@@ -1143,43 +1143,112 @@ async def print_comp_form():
     return FileResponse(os.path.join(TEMPLATES_DIR, "comp_print_template.html"))
 
 @app.get("/api/distribution_summary")
-async def api_distribution_summary(round_num: int = 1, weeks_count: int = 4, dept: str = "ช่างยนต์"):
+async def api_distribution_summary(round_num: int = 1, weeks_count: int = 4, dept: str = "ช่างยนต์", target_net: float = 0):
     try:
         from calculator import calculate_internal_distribution, classify_teacher_8_categories, calculate_week
-        with open("teachers_master.json", "r", encoding="utf-8") as f:
+        with open(TEACHERS_FILE, "r", encoding="utf-8") as f:
             teachers = json.load(f)
             
         if dept and dept != "ทั้งหมด":
             teachers = [t for t in teachers if t.get("dept") == dept]
             
+        # Check custom revenue overrides
+        dist_overrides = {}
+        if os.path.exists(CUSTOM_OVERRIDES_FILE):
+            try:
+                with open(CUSTOM_OVERRIDES_FILE, "r", encoding="utf-8") as cof:
+                    cov_data = json.load(cof)
+                    dist_overrides = cov_data.get("distribution_revenues", {})
+            except Exception:
+                dist_overrides = {}
+
         calculated = calculate_week(teachers)
-        total_weekly = sum(t.get("total_money", 0) for t in calculated)
-        total_revenue = total_weekly * weeks_count if total_weekly > 0 else 281510
         
+        # Calculate individual revenues for each teacher
+        teachers_with_cat = []
+        total_revenue = 0
+        
+        for t in calculated:
+            name_clean = t.get("name", "").strip()
+            # If overridden by user
+            if name_clean in dist_overrides:
+                rev = float(dist_overrides[name_clean])
+            elif str(t.get("index")) in dist_overrides:
+                rev = float(dist_overrides[str(t.get("index"))])
+            else:
+                weekly_money = float(t.get("total_money", 0))
+                rev = weekly_money * weeks_count
+                
+            total_revenue += rev
+            
+            cat = classify_teacher_8_categories(t)
+            t_copy = dict(t)
+            t_copy.update(cat)
+            t_copy["revenue"] = rev
+            teachers_with_cat.append(t_copy)
+            
+        if total_revenue <= 0:
+            total_revenue = 223130  # Fallback to authentic department total from PDF
+            for t in teachers_with_cat:
+                t["revenue"] = round(total_revenue / len(teachers_with_cat))
+                
         dist = calculate_internal_distribution(
             total_revenue=total_revenue,
-            teacher_count=len(teachers),
+            teacher_count=len(teachers_with_cat),
             weeks_count=weeks_count,
             fund_rate_per_week=100
         )
         
-        teachers_with_cat = []
-        for t in calculated:
-            cat = classify_teacher_8_categories(t)
-            t_copy = dict(t)
-            t_copy.update(cat)
-            t_copy["rounded_net"] = dist.get("rounded_net", 0)
-            teachers_with_cat.append(t_copy)
-            
+        effective_target_net = float(target_net) if target_net > 0 else dist.get("rounded_net", 0)
+        
+        # Calculate refund (-) and topup (+) for each teacher based on their individual revenue
+        for t in teachers_with_cat:
+            rev = t.get("revenue", 0)
+            t["rounded_net"] = effective_target_net
+            if rev > effective_target_net:
+                t["refund"] = rev - effective_target_net
+                t["topup"] = None
+            elif rev < effective_target_net:
+                t["refund"] = None
+                t["topup"] = effective_target_net - rev
+            else:
+                t["refund"] = None
+                t["topup"] = 0
+                
         return {
             "status": "success",
             "round_num": round_num,
             "weeks_count": weeks_count,
             "distribution": dist,
+            "effective_target_net": effective_target_net,
             "teachers": teachers_with_cat
         }
     except Exception as e:
         return JSONResponse(content={"status": "error", "message": str(e)}, status_code=500)
+
+@app.post("/api/save_distribution_revenues")
+async def save_distribution_revenues(request: Request):
+    """Save user-edited distribution revenues to custom_overrides_master.json"""
+    try:
+        body = await request.json()
+        revenues = body.get("revenues", {})  # { "name": amount }
+        
+        cov_data = {}
+        if os.path.exists(CUSTOM_OVERRIDES_FILE):
+            try:
+                with open(CUSTOM_OVERRIDES_FILE, "r", encoding="utf-8") as f:
+                    cov_data = json.load(f)
+            except Exception:
+                cov_data = {}
+                
+        cov_data["distribution_revenues"] = revenues
+        with open(CUSTOM_OVERRIDES_FILE, "w", encoding="utf-8") as f:
+            json.dump(cov_data, f, ensure_ascii=False, indent=2)
+            
+        return {"status": "success", "message": "บันทึกยอดจัดสรรสำเร็จ", "count": len(revenues)}
+    except Exception as e:
+        return JSONResponse(content={"status": "error", "message": str(e)}, status_code=500)
+
 
 # ----------------------------------------------------
 # BACKUP & RESTORE ENDPOINTS (For Hugging Face Spaces & Local)

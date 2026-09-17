@@ -1037,7 +1037,7 @@
             </div>
           </div>
 
-          <!-- Middle: 3 Main Views -->
+          <!-- Middle: 4 Main Views -->
           <div class="flex items-center bg-slate-200/90 p-0.5 rounded-lg text-[11px] font-bold shrink-0">
             <button id="btnViewA4Form" type="button" onclick="switchSubViewMode('a4_form')" class="px-2 py-0.5 rounded-md transition bg-white text-blue-700 shadow-xs flex items-center gap-1 font-bold cursor-pointer text-[11px]">
               <i data-lucide="file-text" class="w-3.5 h-3.5 text-blue-600"></i> <span>1. แบบฟอร์มใบเบิก A4</span>
@@ -1045,8 +1045,11 @@
             <button id="btnViewCoversTop" type="button" onclick="switchSubViewMode('covers')" class="px-2 py-0.5 rounded-md transition text-slate-600 hover:text-slate-900 flex items-center gap-1 font-bold cursor-pointer text-[11px]">
               <i data-lucide="folder-check" class="w-3.5 h-3.5 text-purple-600"></i> <span>2. งบหน้ารวม (A4)</span>
             </button>
+            <button id="btnViewDistTop" type="button" onclick="switchSubViewMode('distribution')" class="px-2 py-0.5 rounded-md transition text-slate-600 hover:text-slate-900 flex items-center gap-1 font-bold cursor-pointer text-[11px]">
+              <i data-lucide="pie-chart" class="w-3.5 h-3.5 text-amber-600"></i> <span>3. ตารางจัดสรรเงิน (PDF)</span>
+            </button>
             <button id="btnViewSummaryTop" type="button" onclick="switchSubViewMode('summary')" class="px-2 py-0.5 rounded-md transition text-slate-600 hover:text-slate-900 flex items-center gap-1 font-bold cursor-pointer text-[11px]">
-              <i data-lucide="table-2" class="w-3.5 h-3.5 text-slate-600"></i> <span>3. ตารางจัดสรรเงิน</span>
+              <i data-lucide="table-2" class="w-3.5 h-3.5 text-indigo-600"></i> <span>4. สรุปแจงเงินรายรอบ</span>
             </button>
           </div>
         </div>
@@ -1335,115 +1338,116 @@
         </div>
       </div>
 
-      <!-- SUB-VIEW 4: Internal Distribution Table (จัดสรรเงินภายในแผนก หาร 28 คน) -->
+      <!-- SUB-VIEW 4: Internal Distribution Table (การจัดสรรค์เงินรายได้แผนก) -->
       <div id="viewDistributionTable" class="flex-1 flex flex-col overflow-hidden hidden">
-        <div class="p-3 bg-slate-50 border-b border-slate-200 flex items-center justify-between no-print">
+        <!-- Top Toolbar (No-Print) -->
+        <div class="p-3 bg-slate-50 border-b border-slate-200 flex flex-wrap items-center justify-between no-print gap-2">
           <div>
             <h2 class="text-sm font-bold text-slate-900 flex items-center gap-1.5">
-              <i data-lucide="pie-chart" class="w-4 h-4 text-emerald-600"></i>
-              ตารางจัดสรรเงินค่าสอนพิเศษภายในแผนก (รวมทั้ง 8 ไฟล์ หาร 27 ท่าน)
+              <i data-lucide="pie-chart" class="w-4 h-4 text-amber-600"></i>
+              <span>การจัดสรรค์เงินรายได้แผนก</span>
             </h2>
-            <p class="text-[11px] text-slate-500">คำนวณหักเงินเข้ากองกลาง ปัดเศษหลักร้อยถ้วน และเฉลี่ยเงินให้ครูทุกคนเท่ากัน</p>
+            <p class="text-[11px] text-slate-500">จัดสรรเงินรายบุคคล คืนกองกลาง และแผนกจ่ายเพิ่ม ตามแบบฟอร์มเอกสารจริง</p>
           </div>
           <div class="flex items-center gap-2">
-            <button onclick="window.print()" class="px-3 py-1.5 bg-white border border-slate-300 rounded-lg text-xs font-semibold hover:bg-slate-50 flex items-center gap-1 shadow-xs">
-              <i data-lucide="printer" class="w-3.5 h-3.5"></i> สั่งพิมพ์
+            <button type="button" onclick="loadDistributionSummary(false)" title="คำนวณใหม่ตามใบเบิกชั่วโมงสอนจริง" class="px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 rounded-lg text-xs font-bold flex items-center gap-1 shadow-2xs transition cursor-pointer">
+              <i data-lucide="refresh-cw" class="w-3.5 h-3.5 text-blue-600"></i>
+              <span>🔄 คำนวณตามใบเบิก</span>
+            </button>
+            <button type="button" onclick="loadDistributionSummary(true)" title="โหลดตัวเลขตัวอย่างตรงตามเอกสาร PDF (ยอดสุทธิ 7,600 บ.)" class="px-2.5 py-1.5 bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-300 rounded-lg text-xs font-bold flex items-center gap-1 shadow-2xs transition cursor-pointer">
+              <i data-lucide="file-spreadsheet" class="w-3.5 h-3.5 text-amber-600"></i>
+              <span>📋 ใช้ตัวอย่างตาม PDF</span>
+            </button>
+            <button type="button" onclick="saveDistributionRevenues()" title="บันทึกตัวเลขรายรับที่แก้ไขลงระบบ" class="px-2.5 py-1.5 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-xs font-bold flex items-center gap-1 shadow-xs transition cursor-pointer">
+              <i data-lucide="save" class="w-3.5 h-3.5"></i>
+              <span>💾 บันทึกยอดจัดสรร</span>
+            </button>
+            <button type="button" onclick="window.print()" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold flex items-center gap-1 shadow-xs transition cursor-pointer">
+              <i data-lucide="printer" class="w-3.5 h-3.5"></i>
+              <span>🖨️ สั่งพิมพ์ (A4)</span>
             </button>
           </div>
         </div>
 
         <div class="flex-1 overflow-auto p-4 bg-slate-100 space-y-4">
-          <!-- Calculation Card matching user's image -->
-          <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm max-w-2xl mx-auto space-y-3 text-xs">
+          <!-- Calculation Summary Card (collapsible / no-print on demand) -->
+          <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm max-w-4xl mx-auto space-y-3 text-xs no-print">
             <div class="font-bold text-sm text-slate-900 border-b pb-2 flex items-center justify-between">
-              <span>สูตรการคำนวณจัดสรรเงิน (ตามระเบียบแผนก)</span>
+              <span class="flex items-center gap-1.5">
+                <i data-lucide="calculator" class="w-4 h-4 text-indigo-600"></i>
+                สูตรการคำนวณจัดสรรเงินภายในแผนก
+              </span>
               <span class="text-xs font-semibold px-2.5 py-0.5 bg-indigo-100 text-slate-700 rounded-full" id="distRoundBadge">รอบที่ 1</span>
             </div>
 
-            <!-- Row 1: ยอดเงินรายรับ ÷ ยอดคน -->
-            <div class="grid grid-cols-12 items-center gap-2 py-1.5 border-b border-slate-100">
-              <div class="col-span-4 font-semibold text-slate-700">ยอดเงินรายรับ ÷ ยอดคน</div>
-              <div class="col-span-2 text-right font-mono font-bold text-slate-900" id="distTotalRev">281,510</div>
-              <div class="col-span-1 text-center text-slate-400 font-bold">÷</div>
-              <div class="col-span-1 text-center font-mono font-bold">27</div>
-              <div class="col-span-1 text-center text-slate-400 font-bold">=</div>
-              <div class="col-span-3 text-right font-mono font-bold text-slate-900 text-sm" id="distAvg">10,054</div>
-            </div>
-
-            <!-- Row 2: หักเข้ากองกลาง -->
-            <div class="grid grid-cols-12 items-center gap-2 py-1.5 border-b border-slate-100">
-              <div class="col-span-4 font-semibold text-slate-700" id="distFundLabel">หักเข้ากองกลาง (4 ส.x100) x 27 คน</div>
-              <div class="col-span-2 text-right font-mono" id="distFundPerPerson">400</div>
-              <div class="col-span-1 text-center text-slate-400 font-bold">x</div>
-              <div class="col-span-1 text-center font-mono font-bold">27</div>
-              <div class="col-span-1 text-center text-slate-400 font-bold">=</div>
-              <div class="col-span-3 text-right font-mono font-bold text-slate-900 text-sm" id="distFundTotal">11,200</div>
-            </div>
-
-            <!-- Row 3: เงินที่ได้รับ คนละ -->
-            <div class="grid grid-cols-12 items-center gap-2 py-1.5 border-b border-slate-100 text-rose-700 font-bold">
-              <div class="col-span-4">เงินที่ได้รับ คนละ</div>
-              <div class="col-span-2 text-right font-mono" id="distNetRaw1">10,054</div>
-              <div class="col-span-1 text-center text-rose-400 font-bold">-</div>
-              <div class="col-span-1 text-center font-mono" id="distNetRaw2">400</div>
-              <div class="col-span-1 text-center text-rose-400 font-bold">=</div>
-              <div class="col-span-3 text-right font-mono text-sm" id="distNetBeforeRound">9,654</div>
-            </div>
-
-            <!-- Row 4: ปัดให้ลงตัว (Yellow Highlight) -->
-            <div class="grid grid-cols-12 items-center gap-2 py-1.5 border-b border-slate-100 font-bold">
-              <div class="col-span-4 text-slate-900">ปัดให้ลงตัว (ได้รับจริง)</div>
-              <div class="col-span-2 text-right font-mono text-slate-700" id="distRoundBase">9,654</div>
-              <div class="col-span-1 text-center text-slate-400 font-bold">+</div>
-              <div class="col-span-1 text-center font-mono text-slate-600" id="distRoundAdd">46</div>
-              <div class="col-span-1 text-center text-slate-400 font-bold">=</div>
-              <div class="col-span-3 text-right">
-                <span class="font-mono text-base px-3 py-1 rounded-md bg-yellow-300 text-slate-950 shadow-2xs font-extrabold inline-block" id="distRoundedNet">9,700</span>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <!-- Left Col -->
+              <div class="space-y-2">
+                <div class="grid grid-cols-12 items-center gap-2 py-1 border-b border-slate-100">
+                  <div class="col-span-5 font-semibold text-slate-700">ยอดเงินรายรับทั้งหมด</div>
+                  <div class="col-span-7 text-right font-mono font-bold text-blue-800 text-sm" id="distTotalRev">0</div>
+                </div>
+                <div class="grid grid-cols-12 items-center gap-2 py-1 border-b border-slate-100">
+                  <div class="col-span-5 font-semibold text-slate-700">หารจำนวนคนเฉลี่ย</div>
+                  <div class="col-span-7 text-right font-mono font-bold text-slate-800" id="distAvg">0</div>
+                </div>
+                <div class="grid grid-cols-12 items-center gap-2 py-1 border-b border-slate-100">
+                  <div class="col-span-5 font-semibold text-slate-700" id="distFundLabel">หักเข้ากองกลาง (ส.x100)</div>
+                  <div class="col-span-7 text-right font-mono font-bold text-rose-700" id="distFundTotal">0</div>
+                </div>
               </div>
-            </div>
-
-            <!-- Row 5: เงินกองกลาง -->
-            <div class="grid grid-cols-12 items-center gap-2 py-1.5 border-b border-slate-100 text-rose-700 font-bold">
-              <div class="col-span-4">เงินกองกลาง</div>
-              <div class="col-span-5 text-right text-slate-400 font-bold">=</div>
-              <div class="col-span-3 text-right font-mono text-sm" id="distFundBase">11,200</div>
-            </div>
-
-            <!-- Row 6: เงินเข้ากองกลางคงเหลือ (Blue Highlight) -->
-            <div class="grid grid-cols-12 items-center gap-2 py-1.5 font-bold">
-              <div class="col-span-4 text-slate-900">เงินเข้ากองกลางคงเหลือ</div>
-              <div class="col-span-2 text-right font-mono text-slate-700" id="distFundRemain1">11,200</div>
-              <div class="col-span-1 text-center text-slate-400 font-bold">-</div>
-              <div class="col-span-1 text-center font-mono text-rose-600" id="distFundRemain2">1,288</div>
-              <div class="col-span-1 text-center text-slate-400 font-bold">=</div>
-              <div class="col-span-3 text-right">
-                <span class="font-mono text-base px-3 py-1 rounded-md bg-sky-200 text-slate-950 shadow-2xs font-extrabold inline-block" id="distRemainingFund">9,912</span>
+              <!-- Right Col -->
+              <div class="space-y-2">
+                <div class="grid grid-cols-12 items-center gap-2 py-1 border-b border-slate-100">
+                  <div class="col-span-5 font-semibold text-slate-700">เงินสุทธิก่อนปัดเศษ</div>
+                  <div class="col-span-7 text-right font-mono font-bold text-slate-700" id="distNetBeforeRound">0</div>
+                </div>
+                <div class="grid grid-cols-12 items-center gap-2 py-1 border-b border-slate-100 bg-amber-50/60 px-2 rounded-lg">
+                  <div class="col-span-5 font-bold text-amber-950">ปัดเศษลงตัว (ได้รับจริงต่อคน)</div>
+                  <div class="col-span-7 text-right font-mono text-base font-extrabold text-amber-900" id="distRoundedNet">0</div>
+                </div>
+                <div class="grid grid-cols-12 items-center gap-2 py-1 border-b border-slate-100 bg-sky-50/60 px-2 rounded-lg">
+                  <div class="col-span-5 font-bold text-sky-950">เงินเข้ากองกลางคงเหลือ</div>
+                  <div class="col-span-7 text-right font-mono text-base font-extrabold text-sky-900" id="distRemainingFund">0</div>
+                </div>
               </div>
             </div>
           </div>
 
-          <!-- Table of 28 Teachers with Distributed Amounts -->
-          <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden max-w-4xl mx-auto">
-            <div class="p-3 bg-slate-50 border-b border-slate-200 font-bold text-xs text-slate-800 flex items-center justify-between">
-              <span>รายชื่อครูและยอดเงินจัดสรรสุทธิ (27 ท่าน)</span>
-              <span class="text-emerald-700 font-bold">ได้รับคนละ: <span id="distTablePerPersonBadge" class="text-sm underline">9,700</span> บาท</span>
+          <!-- Official Printable Sheet: การจัดสรรค์เงินรายได้แผนก -->
+          <div class="bg-white p-6 sm:p-8 rounded-2xl border border-slate-300 shadow-sm max-w-4xl mx-auto print:border-0 print:shadow-none print:p-0 print:m-0 print:max-w-none text-slate-900">
+            <!-- Header matching PDF -->
+            <div class="text-center pb-4">
+              <h2 class="text-base sm:text-lg font-bold text-slate-950 tracking-wide">การจัดสรรค์เงินรายได้แผนก</h2>
+              <div class="text-xs text-slate-600 font-medium pt-0.5" id="distDeptRoundTitle">แผนกวิชาช่างยนต์ และ ยานยนต์ไฟฟ้า</div>
             </div>
-            <table class="w-full text-xs text-left">
-              <thead class="bg-slate-100 text-slate-700 border-b text-center font-bold">
-                <tr>
-                  <th class="p-2 w-12 border-r">ลำดับ</th>
-                  <th class="p-2 border-r text-left">ชื่อ - นามสกุล</th>
-                  <th class="p-2 border-r w-32">แผนก</th>
-                  <th class="p-2 border-r w-28">ตำแหน่ง</th>
-                  <th class="p-2 border-r w-20">ระดับ</th>
-                  <th class="p-2 border-r w-32 text-right">เงินที่ได้รับจริง (บาท)</th>
-                  <th class="p-2 w-32">ลงชื่อรับเงิน</th>
+
+            <!-- Table Matching User's PDF -->
+            <table class="w-full text-xs border-collapse border border-slate-500 font-sans">
+              <thead>
+                <tr class="bg-[#FCE4D6] text-center font-bold text-slate-900 border-b border-slate-500">
+                  <th rowspan="2" class="p-2 border border-slate-500 w-12 text-center align-middle">ลำดับ</th>
+                  <th rowspan="2" class="p-2 border border-slate-500 text-center align-middle min-w-[200px]">ชื่อ-สกุล</th>
+                  <th colspan="3" class="p-2 border border-slate-500 text-center align-middle bg-[#FCE4D6]">การจัดสรรค์เงินรายได้แผนก</th>
+                  <th rowspan="2" class="p-2 border border-slate-500 w-36 text-center align-middle bg-[#FCE4D6]">ลงชื่อ</th>
+                </tr>
+                <tr class="text-center font-bold text-slate-900 border-b border-slate-500 text-[11px]">
+                  <th class="p-1.5 border border-slate-500 w-28 bg-[#FCE4D6]">รายรับ / บุคคล</th>
+                  <th class="p-1.5 border border-slate-500 w-32 bg-[#FCE4D6]">คืนกองกลางแผนก ( - )</th>
+                  <th class="p-1.5 border border-slate-500 w-32 bg-[#FFFF00] text-slate-950">แผนกจ่ายเพิ่ม ( + )</th>
                 </tr>
               </thead>
-              <tbody id="distributionTableBody" class="divide-y divide-slate-100">
+              <tbody id="distributionTableBody">
                 <!-- Populated via JS -->
               </tbody>
             </table>
+
+            <!-- Signature Section Matching User's PDF -->
+            <div class="mt-8 flex flex-col items-center justify-center text-center text-xs space-y-1.5 page-break-inside-avoid">
+              <div class="text-slate-800 font-light select-none tracking-tight">..................................................................................................................................</div>
+              <div class="pt-2 font-bold text-slate-900">( <span id="distSignerName">นายชำนาญ แก้วจงประสิทธิ์</span> )</div>
+              <div class="text-slate-700">ตำแหน่ง &nbsp;&nbsp; <span id="distSignerTitle">หัวหน้าแผนกวิชา ช่างยนต์</span></div>
+            </div>
           </div>
         </div>
       </div>
@@ -9159,15 +9163,17 @@ function selectRound(roundNum) {
 
       currentSubViewMode = mode;
 
-      // Update the 3 top navigation buttons
+      // Update the 4 top navigation buttons
       const btnA4 = document.getElementById('btnViewA4Form');
       const btnCovers = document.getElementById('btnViewCoversTop');
+      const btnDist = document.getElementById('btnViewDistTop');
       const btnSummary = document.getElementById('btnViewSummaryTop');
 
       const baseInactive = "px-2 py-0.5 rounded-md transition text-slate-600 hover:text-slate-900 flex items-center gap-1 font-bold cursor-pointer text-[11px]";
       if (btnA4) btnA4.className = (mode === 'a4_form') ? "px-2 py-0.5 rounded-md transition bg-white text-blue-700 shadow-xs flex items-center gap-1 font-bold cursor-pointer text-[11px]" : baseInactive;
       if (btnCovers) btnCovers.className = (mode === 'covers') ? "px-2 py-0.5 rounded-md transition bg-white text-purple-700 shadow-xs flex items-center gap-1 font-bold cursor-pointer text-[11px]" : baseInactive;
-      if (btnSummary) btnSummary.className = (mode === 'summary') ? "px-2 py-0.5 rounded-md transition bg-white text-amber-700 shadow-xs flex items-center gap-1 font-bold cursor-pointer text-[11px]" : baseInactive;
+      if (btnDist) btnDist.className = (mode === 'distribution') ? "px-2 py-0.5 rounded-md transition bg-white text-amber-700 shadow-xs flex items-center gap-1 font-bold cursor-pointer text-[11px]" : baseInactive;
+      if (btnSummary) btnSummary.className = (mode === 'summary') ? "px-2 py-0.5 rounded-md transition bg-white text-indigo-700 shadow-xs flex items-center gap-1 font-bold cursor-pointer text-[11px]" : baseInactive;
 
       // Containers
       const vSingle = document.getElementById('viewSingleTeacher');
@@ -9232,7 +9238,56 @@ function selectRound(roundNum) {
 
 
 
-    async function loadDistributionSummary() {
+    let currentDistData = null;
+    let distTeachers = [];
+
+    // 28 teachers and authentic revenue figures from user's official PDF document
+    const PDF_SAMPLE_ITEMS = [
+      { name: "นายชำนาญ แก้วจงประสิทธิ์", revenue: 8400 },
+      { name: "นายเปรม เพ็งยอด", revenue: 9450 },
+      { name: "นายสุเมธ เฉลิมพันธ์", revenue: 9720 },
+      { name: "นายธนิต กฐินทอง", revenue: 9720 },
+      { name: "นายสุริยา คำอุดม", revenue: 9720 },
+      { name: "นายดำเนิน สุขขี", revenue: 10260 },
+      { name: "นายคงศักดิ์ มากซุง", revenue: 9990 },
+      { name: "นายวัชรัศมิ์ ไชยศาสตร์", revenue: 7600 },
+      { name: "นายกวีศักดิ์ แป้นขาว", revenue: 6800 },
+      { name: "นายไพรัช น้อยแสง", revenue: 7200 },
+      { name: "นายจักรกฤษณ์ ปัญญา", revenue: 7600 },
+      { name: "นายพลกฤต น้อยเกิด", revenue: 6800 },
+      { name: "นายพงษ์พัฒน์ พิมพ์ปรุ", revenue: 6750 },
+      { name: "นายธรรศกร เกตุวงศ์", revenue: 11610 },
+      { name: "นายพงศ์ศิริ ธรรมาวุฒิ", revenue: 6200 },
+      { name: "นายศุภเดช เมืองเงิน", revenue: 7000 },
+      { name: "นายณัฐพงศ์ จันทร์แดง", revenue: 5600 },
+      { name: "นายมนตรี ทิมสุข", revenue: 5200 },
+      { name: "นายสณปวริศร์ ชมพู", revenue: 11880 },
+      { name: "นายสถาปนิก คุ้มสะอาด", revenue: 7000 },
+      { name: "นายดาวรุ่ง พูลทอง", revenue: 7200 },
+      { name: "ว่าที่ร.ต.สุริยะ อัมรนันท์", revenue: 7200 },
+      { name: "นายพรชัย สมณะ", revenue: 7400 },
+      { name: "นายบัณฑิต สุ่มศรี", revenue: 8910 },
+      { name: "นายยศกร อ่วมมี", revenue: 5400 },
+      { name: "นายอาทิตย์ แก้วแดง", revenue: 9720 },
+      { name: "นายสมพร สุธรรมมา", revenue: 6600 },
+      { name: "นายชนาธิป สุวรรณขันธ์", revenue: 6200 }
+    ];
+
+    let distReqId = 0;
+    async function loadDistributionSummary(usePdfSample = false) {
+      const curReq = ++distReqId;
+      if (usePdfSample) {
+        distTeachers = PDF_SAMPLE_ITEMS.map(item => ({
+          name: item.name,
+          revenue: item.revenue,
+          dept: 'ช่างยนต์',
+          rounded_net: 7600
+        }));
+        recalcDistLocally(4);
+        showToast('โหลดข้อมูลตัวอย่างสำเร็จ', 'นำเข้าข้อมูลรายรับ 28 ท่านตรงตามเอกสาร PDF (ยอดสุทธิ 7,600 บาท)', true);
+        return;
+      }
+
       const roundNum = document.getElementById('inputRoundNum') ? parseInt(document.getElementById('inputRoundNum').value) || 1 : 1;
       let roundWeeks = [1, 2, 3, 4, 5];
       if (typeof currentRoundSchedule !== 'undefined' && Array.isArray(currentRoundSchedule)) {
@@ -9245,47 +9300,211 @@ function selectRound(roundNum) {
         const deptParam = encodeURIComponent(currentDeptFilter || 'ช่างยนต์');
         const res = await fetch(`/api/distribution_summary?round_num=${roundNum}&weeks_count=${weeksCount}&dept=${deptParam}`);
         const data = await res.json();
+        if (curReq !== distReqId) return; // Discard superseded fetch
         if (data.status === 'success') {
-          const d = data.distribution;
-          const badgeEl = document.getElementById('distRoundBadge');
-          if (badgeEl) badgeEl.innerText = `รอบที่ ${roundNum} (${weeksCount} สัปดาห์)`;
-          
-          document.getElementById('distTotalRev').innerText = d.total_revenue.toLocaleString();
-          document.getElementById('distAvg').innerText = d.avg_per_person.toLocaleString();
-          document.getElementById('distFundLabel').innerText = `หักเข้ากองกลาง (${weeksCount} ส.x100) x ${d.teacher_count} คน`;
-          document.getElementById('distFundPerPerson').innerText = d.fund_per_person.toLocaleString();
-          document.getElementById('distFundTotal').innerText = d.fund_total.toLocaleString();
-          document.getElementById('distNetRaw1').innerText = d.avg_per_person.toLocaleString();
-          document.getElementById('distNetRaw2').innerText = d.fund_per_person.toLocaleString();
-          document.getElementById('distNetBeforeRound').innerText = d.net_per_person.toLocaleString();
-          document.getElementById('distRoundBase').innerText = d.net_per_person.toLocaleString();
-          document.getElementById('distRoundAdd').innerText = d.round_diff_per_person.toLocaleString();
-          document.getElementById('distRoundedNet').innerText = d.rounded_net.toLocaleString();
-          document.getElementById('distFundBase').innerText = d.fund_total.toLocaleString();
-          document.getElementById('distFundRemain1').innerText = d.fund_total.toLocaleString();
-          document.getElementById('distFundRemain2').innerText = d.total_round_diff.toLocaleString();
-          document.getElementById('distRemainingFund').innerText = d.remaining_fund.toLocaleString();
-          document.getElementById('distTablePerPersonBadge').innerText = d.rounded_net.toLocaleString();
-
-          const tbody = document.getElementById('distributionTableBody');
-          if (tbody && data.teachers) {
-            tbody.innerHTML = data.teachers.map((t, idx) => `
-              <tr class="hover:bg-slate-50 text-center">
-                <td class="p-2 border-r font-medium">${idx + 1}</td>
-                <td class="p-2 border-r text-left font-bold text-slate-900">${t.name}</td>
-                <td class="p-2 border-r text-slate-600">${t.dept_name || t.dept}</td>
-                <td class="p-2 border-r text-slate-500">${t.position || t.teacher_type || 'ครู'}</td>
-                <td class="p-2 border-r text-slate-600">${t.level || 'ปวช.'}</td>
-                <td class="p-2 border-r text-right font-mono font-bold text-emerald-700">${d.rounded_net.toLocaleString()}</td>
-                <td class="p-2 text-slate-300">........................</td>
-              </tr>
-            `).join('');
-          }
-          lucide.createIcons();
+          currentDistData = data.distribution;
+          distTeachers = data.teachers || [];
+          renderDistributionUI();
         }
       } catch(e) {
         console.error('Error loading distribution:', e);
       }
+    }
+
+    function recalcDistLocally(forcedWeeksCount = null) {
+      if (!distTeachers || distTeachers.length === 0) return;
+      
+      const teacherCount = distTeachers.length;
+      const roundNum = document.getElementById('inputRoundNum') ? parseInt(document.getElementById('inputRoundNum').value) || 1 : 1;
+      let roundWeeks = [1, 2, 3, 4, 5];
+      if (typeof currentRoundSchedule !== 'undefined' && Array.isArray(currentRoundSchedule)) {
+        const curR = currentRoundSchedule.find(r => r.round === roundNum);
+        if (curR && curR.weeksList) roundWeeks = curR.weeksList;
+      }
+      const weeksCount = forcedWeeksCount || (currentDistData?.weeks_count || roundWeeks.length);
+      const fundRatePerWeek = 100;
+
+      // 1. Total revenue
+      const totalRevenue = distTeachers.reduce((sum, t) => sum + (parseFloat(t.revenue) || 0), 0);
+      
+      // 2. Average per person
+      const avgPerPerson = Math.round(totalRevenue / teacherCount);
+      
+      // 3. Central Fund deduction
+      const fundPerPerson = weeksCount * fundRatePerWeek;
+      const fundTotal = fundPerPerson * teacherCount;
+      const rawNetPerPerson = (totalRevenue / teacherCount) - fundPerPerson;
+      const netPerPerson = avgPerPerson - fundPerPerson;
+      
+      // 4. Rounded net to 100s
+      const roundedNet = Math.ceil(rawNetPerPerson / 100) * 100;
+      const roundDiffPerPerson = roundedNet - Math.round(rawNetPerPerson);
+      const totalRoundDiff = Math.round((roundedNet - rawNetPerPerson) * teacherCount);
+      const remainingFund = fundTotal - totalRoundDiff;
+
+      currentDistData = {
+        total_revenue: totalRevenue,
+        teacher_count: teacherCount,
+        weeks_count: weeksCount,
+        fund_rate_per_week: fundRatePerWeek,
+        avg_per_person: avgPerPerson,
+        fund_per_person: fundPerPerson,
+        fund_total: fundTotal,
+        net_per_person: netPerPerson,
+        rounded_net: roundedNet,
+        round_diff_per_person: roundDiffPerPerson,
+        total_round_diff: totalRoundDiff,
+        remaining_fund: remainingFund
+      };
+
+      // Recalculate refund and topup for each teacher
+      distTeachers.forEach(t => {
+        const rev = parseFloat(t.revenue) || 0;
+        t.rounded_net = roundedNet;
+        if (rev > roundedNet) {
+          t.refund = rev - roundedNet;
+          t.topup = null;
+        } else if (rev < roundedNet) {
+          t.refund = null;
+          t.topup = roundedNet - rev;
+        } else {
+          t.refund = 0;
+          t.topup = null;
+        }
+      });
+
+      renderDistributionUI();
+    }
+
+    function onTeacherRevenueChange(idx, val) {
+      const num = parseFloat(String(val).replace(/,/g, '')) || 0;
+      if (distTeachers[idx]) {
+        distTeachers[idx].revenue = num;
+        recalcDistLocally();
+      }
+    }
+
+    async function saveDistributionRevenues() {
+      if (!distTeachers || distTeachers.length === 0) return;
+      const revMap = {};
+      distTeachers.forEach(t => {
+        revMap[t.name.trim()] = t.revenue;
+      });
+      try {
+        const resp = await fetch('/api/save_distribution_revenues', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({revenues: revMap})
+        });
+        const res = await resp.json();
+        if (resp.ok && res.status === 'success') {
+          showToast('บันทึกสำเร็จ', 'บันทึกยอดรายรับจัดสรรเรียบร้อยแล้ว', true);
+        } else {
+          showToast('บันทึกล้มเหลว', res.message || 'ไม่สามารถบันทึกได้', false);
+        }
+      } catch (err) {
+        showToast('ผิดพลาด', err.message, false);
+      }
+    }
+
+    function renderDistributionUI() {
+      if (!currentDistData) return;
+      const d = currentDistData;
+      const roundNum = document.getElementById('inputRoundNum') ? parseInt(document.getElementById('inputRoundNum').value) || 1 : 1;
+      const weeksCount = d.weeks_count || 4;
+
+      const badgeEl = document.getElementById('distRoundBadge');
+      if (badgeEl) badgeEl.innerText = `รอบที่ ${roundNum} (${weeksCount} สัปดาห์)`;
+
+      const titleEl = document.getElementById('distDeptRoundTitle');
+      if (titleEl) {
+        titleEl.innerText = `${currentDeptFilter || 'แผนกวิชาช่างยนต์'} ประจำรอบที่ ${roundNum} (${weeksCount} สัปดาห์) จำนวน ${d.teacher_count} ท่าน`;
+      }
+      
+      const setTxt = (id, val) => {
+        const el = document.getElementById(id);
+        if (el) el.innerText = (typeof val === 'number') ? val.toLocaleString() : (val || '');
+      };
+
+      setTxt('distTotalRev', d.total_revenue);
+      setTxt('distAvg', d.avg_per_person);
+      const fLabel = document.getElementById('distFundLabel');
+      if (fLabel) fLabel.innerText = `หักเข้ากองกลาง (${weeksCount} ส.x100) x ${d.teacher_count} คน`;
+      setTxt('distFundPerPerson', d.fund_per_person);
+      setTxt('distFundTotal', d.fund_total);
+      setTxt('distNetRaw1', d.avg_per_person);
+      setTxt('distNetRaw2', d.fund_per_person);
+      setTxt('distNetBeforeRound', d.net_per_person);
+      setTxt('distRoundBase', d.net_per_person);
+      setTxt('distRoundAdd', d.round_diff_per_person);
+      setTxt('distRoundedNet', d.rounded_net);
+      setTxt('distFundBase', d.fund_total);
+      setTxt('distFundRemain1', d.fund_total);
+      setTxt('distFundRemain2', d.total_round_diff);
+      setTxt('distRemainingFund', d.remaining_fund);
+
+      // Signatory
+      if (typeof appSignatories !== 'undefined') {
+        const autoMaker = appSignatories.maker_auto || {};
+        setTxt('distSignerName', autoMaker.name || 'นายชำนาญ แก้วจงประสิทธิ์');
+        setTxt('distSignerTitle', autoMaker.title || 'ตำแหน่งครู  หัวหน้าแผนกวิชาช่างยนต์');
+      }
+
+      // Render the PDF-Matching Table Rows
+      const tbody = document.getElementById('distributionTableBody');
+      if (tbody && distTeachers) {
+        let totalRev = 0, totalRefund = 0, totalTopup = 0;
+        tbody.innerHTML = distTeachers.map((t, idx) => {
+          const rev = parseFloat(t.revenue) || 0;
+          totalRev += rev;
+          
+          let refundStr = '';
+          if (t.refund !== null && t.refund !== undefined) {
+            refundStr = (t.refund === 0) ? '0' : t.refund.toLocaleString();
+            if (t.refund > 0) totalRefund += t.refund;
+          }
+
+          let topupStr = '';
+          let topupBg = '';
+          if (t.topup !== null && t.topup !== undefined) {
+            if (t.topup > 0) {
+              topupStr = t.topup.toLocaleString();
+              topupBg = 'bg-[#FFFF00] font-bold text-slate-950'; // Exactly matching bright yellow in PDF!
+              totalTopup += t.topup;
+            } else if (t.topup === 0 && t.refund === null) {
+              topupStr = '0';
+            }
+          }
+
+          return `
+            <tr class="hover:bg-amber-50/40 text-xs transition border-b border-slate-400">
+              <td class="p-1 border border-slate-400 text-center font-medium text-slate-800">${idx + 1}</td>
+              <td class="p-1.5 border border-slate-400 text-left font-bold text-slate-900">${t.name}</td>
+              <td class="p-0.5 border border-slate-400 text-right font-mono font-bold text-slate-900">
+                <input type="text" 
+                       value="${rev.toLocaleString()}" 
+                       onfocus="this.select()"
+                       onchange="onTeacherRevenueChange(${idx}, this.value)"
+                       title="คลิกเพื่อแก้ไขตัวเลขรายรับ"
+                       class="w-full text-right font-mono font-bold bg-transparent outline-none focus:bg-amber-100/80 px-1 py-0.5 rounded cursor-text">
+              </td>
+              <td class="p-1.5 border border-slate-400 text-right font-mono font-bold text-slate-800">${refundStr}</td>
+              <td class="p-1.5 border border-slate-400 text-right font-mono ${topupBg}">${topupStr}</td>
+              <td class="p-1.5 border border-slate-400 text-center text-slate-400 font-light select-none tracking-tighter">..................................</td>
+            </tr>
+          `;
+        }).join('') + `
+          <!-- Total Summary Row -->
+          <tr class="bg-amber-100/60 font-bold text-xs border-t-2 border-slate-600">
+            <td colspan="2" class="p-2 border border-slate-600 text-center font-extrabold text-slate-900">รวมทั้งสิ้น (${distTeachers.length} ท่าน)</td>
+            <td class="p-2 border border-slate-600 text-right font-mono font-extrabold text-blue-900">${totalRev.toLocaleString()}</td>
+            <td class="p-2 border border-slate-600 text-right font-mono font-extrabold text-rose-900">${totalRefund.toLocaleString()}</td>
+            <td class="p-2 border border-slate-600 text-right font-mono font-extrabold text-amber-950 bg-[#FFFF00]">${totalTopup.toLocaleString()}</td>
+            <td class="p-2 border border-slate-600 text-center text-[11px] text-emerald-800 font-extrabold">สุทธิ ${d.rounded_net.toLocaleString()} บ./คน</td>
+          </tr>
+        `;
+      }
+      if (typeof lucide !== 'undefined') lucide.createIcons();
     }
 
     window.addEventListener('load', async () => {
@@ -9343,6 +9562,13 @@ function selectRound(roundNum) {
             cSel.value = paramCoverIdx;
             onCoverFileSelectChange(paramCoverIdx);
           }
+        }
+      } else if (paramView === 'summary') {
+        switchSubViewMode('summary');
+      } else if (paramView === 'distribution' || paramView === 'dist') {
+        switchSubViewMode('distribution');
+        if (urlParams.get('sample') === 'pdf') {
+          loadDistributionSummary(true);
         }
       } else {
         switchSubViewMode('a4_form');
