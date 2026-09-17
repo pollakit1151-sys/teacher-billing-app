@@ -108,11 +108,50 @@ def save_signatories(data):
 CUSTOM_OVERRIDES_FILE = os.path.join(BASE_DIR, "custom_overrides_master.json")
 COMPENSATIONS_FILE = os.path.join(BASE_DIR, "compensations_master.json")
 
+def sanitize_custom_overrides(data):
+    if not isinstance(data, dict):
+        return data
+    text_edits = data.get("text_edits", {})
+    template_overrides = data.get("template_overrides", {})
+    bad_patterns = [
+        "table:nth-of-type(2) > tbody > tr:nth-of-type(1) > td:nth-of-type(1)",
+        "covTotalMoney",
+        "covBahtText",
+        "รวมจำนวนเงินค่าสอนพิเศษทั้งสิ้น",
+        "หนึ่งแสนห้าหมื่นหกพันบาทถ้วน"
+    ]
+    cleaned_texts = {}
+    for k, v in text_edits.items():
+        if any(p in k for p in bad_patterns[:3]):
+            continue
+        if isinstance(v, str) and any(p in v for p in bad_patterns[3:]):
+            continue
+        cleaned_texts[k] = v
+    data["text_edits"] = cleaned_texts
+
+    cleaned_templates = {}
+    for k, v in template_overrides.items():
+        if isinstance(v, dict):
+            if any(p in k for p in bad_patterns[:3]):
+                v_copy = dict(v)
+                v_copy.pop("html", None)
+                cleaned_templates[k] = v_copy
+            elif isinstance(v.get("html"), str) and any(p in v["html"] for p in bad_patterns[3:]):
+                v_copy = dict(v)
+                v_copy.pop("html", None)
+                cleaned_templates[k] = v_copy
+            else:
+                cleaned_templates[k] = v
+        else:
+            cleaned_templates[k] = v
+    data["template_overrides"] = cleaned_templates
+    return data
+
 def load_custom_overrides():
     if os.path.exists(CUSTOM_OVERRIDES_FILE):
         try:
             with open(CUSTOM_OVERRIDES_FILE, "r", encoding="utf-8") as f:
-                return json.load(f)
+                return sanitize_custom_overrides(json.load(f))
         except Exception as e:
             print(f"Error reading {CUSTOM_OVERRIDES_FILE}: {e}")
     return {
@@ -123,8 +162,9 @@ def load_custom_overrides():
     }
 
 def save_custom_overrides(data):
+    sanitized = sanitize_custom_overrides(data)
     with open(CUSTOM_OVERRIDES_FILE, "w", encoding="utf-8") as f:
-        json.dump(data, f, ensure_ascii=False, indent=2)
+        json.dump(sanitized, f, ensure_ascii=False, indent=2)
 
 def load_compensations():
     if os.path.exists(COMPENSATIONS_FILE):
