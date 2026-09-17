@@ -848,8 +848,11 @@ def calculate_round_breakdown_matrix(teachers_master, round_weeks, dept='ช่�
     if subs_map is None: subs_map = {}
     if comps_map is None: comps_map = {}
 
-    # กรองครูตามแผนก
-    dept_teachers = [t for t in teachers_master if (t.get('dept', 'ช่างยนต์') == dept)]
+    # กรองครูตามแผนก (ถ้า dept เป็น 'ทั้งหมด' หรือ 'ทั้งสองแผนก' ให้รวมทั้งสองแผนก ช่างยนต์ + ยานยนต์ไฟฟ้า)
+    if not dept or dept in ['ทั้งหมด', 'ทั้งสองแผนก', 'ช่างยนต์และยานยนต์ไฟฟ้า', 'auto_ev', 'all']:
+        dept_teachers = list(teachers_master)
+    else:
+        dept_teachers = [t for t in teachers_master if (t.get('dept', 'ช่างยนต์') == dept)]
 
     weekly_results = {}
     for w in round_weeks:

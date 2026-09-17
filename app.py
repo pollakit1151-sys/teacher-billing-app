@@ -369,7 +369,7 @@ async def api_add_teacher(payload: dict):
     return JSONResponse(content={"status": "success", "message": f"เพิ่มครูใหม่ '{name}' เรียบร้อยแล้ว", "teacher": new_t})
 
 @app.get("/api/round_breakdown_matrix")
-async def api_round_breakdown_matrix(round_num: int = 1, dept: str = "ช่างยนต์", weeks: str = ""):
+async def api_round_breakdown_matrix(round_num: int = 1, dept: str = "ทั้งหมด", weeks: str = ""):
     teachers = load_master()
     if weeks:
         try:
@@ -1143,13 +1143,13 @@ async def print_comp_form():
     return FileResponse(os.path.join(TEMPLATES_DIR, "comp_print_template.html"))
 
 @app.get("/api/distribution_summary")
-async def api_distribution_summary(round_num: int = 1, weeks_count: int = 4, dept: str = "ช่างยนต์", target_net: float = 0):
+async def api_distribution_summary(round_num: int = 1, weeks_count: int = 4, dept: str = "ทั้งหมด", target_net: float = 0):
     try:
         from calculator import calculate_internal_distribution, classify_teacher_8_categories, calculate_week
         with open(TEACHERS_FILE, "r", encoding="utf-8") as f:
             teachers = json.load(f)
             
-        if dept and dept != "ทั้งหมด":
+        if dept and dept not in ["ทั้งหมด", "ทั้งสองแผนก", "ช่างยนต์และยานยนต์ไฟฟ้า", "auto_ev", "all"]:
             teachers = [t for t in teachers if t.get("dept") == dept]
             
         # Check custom revenue overrides
@@ -1348,6 +1348,62 @@ async def import_backup(request: Request, file: UploadFile = File(None)):
         }
     except Exception as e:
         return JSONResponse(content={"status": "error", "message": f"การกู้คืนล้มเหลว: {str(e)}"}, status_code=500)
+
+@app.post("/api/deploy/hf")
+async def deploy_to_huggingface(request: Request):
+    """Deploy current repository to Hugging Face Spaces using user's token and space URL."""
+    try:
+        body = await request.json()
+        raw_space = body.get("space_url", "").strip()
+        hf_token = body.get("token", "").strip()
+        
+        if not raw_space:
+            return JSONResponse(content={"status": "error", "message": "กรุณาระบุ URL ของ Space หรือชื่อ Space (เช่น username/space-name)"}, status_code=400)
+        if not hf_token:
+            return JSONResponse(content={"status": "error", "message": "กรุณาระบุ Hugging Face Access Token (สิทธิ์ Write)"}, status_code=400)
+            
+        # Parse username and space_name
+        clean = raw_space
+        for prefix in ["https://huggingface.co/spaces/", "http://huggingface.co/spaces/", "huggingface.co/spaces/"]:
+            if clean.startswith(prefix):
+                clean = clean[len(prefix):]
+        clean = clean.strip("/")
+        parts = clean.split("/")
+        if len(parts) < 2:
+            return JSONResponse(content={"status": "error", "message": "รูปแบบ Space ไม่ถูกต้อง กรุณากรอกในรูปแบบ เช่น username/space-name หรือ https://huggingface.co/spaces/username/space-name"}, status_code=400)
+            
+        username = parts[0]
+        space_name = parts[1]
+        repo_url = f"https://{username}:{hf_token}@huggingface.co/spaces/{username}/{space_name}.git"
+        
+        # Git commands
+        # 1. Clean old remote
+        subprocess.run(["git", "remote", "remove", "space"], cwd=BASE_DIR, capture_output=True)
+        
+        # 2. Add remote
+        res_add = subprocess.run(["git", "remote", "add", "space", repo_url], cwd=BASE_DIR, capture_output=True, text=True)
+        if res_add.returncode != 0:
+            return JSONResponse(content={"status": "error", "message": f"Git remote add failed: {res_add.stderr}"}, status_code=500)
+            
+        # 3. Push to space
+        res_push = subprocess.run(["git", "push", "-u", "space", "main", "--force"], cwd=BASE_DIR, capture_output=True, text=True, timeout=120)
+        
+        # 4. Remove remote so token is never stored on disk
+        subprocess.run(["git", "remote", "remove", "space"], cwd=BASE_DIR, capture_output=True)
+        
+        if res_push.returncode != 0:
+            err_msg = res_push.stderr or res_push.stdout
+            err_msg = err_msg.replace(hf_token, "***")
+            return JSONResponse(content={"status": "error", "message": f"นำขึ้นระบบไม่สำเร็จ: {err_msg}"}, status_code=500)
+            
+        live_url = f"https://huggingface.co/spaces/{username}/{space_name}"
+        return {
+            "status": "success",
+            "message": "นำขึ้น Hugging Face Spaces สำเร็จเรียบร้อยแล้ว!",
+            "live_url": live_url
+        }
+    except Exception as e:
+        return JSONResponse(content={"status": "error", "message": str(e)}, status_code=500)
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 7860 if os.environ.get("SPACE_ID") else 8000))

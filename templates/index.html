@@ -8105,8 +8105,7 @@
       `;
 
       try {
-        const deptParam = encodeURIComponent(currentDeptFilter || 'ช่างยนต์');
-        const res = await fetch(`/api/round_breakdown_matrix?round_num=${currentSummaryRound}&dept=${deptParam}`);
+        const res = await fetch(`/api/round_breakdown_matrix?round_num=${currentSummaryRound}&dept=ทั้งหมด`);
         const json = await res.json();
         if (json.status !== 'success' || !json.data) {
           container.innerHTML = `<div class="p-8 text-center text-rose-500 font-bold">ไม่สามารถดึงข้อมูลตารางแจงเงินรายบุคคลได้</div>`;
@@ -8145,10 +8144,14 @@
               `;
             }).join('');
 
+            const evTag = (t.dept === 'ยานยนต์ไฟฟ้า') 
+              ? '<span class="ml-1.5 px-1.5 py-0.2 bg-amber-100 text-amber-800 border border-amber-300 rounded text-[9px] font-bold">EV</span>' 
+              : '';
+
             secHtml += `
               <tr class="hover:bg-blue-50/60 text-[11px] h-7 ${idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/80'}">
                 <td class="border border-slate-400 text-center font-bold text-slate-600">${idx + 1}</td>
-                <td class="border border-slate-400 px-2 font-semibold text-slate-900 whitespace-nowrap">${t.name}</td>
+                <td class="border border-slate-400 px-2 font-semibold text-slate-900 whitespace-nowrap">${t.name} ${evTag}</td>
                 <td class="border border-slate-400 px-1.5 text-slate-500 text-[10px] truncate max-w-[130px]">${t.duty || t.position || 'ผู้สอน'}</td>
                 <td class="border border-slate-400 text-center font-bold text-slate-700">${t.level}</td>
                 ${wkCells}
@@ -8181,8 +8184,8 @@
           return secHtml;
         }
 
-        const regHtml = renderRows(groupReg, `ครูประจำ (${currentDeptFilter} ${groupReg.length} ท่าน)`, false);
-        const spHtml = renderRows(groupSp, `ครูพิเศษ (${currentDeptFilter} ${groupSp.length} ท่าน)`, true);
+        const regHtml = renderRows(groupReg, `ครูประจำ (รวม 2 แผนก: ช่างยนต์ + ยานยนต์ไฟฟ้า ${groupReg.length} ท่าน)`, false);
+        const spHtml = renderRows(groupSp, `ครูพิเศษ (รวม 2 แผนก: ช่างยนต์ + ยานยนต์ไฟฟ้า ${groupSp.length} ท่าน)`, true);
 
         let grandWkSumCells = weeks.map(w => {
           const wTot = weekTotals[w] || { total_hours: 0, total_money: 0 };
@@ -8196,7 +8199,7 @@
           <div class="max-w-7xl mx-auto bg-white p-5 rounded-2xl border border-slate-300 shadow-md">
             <div class="text-center mb-4 text-slate-900">
               <h3 class="text-base font-bold">ตารางแจงเงินรายบุคคล (การเบิกจ่ายค่าสอนพิเศษและเกินภาระงาน)</h3>
-              <p class="text-xs text-slate-600">แผนกวิชา${currentDeptFilter} • วิทยาลัยเทคนิคนครสวรรค์ • รอบที่ ${currentSummaryRound} (สัปดาห์ที่ ${weeks.join(', ')})</p>
+              <p class="text-xs text-slate-600">แผนกวิชาช่างยนต์ และ แผนกวิชายานยนต์ไฟฟ้า (รวม 2 แผนก ${summary.total_teachers_count || 29} ท่าน) • วิทยาลัยเทคนิคนครสวรรค์ • รอบที่ ${currentSummaryRound} (สัปดาห์ที่ ${weeks.join(', ')})</p>
             </div>
 
             <div class="overflow-x-auto">
@@ -8237,10 +8240,10 @@
               <div class="text-slate-600">
                 <span>ครูประจำ: <strong>${summary.regular_teachers_count || 0}</strong> ท่าน (${(summary.regular_money || 0).toLocaleString()} บาท)</span> • 
                 <span>ครูพิเศษ: <strong>${summary.special_teachers_count || 0}</strong> ท่าน (${(summary.special_money || 0).toLocaleString()} บาท)</span> • 
-                <span>รวมทั้งแผนก: <strong>${summary.total_teachers_count || 0}</strong> ท่าน</span>
+                <span>รวมทั้ง 2 แผนก: <strong>${summary.total_teachers_count || 0}</strong> ท่าน</span>
               </div>
-              <button onclick="switchMainTab('distribution')" class="px-4 py-1.5 bg-purple-600 hover:bg-purple-700 text-white font-bold rounded-lg shadow-xs flex items-center gap-1.5 cursor-pointer">
-                <span>👉 ส่งยอดเงิน ${(summary.grand_money || 0).toLocaleString()} บาท ไปคำนวณในตารางจัดสรรเงิน (หาร 25 คน)</span>
+              <button onclick="switchSubViewMode('distribution')" class="px-4 py-1.5 bg-purple-600 hover:bg-purple-700 text-white font-bold rounded-lg shadow-xs flex items-center gap-1.5 cursor-pointer">
+                <span>👉 ส่งยอดเงิน ${(summary.grand_money || 0).toLocaleString()} บาท ไปคำนวณในตารางจัดสรรเงิน (รวม 2 แผนก)</span>
               </button>
             </div>
           </div>
@@ -9297,8 +9300,7 @@ function selectRound(roundNum) {
       const weeksCount = roundWeeks.length;
       
       try {
-        const deptParam = encodeURIComponent(currentDeptFilter || 'ช่างยนต์');
-        const res = await fetch(`/api/distribution_summary?round_num=${roundNum}&weeks_count=${weeksCount}&dept=${deptParam}`);
+        const res = await fetch(`/api/distribution_summary?round_num=${roundNum}&weeks_count=${weeksCount}&dept=ทั้งหมด`);
         const data = await res.json();
         if (curReq !== distReqId) return; // Discard superseded fetch
         if (data.status === 'success') {
@@ -9418,7 +9420,7 @@ function selectRound(roundNum) {
 
       const titleEl = document.getElementById('distDeptRoundTitle');
       if (titleEl) {
-        titleEl.innerText = `${currentDeptFilter || 'แผนกวิชาช่างยนต์'} ประจำรอบที่ ${roundNum} (${weeksCount} สัปดาห์) จำนวน ${d.teacher_count} ท่าน`;
+        titleEl.innerText = `แผนกวิชาช่างยนต์ และ แผนกวิชายานยนต์ไฟฟ้า ประจำรอบที่ ${roundNum} (${weeksCount} สัปดาห์) รวม 2 แผนก จำนวน ${d.teacher_count} ท่าน`;
       }
       
       const setTxt = (id, val) => {
@@ -9476,10 +9478,15 @@ function selectRound(roundNum) {
             }
           }
 
+          const isEv = (t.dept === 'ยานยนต์ไฟฟ้า' || t.name.includes('อาทิตย์') || t.name.includes('สมพร') || t.name.includes('ชนาธิป'));
+          const evTag = isEv 
+            ? '<span class="ml-1 px-1.5 py-0.2 bg-amber-100 text-amber-900 border border-amber-300 rounded text-[9px] font-bold">EV</span>' 
+            : '';
+
           return `
             <tr class="hover:bg-amber-50/40 text-xs transition border-b border-slate-400">
               <td class="p-1 border border-slate-400 text-center font-medium text-slate-800">${idx + 1}</td>
-              <td class="p-1.5 border border-slate-400 text-left font-bold text-slate-900">${t.name}</td>
+              <td class="p-1.5 border border-slate-400 text-left font-bold text-slate-900">${t.name} ${evTag}</td>
               <td class="p-0.5 border border-slate-400 text-right font-mono font-bold text-slate-900">
                 <input type="text" 
                        value="${rev.toLocaleString()}" 
@@ -9496,7 +9503,7 @@ function selectRound(roundNum) {
         }).join('') + `
           <!-- Total Summary Row -->
           <tr class="bg-amber-100/60 font-bold text-xs border-t-2 border-slate-600">
-            <td colspan="2" class="p-2 border border-slate-600 text-center font-extrabold text-slate-900">รวมทั้งสิ้น (${distTeachers.length} ท่าน)</td>
+            <td colspan="2" class="p-2 border border-slate-600 text-center font-extrabold text-slate-900">รวมทั้งสิ้น (รวม 2 แผนก ${distTeachers.length} ท่าน)</td>
             <td class="p-2 border border-slate-600 text-right font-mono font-extrabold text-blue-900">${totalRev.toLocaleString()}</td>
             <td class="p-2 border border-slate-600 text-right font-mono font-extrabold text-rose-900">${totalRefund.toLocaleString()}</td>
             <td class="p-2 border border-slate-600 text-right font-mono font-extrabold text-amber-950 bg-[#FFFF00]">${totalTopup.toLocaleString()}</td>
