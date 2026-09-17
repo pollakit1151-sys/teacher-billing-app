@@ -1,0 +1,1754 @@
+{
+  "file_1_ช่างยนต์ - ครูประจำ ปวช..xlsx": [
+    {
+      "teacher_index": 1,
+      "teacher_name": "นายชำนาญ  แก้วจงประสิทธิ์",
+      "check": "ü",
+      "pos": "ครู",
+      "duty_label": "หน้าที่พิเศษ",
+      "duty_name": "หัวหน้าแผนกวิชาช่างยนต์"
+    },
+    {
+      "teacher_index": 2,
+      "teacher_name": "นายเปรม  เพ็งยอด",
+      "check": "ü",
+      "pos": "ครู",
+      "duty_label": "หน้าที่พิเศษ",
+      "duty_name": "ประธานหลักสูตรแผนกวิชาช่างยนต์"
+    },
+    {
+      "teacher_index": 3,
+      "teacher_name": "นายสุเมธ  เฉลิมพันธ์",
+      "check": "ü",
+      "pos": "ครู",
+      "duty_label": "หน้าที่พิเศษ",
+      "duty_name": "หัวหน้างานบุคลากร"
+    },
+    {
+      "teacher_index": 4,
+      "teacher_name": "นายธนิต  กฐินทอง",
+      "check": "ü",
+      "pos": "ครู",
+      "duty_label": "หน้าที่พิเศษ",
+      "duty_name": ""
+    },
+    {
+      "teacher_index": 5,
+      "teacher_name": "นายสุริยา  คำอุดม",
+      "check": "ü",
+      "pos": "ครู",
+      "duty_label": "หน้าที่พิเศษ",
+      "duty_name": "หัวหน้างานศูนย์ข้อมูล และสารสนเทศ"
+    },
+    {
+      "teacher_index": 6,
+      "teacher_name": "นายดำเนิน  สุขขี",
+      "check": "ü",
+      "pos": "ครู",
+      "duty_label": "หน้าที่พิเศษ",
+      "duty_name": "หัวหน้างานพัฒนาหลักสูตรเทคโนโลยียานยนต์"
+    },
+    {
+      "teacher_index": 7,
+      "teacher_name": "นายคงศักดิ์  มากซุง",
+      "check": "ü",
+      "pos": "ครู",
+      "duty_label": "หน้าที่พิเศษ",
+      "duty_name": ""
+    },
+    {
+      "teacher_index": 8,
+      "teacher_name": "นายวัชรัศนิ์  ไชยศาสตร์",
+      "check": "ü",
+      "pos": "ครู",
+      "duty_label": "หน้าที่พิเศษ",
+      "duty_name": "หัวหน้างานทวิภาคี"
+    },
+    {
+      "teacher_index": 9,
+      "teacher_name": "นายกวีศักดิ์  แป้นขาว",
+      "check": "ü",
+      "pos": "ครู",
+      "duty_label": "หน้าที่พิเศษ",
+      "duty_name": ""
+    },
+    {
+      "teacher_index": 10,
+      "teacher_name": "นายไพรัช  น้อยแสง",
+      "check": "ü",
+      "pos": "ครู",
+      "duty_label": "หน้าที่พิเศษ",
+      "duty_name": ""
+    },
+    {
+      "teacher_index": 11,
+      "teacher_name": "นายจักรกฤษณ์ ปัญญา",
+      "check": "ü",
+      "pos": "ครู",
+      "duty_label": "หน้าที่พิเศษ",
+      "duty_name": "หัวหน้างานโครงการพิเศษและบริการชุมชน"
+    },
+    {
+      "teacher_index": 12,
+      "teacher_name": "นายพลกฤต  น้อยเกิด",
+      "check": "ü",
+      "pos": "ครู",
+      "duty_label": "หน้าที่พิเศษ",
+      "duty_name": ""
+    },
+    {
+      "teacher_index": 13,
+      "teacher_name": "นายพงษ์พัฒน์ พิมพ์ปรุ",
+      "check": "ü",
+      "pos": "ครู",
+      "duty_label": "หน้าที่พิเศษ",
+      "duty_name": ""
+    },
+    {
+      "teacher_index": 14,
+      "teacher_name": "นายธรรศกร เกตุวงศ์",
+      "check": "ü",
+      "pos": "ครู",
+      "duty_label": "หน้าที่พิเศษ",
+      "duty_name": "หัวหน้างานวิจัยนวัฒกรรมและสิ่งประดิษฐ์"
+    },
+    {
+      "teacher_index": 15,
+      "teacher_name": "นายพงศ์ศิริ ธรรมาวุฒิ",
+      "check": "ü",
+      "pos": "ครู",
+      "duty_label": "หน้าที่พิเศษ",
+      "duty_name": ""
+    },
+    {
+      "teacher_index": 16,
+      "teacher_name": "นายศุภเดช เมืองเงิน",
+      "check": "ü",
+      "pos": "ครู",
+      "duty_label": "หน้าที่พิเศษ",
+      "duty_name": ""
+    },
+    {
+      "teacher_index": 17,
+      "teacher_name": "นายณัฐพงศ์ จันทร์แดง",
+      "check": "ü",
+      "pos": "ครู",
+      "duty_label": "หน้าที่พิเศษ",
+      "duty_name": ""
+    },
+    {
+      "teacher_index": 18,
+      "teacher_name": "นายมนตรี ทิมสุข",
+      "check": "ü",
+      "pos": "ครู",
+      "duty_label": "หน้าที่พิเศษ",
+      "duty_name": ""
+    },
+    {
+      "teacher_index": 19,
+      "teacher_name": "นายสณปวริศร์ ชมพู",
+      "check": "ü",
+      "pos": "ครู",
+      "duty_label": "หน้าที่พิเศษ",
+      "duty_name": ""
+    },
+    {
+      "teacher_index": 20,
+      "teacher_name": "นายสถาปนิก  คุ้มสะอาด",
+      "check": "ü",
+      "pos": "พนง.ราชการ",
+      "duty_label": "หน้าที่พิเศษ",
+      "duty_name": "หัวหน้างานสวัสดิการ นักเรียนนักศึกษา"
+    },
+    {
+      "teacher_index": 21,
+      "teacher_name": "นายดาวรุ่ง  พูลทอง",
+      "check": "ü",
+      "pos": "ครูพิเศษ",
+      "duty_label": "หน้าที่พิเศษ",
+      "duty_name": ""
+    },
+    {
+      "teacher_index": 22,
+      "teacher_name": "ว่าที่ร.ต.สุริยะ  อัมรนันท์",
+      "check": "ü",
+      "pos": "ครูพิเศษ",
+      "duty_label": "หน้าที่พิเศษ",
+      "duty_name": ""
+    },
+    {
+      "teacher_index": 23,
+      "teacher_name": "นายพรชัย  สมณะ",
+      "check": "ü",
+      "pos": "ครูพิเศษ",
+      "duty_label": "หน้าที่พิเศษ",
+      "duty_name": ""
+    },
+    {
+      "teacher_index": 24,
+      "teacher_name": "นายบัณฑิต  สุ่มศรี",
+      "check": "ü",
+      "pos": "ครูพิเศษ",
+      "duty_label": "หน้าที่พิเศษ",
+      "duty_name": ""
+    },
+    {
+      "teacher_index": 25,
+      "teacher_name": "นายยศกร  อ่วมมี",
+      "check": "ü",
+      "pos": "ครูพิเศษ",
+      "duty_label": "หน้าที่พิเศษ",
+      "duty_name": ""
+    }
+  ],
+  "file_2_ช่างยนต์ - ครูประจำ ปวส..xlsx": [
+    {
+      "teacher_index": 1,
+      "teacher_name": "นายชำนาญ  แก้วจงประสิทธิ์",
+      "check": "ü",
+      "pos": "ครู",
+      "duty_label": "หน้าที่พิเศษ",
+      "duty_name": "หัวหน้าแผนกวิชาช่างยนต์"
+    },
+    {
+      "teacher_index": 2,
+      "teacher_name": "นายเปรม  เพ็งยอด",
+      "check": "ü",
+      "pos": "ครู",
+      "duty_label": "หน้าที่พิเศษ",
+      "duty_name": "ประธานหลักสูตรแผนกวิชาช่างยนต์"
+    },
+    {
+      "teacher_index": 3,
+      "teacher_name": "นายสุเมธ  เฉลิมพันธ์",
+      "check": "ü",
+      "pos": "ครู",
+      "duty_label": "หน้าที่พิเศษ",
+      "duty_name": "หัวหน้างานบุคลากร"
+    },
+    {
+      "teacher_index": 4,
+      "teacher_name": "นายธนิต  กฐินทอง",
+      "check": "ü",
+      "pos": "ครู",
+      "duty_label": "หน้าที่พิเศษ",
+      "duty_name": ""
+    },
+    {
+      "teacher_index": 5,
+      "teacher_name": "นายสุริยา  คำอุดม",
+      "check": "ü",
+      "pos": "ครู",
+      "duty_label": "หน้าที่พิเศษ",
+      "duty_name": "หัวหน้างานศูนย์ข้อมูล และสารสนเทศ"
+    },
+    {
+      "teacher_index": 6,
+      "teacher_name": "นายดำเนิน  สุขขี",
+      "check": "ü",
+      "pos": "ครู",
+      "duty_label": "หน้าที่พิเศษ",
+      "duty_name": "หัวหน้างานพัฒนาหลักสูตรเทคโนโลยียานยนต์"
+    },
+    {
+      "teacher_index": 7,
+      "teacher_name": "นายคงศักดิ์  มากซุง",
+      "check": "ü",
+      "pos": "ครู",
+      "duty_label": "หน้าที่พิเศษ",
+      "duty_name": ""
+    },
+    {
+      "teacher_index": 8,
+      "teacher_name": "นายวัชรัศนิ์  ไชยศาสตร์",
+      "check": "ü",
+      "pos": "ครู",
+      "duty_label": "หน้าที่พิเศษ",
+      "duty_name": "หัวหน้างานทวิภาคี"
+    },
+    {
+      "teacher_index": 9,
+      "teacher_name": "นายกวีศักดิ์  แป้นขาว",
+      "check": "ü",
+      "pos": "ครู",
+      "duty_label": "หน้าที่พิเศษ",
+      "duty_name": ""
+    },
+    {
+      "teacher_index": 10,
+      "teacher_name": "นายไพรัช  น้อยแสง",
+      "check": "ü",
+      "pos": "ครู",
+      "duty_label": "หน้าที่พิเศษ",
+      "duty_name": ""
+    },
+    {
+      "teacher_index": 11,
+      "teacher_name": "นายจักรกฤษณ์ ปัญญา",
+      "check": "ü",
+      "pos": "ครู",
+      "duty_label": "หน้าที่พิเศษ",
+      "duty_name": "หัวหน้างานโครงการพิเศษและบริการชุมชน"
+    },
+    {
+      "teacher_index": 12,
+      "teacher_name": "นายพลกฤต  น้อยเกิด",
+      "check": "ü",
+      "pos": "ครู",
+      "duty_label": "หน้าที่พิเศษ",
+      "duty_name": ""
+    },
+    {
+      "teacher_index": 13,
+      "teacher_name": "นายพงษ์พัฒน์ พิมพ์ปรุ",
+      "check": "ü",
+      "pos": "ครู",
+      "duty_label": "หน้าที่พิเศษ",
+      "duty_name": ""
+    },
+    {
+      "teacher_index": 14,
+      "teacher_name": "นายธรรศกร เกตุวงศ์",
+      "check": "ü",
+      "pos": "ครู",
+      "duty_label": "หน้าที่พิเศษ",
+      "duty_name": "หัวหน้างานวิจัยนวัฒกรรมและสิ่งประดิษฐ์"
+    },
+    {
+      "teacher_index": 15,
+      "teacher_name": "นายพงศ์ศิริ ธรรมาวุฒิ",
+      "check": "ü",
+      "pos": "ครู",
+      "duty_label": "หน้าที่พิเศษ",
+      "duty_name": ""
+    },
+    {
+      "teacher_index": 16,
+      "teacher_name": "นายศุภเดช เมืองเงิน",
+      "check": "ü",
+      "pos": "ครู",
+      "duty_label": "หน้าที่พิเศษ",
+      "duty_name": ""
+    },
+    {
+      "teacher_index": 17,
+      "teacher_name": "นายณัฐพงศ์ จันทร์แดง",
+      "check": "ü",
+      "pos": "ครู",
+      "duty_label": "หน้าที่พิเศษ",
+      "duty_name": ""
+    },
+    {
+      "teacher_index": 18,
+      "teacher_name": "นายมนตรี ทิมสุข",
+      "check": "ü",
+      "pos": "ครู",
+      "duty_label": "หน้าที่พิเศษ",
+      "duty_name": ""
+    },
+    {
+      "teacher_index": 19,
+      "teacher_name": "นายสณปวริศร์ ชมพู",
+      "check": "ü",
+      "pos": "ครู",
+      "duty_label": "หน้าที่พิเศษ",
+      "duty_name": ""
+    },
+    {
+      "teacher_index": 20,
+      "teacher_name": "นายสถาปนิก  คุ้มสะอาด",
+      "check": "ü",
+      "pos": "พนง.ราชการ",
+      "duty_label": "หน้าที่พิเศษ",
+      "duty_name": "หัวหน้างานสวัสดิการ นักเรียนนักศึกษา"
+    },
+    {
+      "teacher_index": 21,
+      "teacher_name": "นายดาวรุ่ง  พูลทอง",
+      "check": "ü",
+      "pos": "ครูพิเศษ",
+      "duty_label": "หน้าที่พิเศษ",
+      "duty_name": ""
+    },
+    {
+      "teacher_index": 22,
+      "teacher_name": "ว่าที่ร.ต.สุริยะ  อัมรนันท์",
+      "check": "ü",
+      "pos": "ครูพิเศษ",
+      "duty_label": "หน้าที่พิเศษ",
+      "duty_name": ""
+    },
+    {
+      "teacher_index": 23,
+      "teacher_name": "นายพรชัย  สมณะ",
+      "check": "ü",
+      "pos": "ครูพิเศษ",
+      "duty_label": "หน้าที่พิเศษ",
+      "duty_name": ""
+    },
+    {
+      "teacher_index": 24,
+      "teacher_name": "นายบัณฑิต  สุ่มศรี",
+      "check": "ü",
+      "pos": "ครูพิเศษ",
+      "duty_label": "หน้าที่พิเศษ",
+      "duty_name": ""
+    },
+    {
+      "teacher_index": 25,
+      "teacher_name": "นายยศกร  อ่วมมี",
+      "check": "ü",
+      "pos": "ครูพิเศษ",
+      "duty_label": "หน้าที่พิเศษ",
+      "duty_name": ""
+    },
+    {
+      "teacher_index": 26,
+      "teacher_name": "นายอาทิตย์  แก้วแดง",
+      "check": "ü",
+      "pos": "ครู",
+      "duty_label": "หน้าที่พิเศษ",
+      "duty_name": "หัวหน้าแผนกยานยนต์ไฟฟ้า"
+    },
+    {
+      "teacher_index": 27,
+      "teacher_name": "นายสมพร สุธรรมมา",
+      "check": "ü",
+      "pos": "ครู",
+      "duty_label": "หน้าที่พิเศษ",
+      "duty_name": ""
+    },
+    {
+      "teacher_index": 28,
+      "teacher_name": "นายชนาธิป สุวรรณขันธ์",
+      "check": "ü",
+      "pos": "ครู",
+      "duty_label": "หน้าที่พิเศษ",
+      "duty_name": ""
+    }
+  ],
+  "file_3_ช่างยนต์ - ครูพิเศษ ปวช..xlsx": [
+    {
+      "teacher_index": 1,
+      "teacher_name": "นายชำนาญ  แก้วจงประสิทธิ์",
+      "check": "ü",
+      "pos": "ครู",
+      "duty_label": "หน้าที่พิเศษ",
+      "duty_name": "หัวหน้าแผนกวิชาช่างยนต์"
+    },
+    {
+      "teacher_index": 2,
+      "teacher_name": "นายเปรม  เพ็งยอด",
+      "check": "ü",
+      "pos": "ครู",
+      "duty_label": "หน้าที่พิเศษ",
+      "duty_name": "ประธานหลักสูตรแผนกวิชาช่างยนต์"
+    },
+    {
+      "teacher_index": 3,
+      "teacher_name": "นายสุเมธ  เฉลิมพันธ์",
+      "check": "ü",
+      "pos": "ครู",
+      "duty_label": "หน้าที่พิเศษ",
+      "duty_name": "หัวหน้างานบุคลากร"
+    },
+    {
+      "teacher_index": 4,
+      "teacher_name": "นายธนิต  กฐินทอง",
+      "check": "ü",
+      "pos": "ครู",
+      "duty_label": "หน้าที่พิเศษ",
+      "duty_name": ""
+    },
+    {
+      "teacher_index": 5,
+      "teacher_name": "นายสุริยา  คำอุดม",
+      "check": "ü",
+      "pos": "ครู",
+      "duty_label": "หน้าที่พิเศษ",
+      "duty_name": "หัวหน้างานศูนย์ข้อมูล และสารสนเทศ"
+    },
+    {
+      "teacher_index": 6,
+      "teacher_name": "นายดำเนิน  สุขขี",
+      "check": "ü",
+      "pos": "ครู",
+      "duty_label": "หน้าที่พิเศษ",
+      "duty_name": "หัวหน้างานพัฒนาหลักสูตรเทคโนโลยียานยนต์"
+    },
+    {
+      "teacher_index": 7,
+      "teacher_name": "นายคงศักดิ์  มากซุง",
+      "check": "ü",
+      "pos": "ครู",
+      "duty_label": "หน้าที่พิเศษ",
+      "duty_name": ""
+    },
+    {
+      "teacher_index": 8,
+      "teacher_name": "นายวัชรัศนิ์  ไชยศาสตร์",
+      "check": "ü",
+      "pos": "ครู",
+      "duty_label": "หน้าที่พิเศษ",
+      "duty_name": "หัวหน้างานทวิภาคี"
+    },
+    {
+      "teacher_index": 9,
+      "teacher_name": "นายกวีศักดิ์  แป้นขาว",
+      "check": "ü",
+      "pos": "ครู",
+      "duty_label": "หน้าที่พิเศษ",
+      "duty_name": ""
+    },
+    {
+      "teacher_index": 10,
+      "teacher_name": "นายไพรัช  น้อยแสง",
+      "check": "ü",
+      "pos": "ครู",
+      "duty_label": "หน้าที่พิเศษ",
+      "duty_name": ""
+    },
+    {
+      "teacher_index": 11,
+      "teacher_name": "นายจักรกฤษณ์ ปัญญา",
+      "check": "ü",
+      "pos": "ครู",
+      "duty_label": "หน้าที่พิเศษ",
+      "duty_name": "หัวหน้างานโครงการพิเศษและบริการชุมชน"
+    },
+    {
+      "teacher_index": 12,
+      "teacher_name": "นายพลกฤต  น้อยเกิด",
+      "check": "ü",
+      "pos": "ครู",
+      "duty_label": "หน้าที่พิเศษ",
+      "duty_name": ""
+    },
+    {
+      "teacher_index": 13,
+      "teacher_name": "นายพงษ์พัฒน์ พิมพ์ปรุ",
+      "check": "ü",
+      "pos": "ครู",
+      "duty_label": "หน้าที่พิเศษ",
+      "duty_name": ""
+    },
+    {
+      "teacher_index": 14,
+      "teacher_name": "นายธรรศกร เกตุวงศ์",
+      "check": "ü",
+      "pos": "ครู",
+      "duty_label": "หน้าที่พิเศษ",
+      "duty_name": "หัวหน้างานวิจัยนวัฒกรรมและสิ่งประดิษฐ์"
+    },
+    {
+      "teacher_index": 15,
+      "teacher_name": "นายพงศ์ศิริ ธรรมาวุฒิ",
+      "check": "ü",
+      "pos": "ครู",
+      "duty_label": "หน้าที่พิเศษ",
+      "duty_name": ""
+    },
+    {
+      "teacher_index": 16,
+      "teacher_name": "นายศุภเดช เมืองเงิน",
+      "check": "ü",
+      "pos": "ครู",
+      "duty_label": "หน้าที่พิเศษ",
+      "duty_name": ""
+    },
+    {
+      "teacher_index": 17,
+      "teacher_name": "นายณัฐพงศ์ จันทร์แดง",
+      "check": "ü",
+      "pos": "ครู",
+      "duty_label": "หน้าที่พิเศษ",
+      "duty_name": ""
+    },
+    {
+      "teacher_index": 18,
+      "teacher_name": "นายมนตรี ทิมสุข",
+      "check": "ü",
+      "pos": "ครู",
+      "duty_label": "หน้าที่พิเศษ",
+      "duty_name": ""
+    },
+    {
+      "teacher_index": 19,
+      "teacher_name": "นายสณปวริศร์ ชมพู",
+      "check": "ü",
+      "pos": "ครู",
+      "duty_label": "หน้าที่พิเศษ",
+      "duty_name": ""
+    },
+    {
+      "teacher_index": 20,
+      "teacher_name": "นายสถาปนิก  คุ้มสะอาด",
+      "check": "ü",
+      "pos": "พนง.ราชการ",
+      "duty_label": "หน้าที่พิเศษ",
+      "duty_name": "หัวหน้างานสวัสดิการ นักเรียนนักศึกษา"
+    },
+    {
+      "teacher_index": 21,
+      "teacher_name": "นายดาวรุ่ง  พูลทอง",
+      "check": "ü",
+      "pos": "ครูพิเศษ",
+      "duty_label": "หน้าที่พิเศษ",
+      "duty_name": ""
+    },
+    {
+      "teacher_index": 22,
+      "teacher_name": "ว่าที่ร.ต.สุริยะ  อัมรนันท์",
+      "check": "ü",
+      "pos": "ครูพิเศษ",
+      "duty_label": "หน้าที่พิเศษ",
+      "duty_name": ""
+    },
+    {
+      "teacher_index": 23,
+      "teacher_name": "นายพรชัย  สมณะ",
+      "check": "ü",
+      "pos": "ครูพิเศษ",
+      "duty_label": "หน้าที่พิเศษ",
+      "duty_name": ""
+    },
+    {
+      "teacher_index": 24,
+      "teacher_name": "นายบัณฑิต  สุ่มศรี",
+      "check": "ü",
+      "pos": "ครูพิเศษ",
+      "duty_label": "หน้าที่พิเศษ",
+      "duty_name": ""
+    },
+    {
+      "teacher_index": 25,
+      "teacher_name": "นายยศกร  อ่วมมี",
+      "check": "ü",
+      "pos": "ครูพิเศษ",
+      "duty_label": "หน้าที่พิเศษ",
+      "duty_name": ""
+    },
+    {
+      "teacher_index": 26,
+      "teacher_name": "นายอาทิตย์  แก้วแดง",
+      "check": "ü",
+      "pos": "ครู",
+      "duty_label": "หน้าที่พิเศษ",
+      "duty_name": "หัวหน้าแผนกยานยนต์ไฟฟ้า"
+    },
+    {
+      "teacher_index": 27,
+      "teacher_name": "นายสมพร สุธรรมมา",
+      "check": "ü",
+      "pos": "ครู",
+      "duty_label": "หน้าที่พิเศษ",
+      "duty_name": ""
+    },
+    {
+      "teacher_index": 28,
+      "teacher_name": "นายชนาธิป สุวรรณขันธ์",
+      "check": "ü",
+      "pos": "ครู",
+      "duty_label": "หน้าที่พิเศษ",
+      "duty_name": ""
+    }
+  ],
+  "file_4_ช่างยนต์ - ครูพิเศษ ปวส..xlsx": [
+    {
+      "teacher_index": 1,
+      "teacher_name": "นายชำนาญ  แก้วจงประสิทธิ์",
+      "check": "ü",
+      "pos": "ครู",
+      "duty_label": "หน้าที่พิเศษ",
+      "duty_name": "หัวหน้าแผนกวิชาช่างยนต์"
+    },
+    {
+      "teacher_index": 2,
+      "teacher_name": "นายเปรม  เพ็งยอด",
+      "check": "ü",
+      "pos": "ครู",
+      "duty_label": "หน้าที่พิเศษ",
+      "duty_name": "ประธานหลักสูตรแผนกวิชาช่างยนต์"
+    },
+    {
+      "teacher_index": 3,
+      "teacher_name": "นายสุเมธ  เฉลิมพันธ์",
+      "check": "ü",
+      "pos": "ครู",
+      "duty_label": "หน้าที่พิเศษ",
+      "duty_name": "หัวหน้างานบุคลากร"
+    },
+    {
+      "teacher_index": 4,
+      "teacher_name": "นายธนิต  กฐินทอง",
+      "check": "ü",
+      "pos": "ครู",
+      "duty_label": "หน้าที่พิเศษ",
+      "duty_name": ""
+    },
+    {
+      "teacher_index": 5,
+      "teacher_name": "นายสุริยา  คำอุดม",
+      "check": "ü",
+      "pos": "ครู",
+      "duty_label": "หน้าที่พิเศษ",
+      "duty_name": "หัวหน้างานศูนย์ข้อมูล และสารสนเทศ"
+    },
+    {
+      "teacher_index": 6,
+      "teacher_name": "นายดำเนิน  สุขขี",
+      "check": "ü",
+      "pos": "ครู",
+      "duty_label": "หน้าที่พิเศษ",
+      "duty_name": "หัวหน้างานพัฒนาหลักสูตรเทคโนโลยียานยนต์"
+    },
+    {
+      "teacher_index": 7,
+      "teacher_name": "นายคงศักดิ์  มากซุง",
+      "check": "ü",
+      "pos": "ครู",
+      "duty_label": "หน้าที่พิเศษ",
+      "duty_name": ""
+    },
+    {
+      "teacher_index": 8,
+      "teacher_name": "นายวัชรัศนิ์  ไชยศาสตร์",
+      "check": "ü",
+      "pos": "ครู",
+      "duty_label": "หน้าที่พิเศษ",
+      "duty_name": "หัวหน้างานทวิภาคี"
+    },
+    {
+      "teacher_index": 9,
+      "teacher_name": "นายกวีศักดิ์  แป้นขาว",
+      "check": "ü",
+      "pos": "ครู",
+      "duty_label": "หน้าที่พิเศษ",
+      "duty_name": ""
+    },
+    {
+      "teacher_index": 10,
+      "teacher_name": "นายไพรัช  น้อยแสง",
+      "check": "ü",
+      "pos": "ครู",
+      "duty_label": "หน้าที่พิเศษ",
+      "duty_name": ""
+    },
+    {
+      "teacher_index": 11,
+      "teacher_name": "นายจักรกฤษณ์ ปัญญา",
+      "check": "ü",
+      "pos": "ครู",
+      "duty_label": "หน้าที่พิเศษ",
+      "duty_name": "หัวหน้างานโครงการพิเศษและบริการชุมชน"
+    },
+    {
+      "teacher_index": 12,
+      "teacher_name": "นายพลกฤต  น้อยเกิด",
+      "check": "ü",
+      "pos": "ครู",
+      "duty_label": "หน้าที่พิเศษ",
+      "duty_name": ""
+    },
+    {
+      "teacher_index": 13,
+      "teacher_name": "นายพงษ์พัฒน์ พิมพ์ปรุ",
+      "check": "ü",
+      "pos": "ครู",
+      "duty_label": "หน้าที่พิเศษ",
+      "duty_name": ""
+    },
+    {
+      "teacher_index": 14,
+      "teacher_name": "นายธรรศกร เกตุวงศ์",
+      "check": "ü",
+      "pos": "ครู",
+      "duty_label": "หน้าที่พิเศษ",
+      "duty_name": "หัวหน้างานวิจัยนวัฒกรรมและสิ่งประดิษฐ์"
+    },
+    {
+      "teacher_index": 15,
+      "teacher_name": "นายพงศ์ศิริ ธรรมาวุฒิ",
+      "check": "ü",
+      "pos": "ครู",
+      "duty_label": "หน้าที่พิเศษ",
+      "duty_name": ""
+    },
+    {
+      "teacher_index": 16,
+      "teacher_name": "นายศุภเดช เมืองเงิน",
+      "check": "ü",
+      "pos": "ครู",
+      "duty_label": "หน้าที่พิเศษ",
+      "duty_name": ""
+    },
+    {
+      "teacher_index": 17,
+      "teacher_name": "นายณัฐพงศ์ จันทร์แดง",
+      "check": "ü",
+      "pos": "ครู",
+      "duty_label": "หน้าที่พิเศษ",
+      "duty_name": ""
+    },
+    {
+      "teacher_index": 18,
+      "teacher_name": "นายมนตรี ทิมสุข",
+      "check": "ü",
+      "pos": "ครู",
+      "duty_label": "หน้าที่พิเศษ",
+      "duty_name": ""
+    },
+    {
+      "teacher_index": 19,
+      "teacher_name": "นายสณปวริศร์ ชมพู",
+      "check": "ü",
+      "pos": "ครู",
+      "duty_label": "หน้าที่พิเศษ",
+      "duty_name": ""
+    },
+    {
+      "teacher_index": 20,
+      "teacher_name": "นายสถาปนิก  คุ้มสะอาด",
+      "check": "ü",
+      "pos": "พนง.ราชการ",
+      "duty_label": "หน้าที่พิเศษ",
+      "duty_name": "หัวหน้างานสวัสดิการ นักเรียนนักศึกษา"
+    },
+    {
+      "teacher_index": 21,
+      "teacher_name": "นายดาวรุ่ง  พูลทอง",
+      "check": "ü",
+      "pos": "ครูพิเศษ",
+      "duty_label": "หน้าที่พิเศษ",
+      "duty_name": ""
+    },
+    {
+      "teacher_index": 22,
+      "teacher_name": "ว่าที่ร.ต.สุริยะ  อัมรนันท์",
+      "check": "ü",
+      "pos": "ครูพิเศษ",
+      "duty_label": "หน้าที่พิเศษ",
+      "duty_name": ""
+    },
+    {
+      "teacher_index": 23,
+      "teacher_name": "นายพรชัย  สมณะ",
+      "check": "ü",
+      "pos": "ครูพิเศษ",
+      "duty_label": "หน้าที่พิเศษ",
+      "duty_name": ""
+    },
+    {
+      "teacher_index": 24,
+      "teacher_name": "นายบัณฑิต  สุ่มศรี",
+      "check": "ü",
+      "pos": "ครูพิเศษ",
+      "duty_label": "หน้าที่พิเศษ",
+      "duty_name": ""
+    },
+    {
+      "teacher_index": 25,
+      "teacher_name": "นายยศกร  อ่วมมี",
+      "check": "ü",
+      "pos": "ครูพิเศษ",
+      "duty_label": "หน้าที่พิเศษ",
+      "duty_name": ""
+    },
+    {
+      "teacher_index": 26,
+      "teacher_name": "นายอาทิตย์  แก้วแดง",
+      "check": "ü",
+      "pos": "ครู",
+      "duty_label": "หน้าที่พิเศษ",
+      "duty_name": "หัวหน้าแผนกยานยนต์ไฟฟ้า"
+    },
+    {
+      "teacher_index": 27,
+      "teacher_name": "นายสมพร สุธรรมมา",
+      "check": "ü",
+      "pos": "ครู",
+      "duty_label": "หน้าที่พิเศษ",
+      "duty_name": ""
+    },
+    {
+      "teacher_index": 28,
+      "teacher_name": "นายชนาธิป สุวรรณขันธ์",
+      "check": "ü",
+      "pos": "ครู",
+      "duty_label": "หน้าที่พิเศษ",
+      "duty_name": ""
+    }
+  ],
+  "file_5_ยานยนต์ไฟฟ้า - ครูประจำ ปวช..xlsx": [
+    {
+      "teacher_index": 1,
+      "teacher_name": "",
+      "check": "ü",
+      "pos": "ครู",
+      "duty_label": "หน้าที่พิเศษ",
+      "duty_name": "หัวหน้าแผนกยานยนต์ไฟฟ้า"
+    },
+    {
+      "teacher_index": 2,
+      "teacher_name": "นางสาวปาจารีย์  กฐินทอง",
+      "check": "ü",
+      "pos": "พนง.ราชการ",
+      "duty_label": "หน้าที่พิเศษ",
+      "duty_name": ""
+    },
+    {
+      "teacher_index": 3,
+      "teacher_name": "",
+      "check": "ü",
+      "pos": "ครู",
+      "duty_label": "หน้าที่พิเศษ",
+      "duty_name": "หัวหน้างานบุคลากร"
+    },
+    {
+      "teacher_index": 4,
+      "teacher_name": "",
+      "check": "ü",
+      "pos": "ครู",
+      "duty_label": "หน้าที่พิเศษ",
+      "duty_name": ""
+    },
+    {
+      "teacher_index": 5,
+      "teacher_name": "",
+      "check": "ü",
+      "pos": "ครู",
+      "duty_label": "หน้าที่พิเศษ",
+      "duty_name": "หัวหน้างานศูนย์ข้อมูล และสารสนเทศ"
+    },
+    {
+      "teacher_index": 6,
+      "teacher_name": "",
+      "check": "ü",
+      "pos": "ครู",
+      "duty_label": "หน้าที่พิเศษ",
+      "duty_name": ""
+    },
+    {
+      "teacher_index": 7,
+      "teacher_name": "",
+      "check": "ü",
+      "pos": "ครู",
+      "duty_label": "หน้าที่พิเศษ",
+      "duty_name": ""
+    },
+    {
+      "teacher_index": 8,
+      "teacher_name": "",
+      "check": "ü",
+      "pos": "ครู",
+      "duty_label": "หน้าที่พิเศษ",
+      "duty_name": ""
+    },
+    {
+      "teacher_index": 9,
+      "teacher_name": "",
+      "check": "ü",
+      "pos": "ครู",
+      "duty_label": "หน้าที่พิเศษ",
+      "duty_name": "หัวหน้างานทวิภาคี"
+    },
+    {
+      "teacher_index": 10,
+      "teacher_name": "",
+      "check": "ü",
+      "pos": "ครู",
+      "duty_label": "หน้าที่พิเศษ",
+      "duty_name": "หัวหน้างานความร่วมมือ"
+    },
+    {
+      "teacher_index": 11,
+      "teacher_name": "",
+      "check": "ü",
+      "pos": "ครู",
+      "duty_label": "หน้าที่พิเศษ",
+      "duty_name": ""
+    },
+    {
+      "teacher_index": 12,
+      "teacher_name": "",
+      "check": "ü",
+      "pos": "ครู",
+      "duty_label": "หน้าที่พิเศษ",
+      "duty_name": "หัวหน้างานโครงการพิเศษและบริการชุมชน"
+    },
+    {
+      "teacher_index": 13,
+      "teacher_name": "",
+      "check": "ü",
+      "pos": "ครู",
+      "duty_label": "หน้าที่พิเศษ",
+      "duty_name": ""
+    },
+    {
+      "teacher_index": 14,
+      "teacher_name": "",
+      "check": "ü",
+      "pos": "ครู",
+      "duty_label": "หน้าที่พิเศษ",
+      "duty_name": ""
+    },
+    {
+      "teacher_index": 15,
+      "teacher_name": "",
+      "check": "ü",
+      "pos": "ครู",
+      "duty_label": "หน้าที่พิเศษ",
+      "duty_name": ""
+    },
+    {
+      "teacher_index": 16,
+      "teacher_name": "",
+      "check": "ü",
+      "pos": "ครู",
+      "duty_label": "หน้าที่พิเศษ",
+      "duty_name": ""
+    },
+    {
+      "teacher_index": 17,
+      "teacher_name": "",
+      "check": "ü",
+      "pos": "ครู",
+      "duty_label": "หน้าที่พิเศษ",
+      "duty_name": ""
+    },
+    {
+      "teacher_index": 18,
+      "teacher_name": "",
+      "check": "ü",
+      "pos": "ครู",
+      "duty_label": "หน้าที่พิเศษ",
+      "duty_name": ""
+    },
+    {
+      "teacher_index": 19,
+      "teacher_name": "",
+      "check": "ü",
+      "pos": "พนง.ราชการ",
+      "duty_label": "หน้าที่พิเศษ",
+      "duty_name": "หัวหน้างานสวัสดิการ นักเรียนนักศึกษา"
+    },
+    {
+      "teacher_index": 20,
+      "teacher_name": "",
+      "check": "ü",
+      "pos": "ครูพิเศษ",
+      "duty_label": "หน้าที่พิเศษ",
+      "duty_name": ""
+    },
+    {
+      "teacher_index": 21,
+      "teacher_name": "",
+      "check": "ü",
+      "pos": "ครูพิเศษ",
+      "duty_label": "หน้าที่พิเศษ",
+      "duty_name": ""
+    },
+    {
+      "teacher_index": 22,
+      "teacher_name": "",
+      "check": "ü",
+      "pos": "ครูพิเศษ",
+      "duty_label": "หน้าที่พิเศษ",
+      "duty_name": ""
+    },
+    {
+      "teacher_index": 23,
+      "teacher_name": "",
+      "check": "ü",
+      "pos": "ครูพิเศษ",
+      "duty_label": "หน้าที่พิเศษ",
+      "duty_name": ""
+    },
+    {
+      "teacher_index": 24,
+      "teacher_name": "",
+      "check": "ü",
+      "pos": "ครูพิเศษ",
+      "duty_label": "หน้าที่พิเศษ",
+      "duty_name": ""
+    },
+    {
+      "teacher_index": 25,
+      "teacher_name": "",
+      "check": "ü",
+      "pos": "ครูพิเศษ",
+      "duty_label": "หน้าที่พิเศษ",
+      "duty_name": ""
+    },
+    {
+      "teacher_index": 26,
+      "teacher_name": "",
+      "check": "ü",
+      "pos": "ครูพิเศษ",
+      "duty_label": "หน้าที่พิเศษ",
+      "duty_name": ""
+    },
+    {
+      "teacher_index": 27,
+      "teacher_name": "",
+      "check": "ü",
+      "pos": "ครู",
+      "duty_label": "หน้าที่พิเศษ",
+      "duty_name": ""
+    }
+  ],
+  "file_6_ยานยนต์ไฟฟ้า - ครูประจำ ปวส..xlsx": [
+    {
+      "teacher_index": 1,
+      "teacher_name": "",
+      "check": "ü",
+      "pos": "ครู",
+      "duty_label": "หน้าที่พิเศษ",
+      "duty_name": "หัวหน้าแผนกยานยนต์ไฟฟ้า"
+    },
+    {
+      "teacher_index": 2,
+      "teacher_name": "นางสาวปาจารีย์  กฐินทอง",
+      "check": "ü",
+      "pos": "พนง.ราชการ",
+      "duty_label": "หน้าที่พิเศษ",
+      "duty_name": ""
+    },
+    {
+      "teacher_index": 3,
+      "teacher_name": "",
+      "check": "ü",
+      "pos": "ครู",
+      "duty_label": "หน้าที่พิเศษ",
+      "duty_name": "หัวหน้างานบุคลากร"
+    },
+    {
+      "teacher_index": 4,
+      "teacher_name": "",
+      "check": "ü",
+      "pos": "ครู",
+      "duty_label": "หน้าที่พิเศษ",
+      "duty_name": ""
+    },
+    {
+      "teacher_index": 5,
+      "teacher_name": "",
+      "check": "ü",
+      "pos": "ครู",
+      "duty_label": "หน้าที่พิเศษ",
+      "duty_name": "หัวหน้างานศูนย์ข้อมูล และสารสนเทศ"
+    },
+    {
+      "teacher_index": 6,
+      "teacher_name": "",
+      "check": "ü",
+      "pos": "ครู",
+      "duty_label": "หน้าที่พิเศษ",
+      "duty_name": ""
+    },
+    {
+      "teacher_index": 7,
+      "teacher_name": "",
+      "check": "ü",
+      "pos": "ครู",
+      "duty_label": "หน้าที่พิเศษ",
+      "duty_name": ""
+    },
+    {
+      "teacher_index": 8,
+      "teacher_name": "",
+      "check": "ü",
+      "pos": "ครู",
+      "duty_label": "หน้าที่พิเศษ",
+      "duty_name": ""
+    },
+    {
+      "teacher_index": 9,
+      "teacher_name": "",
+      "check": "ü",
+      "pos": "ครู",
+      "duty_label": "หน้าที่พิเศษ",
+      "duty_name": "หัวหน้างานทวิภาคี"
+    },
+    {
+      "teacher_index": 10,
+      "teacher_name": "",
+      "check": "ü",
+      "pos": "ครู",
+      "duty_label": "หน้าที่พิเศษ",
+      "duty_name": "หัวหน้างานความร่วมมือ"
+    },
+    {
+      "teacher_index": 11,
+      "teacher_name": "",
+      "check": "ü",
+      "pos": "ครู",
+      "duty_label": "หน้าที่พิเศษ",
+      "duty_name": ""
+    },
+    {
+      "teacher_index": 12,
+      "teacher_name": "",
+      "check": "ü",
+      "pos": "ครู",
+      "duty_label": "หน้าที่พิเศษ",
+      "duty_name": "หัวหน้างานโครงการพิเศษและบริการชุมชน"
+    },
+    {
+      "teacher_index": 13,
+      "teacher_name": "",
+      "check": "ü",
+      "pos": "ครู",
+      "duty_label": "หน้าที่พิเศษ",
+      "duty_name": ""
+    },
+    {
+      "teacher_index": 14,
+      "teacher_name": "",
+      "check": "ü",
+      "pos": "ครู",
+      "duty_label": "หน้าที่พิเศษ",
+      "duty_name": ""
+    },
+    {
+      "teacher_index": 15,
+      "teacher_name": "",
+      "check": "ü",
+      "pos": "ครู",
+      "duty_label": "หน้าที่พิเศษ",
+      "duty_name": ""
+    },
+    {
+      "teacher_index": 16,
+      "teacher_name": "",
+      "check": "ü",
+      "pos": "ครู",
+      "duty_label": "หน้าที่พิเศษ",
+      "duty_name": ""
+    },
+    {
+      "teacher_index": 17,
+      "teacher_name": "",
+      "check": "ü",
+      "pos": "ครู",
+      "duty_label": "หน้าที่พิเศษ",
+      "duty_name": ""
+    },
+    {
+      "teacher_index": 18,
+      "teacher_name": "",
+      "check": "ü",
+      "pos": "ครู",
+      "duty_label": "หน้าที่พิเศษ",
+      "duty_name": ""
+    },
+    {
+      "teacher_index": 19,
+      "teacher_name": "",
+      "check": "ü",
+      "pos": "พนง.ราชการ",
+      "duty_label": "หน้าที่พิเศษ",
+      "duty_name": "หัวหน้างานสวัสดิการ นักเรียนนักศึกษา"
+    },
+    {
+      "teacher_index": 20,
+      "teacher_name": "",
+      "check": "ü",
+      "pos": "ครูพิเศษ",
+      "duty_label": "หน้าที่พิเศษ",
+      "duty_name": ""
+    },
+    {
+      "teacher_index": 21,
+      "teacher_name": "",
+      "check": "ü",
+      "pos": "ครูพิเศษ",
+      "duty_label": "หน้าที่พิเศษ",
+      "duty_name": ""
+    },
+    {
+      "teacher_index": 22,
+      "teacher_name": "",
+      "check": "ü",
+      "pos": "ครูพิเศษ",
+      "duty_label": "หน้าที่พิเศษ",
+      "duty_name": ""
+    },
+    {
+      "teacher_index": 23,
+      "teacher_name": "",
+      "check": "ü",
+      "pos": "ครูพิเศษ",
+      "duty_label": "หน้าที่พิเศษ",
+      "duty_name": ""
+    },
+    {
+      "teacher_index": 24,
+      "teacher_name": "",
+      "check": "ü",
+      "pos": "ครูพิเศษ",
+      "duty_label": "หน้าที่พิเศษ",
+      "duty_name": ""
+    },
+    {
+      "teacher_index": 25,
+      "teacher_name": "",
+      "check": "ü",
+      "pos": "ครูพิเศษ",
+      "duty_label": "หน้าที่พิเศษ",
+      "duty_name": ""
+    },
+    {
+      "teacher_index": 26,
+      "teacher_name": "",
+      "check": "ü",
+      "pos": "ครูพิเศษ",
+      "duty_label": "หน้าที่พิเศษ",
+      "duty_name": ""
+    },
+    {
+      "teacher_index": 27,
+      "teacher_name": "",
+      "check": "ü",
+      "pos": "ครู",
+      "duty_label": "หน้าที่พิเศษ",
+      "duty_name": ""
+    }
+  ],
+  "file_7_ยานยนต์ไฟฟ้า - ครูพิเศษ ปวช..xlsx": [
+    {
+      "teacher_index": 1,
+      "teacher_name": "",
+      "check": "ü",
+      "pos": "ครู",
+      "duty_label": "หน้าที่พิเศษ",
+      "duty_name": "หัวหน้าแผนกยานยนต์ไฟฟ้า"
+    },
+    {
+      "teacher_index": 2,
+      "teacher_name": "นางสาวปาจารีย์  กฐินทอง",
+      "check": "ü",
+      "pos": "พนง.ราชการ",
+      "duty_label": "หน้าที่พิเศษ",
+      "duty_name": ""
+    },
+    {
+      "teacher_index": 3,
+      "teacher_name": "",
+      "check": "ü",
+      "pos": "ครู",
+      "duty_label": "หน้าที่พิเศษ",
+      "duty_name": "หัวหน้างานบุคลากร"
+    },
+    {
+      "teacher_index": 4,
+      "teacher_name": "",
+      "check": "ü",
+      "pos": "ครู",
+      "duty_label": "หน้าที่พิเศษ",
+      "duty_name": ""
+    },
+    {
+      "teacher_index": 5,
+      "teacher_name": "",
+      "check": "ü",
+      "pos": "ครู",
+      "duty_label": "หน้าที่พิเศษ",
+      "duty_name": "หัวหน้างานศูนย์ข้อมูล และสารสนเทศ"
+    },
+    {
+      "teacher_index": 6,
+      "teacher_name": "",
+      "check": "ü",
+      "pos": "ครู",
+      "duty_label": "หน้าที่พิเศษ",
+      "duty_name": ""
+    },
+    {
+      "teacher_index": 7,
+      "teacher_name": "",
+      "check": "ü",
+      "pos": "ครู",
+      "duty_label": "หน้าที่พิเศษ",
+      "duty_name": ""
+    },
+    {
+      "teacher_index": 8,
+      "teacher_name": "",
+      "check": "ü",
+      "pos": "ครู",
+      "duty_label": "หน้าที่พิเศษ",
+      "duty_name": ""
+    },
+    {
+      "teacher_index": 9,
+      "teacher_name": "",
+      "check": "ü",
+      "pos": "ครู",
+      "duty_label": "หน้าที่พิเศษ",
+      "duty_name": "หัวหน้างานทวิภาคี"
+    },
+    {
+      "teacher_index": 10,
+      "teacher_name": "",
+      "check": "ü",
+      "pos": "ครู",
+      "duty_label": "หน้าที่พิเศษ",
+      "duty_name": "หัวหน้างานความร่วมมือ"
+    },
+    {
+      "teacher_index": 11,
+      "teacher_name": "",
+      "check": "ü",
+      "pos": "ครู",
+      "duty_label": "หน้าที่พิเศษ",
+      "duty_name": ""
+    },
+    {
+      "teacher_index": 12,
+      "teacher_name": "",
+      "check": "ü",
+      "pos": "ครู",
+      "duty_label": "หน้าที่พิเศษ",
+      "duty_name": "หัวหน้างานโครงการพิเศษและบริการชุมชน"
+    },
+    {
+      "teacher_index": 13,
+      "teacher_name": "",
+      "check": "ü",
+      "pos": "ครู",
+      "duty_label": "หน้าที่พิเศษ",
+      "duty_name": ""
+    },
+    {
+      "teacher_index": 14,
+      "teacher_name": "",
+      "check": "ü",
+      "pos": "ครู",
+      "duty_label": "หน้าที่พิเศษ",
+      "duty_name": ""
+    },
+    {
+      "teacher_index": 15,
+      "teacher_name": "",
+      "check": "ü",
+      "pos": "ครู",
+      "duty_label": "หน้าที่พิเศษ",
+      "duty_name": ""
+    },
+    {
+      "teacher_index": 16,
+      "teacher_name": "",
+      "check": "ü",
+      "pos": "ครู",
+      "duty_label": "หน้าที่พิเศษ",
+      "duty_name": ""
+    },
+    {
+      "teacher_index": 17,
+      "teacher_name": "",
+      "check": "ü",
+      "pos": "ครู",
+      "duty_label": "หน้าที่พิเศษ",
+      "duty_name": ""
+    },
+    {
+      "teacher_index": 18,
+      "teacher_name": "",
+      "check": "ü",
+      "pos": "ครู",
+      "duty_label": "หน้าที่พิเศษ",
+      "duty_name": ""
+    },
+    {
+      "teacher_index": 19,
+      "teacher_name": "",
+      "check": "ü",
+      "pos": "พนง.ราชการ",
+      "duty_label": "หน้าที่พิเศษ",
+      "duty_name": "หัวหน้างานสวัสดิการ นักเรียนนักศึกษา"
+    },
+    {
+      "teacher_index": 20,
+      "teacher_name": "",
+      "check": "ü",
+      "pos": "ครูพิเศษ",
+      "duty_label": "หน้าที่พิเศษ",
+      "duty_name": ""
+    },
+    {
+      "teacher_index": 21,
+      "teacher_name": "",
+      "check": "ü",
+      "pos": "ครูพิเศษ",
+      "duty_label": "หน้าที่พิเศษ",
+      "duty_name": ""
+    },
+    {
+      "teacher_index": 22,
+      "teacher_name": "",
+      "check": "ü",
+      "pos": "ครูพิเศษ",
+      "duty_label": "หน้าที่พิเศษ",
+      "duty_name": ""
+    },
+    {
+      "teacher_index": 23,
+      "teacher_name": "",
+      "check": "ü",
+      "pos": "ครูพิเศษ",
+      "duty_label": "หน้าที่พิเศษ",
+      "duty_name": ""
+    },
+    {
+      "teacher_index": 24,
+      "teacher_name": "",
+      "check": "ü",
+      "pos": "ครูพิเศษ",
+      "duty_label": "หน้าที่พิเศษ",
+      "duty_name": ""
+    },
+    {
+      "teacher_index": 25,
+      "teacher_name": "",
+      "check": "ü",
+      "pos": "ครูพิเศษ",
+      "duty_label": "หน้าที่พิเศษ",
+      "duty_name": ""
+    },
+    {
+      "teacher_index": 26,
+      "teacher_name": "",
+      "check": "ü",
+      "pos": "ครูพิเศษ",
+      "duty_label": "หน้าที่พิเศษ",
+      "duty_name": ""
+    },
+    {
+      "teacher_index": 27,
+      "teacher_name": "",
+      "check": "ü",
+      "pos": "ครู",
+      "duty_label": "หน้าที่พิเศษ",
+      "duty_name": ""
+    }
+  ],
+  "file_8_ยานยนต์ไฟฟ้า - ครูพิเศษ ปวส..xlsx": [
+    {
+      "teacher_index": 1,
+      "teacher_name": "",
+      "check": "ü",
+      "pos": "ครู",
+      "duty_label": "หน้าที่พิเศษ",
+      "duty_name": "หัวหน้าแผนกยานยนต์ไฟฟ้า"
+    },
+    {
+      "teacher_index": 2,
+      "teacher_name": "นางสาวปาจารีย์  กฐินทอง",
+      "check": "ü",
+      "pos": "พนง.ราชการ",
+      "duty_label": "หน้าที่พิเศษ",
+      "duty_name": ""
+    },
+    {
+      "teacher_index": 3,
+      "teacher_name": "",
+      "check": "ü",
+      "pos": "ครู",
+      "duty_label": "หน้าที่พิเศษ",
+      "duty_name": "หัวหน้างานบุคลากร"
+    },
+    {
+      "teacher_index": 4,
+      "teacher_name": "",
+      "check": "ü",
+      "pos": "ครู",
+      "duty_label": "หน้าที่พิเศษ",
+      "duty_name": ""
+    },
+    {
+      "teacher_index": 5,
+      "teacher_name": "",
+      "check": "ü",
+      "pos": "ครู",
+      "duty_label": "หน้าที่พิเศษ",
+      "duty_name": "หัวหน้างานศูนย์ข้อมูล และสารสนเทศ"
+    },
+    {
+      "teacher_index": 6,
+      "teacher_name": "",
+      "check": "ü",
+      "pos": "ครู",
+      "duty_label": "หน้าที่พิเศษ",
+      "duty_name": ""
+    },
+    {
+      "teacher_index": 7,
+      "teacher_name": "",
+      "check": "ü",
+      "pos": "ครู",
+      "duty_label": "หน้าที่พิเศษ",
+      "duty_name": ""
+    },
+    {
+      "teacher_index": 8,
+      "teacher_name": "",
+      "check": "ü",
+      "pos": "ครู",
+      "duty_label": "หน้าที่พิเศษ",
+      "duty_name": ""
+    },
+    {
+      "teacher_index": 9,
+      "teacher_name": "",
+      "check": "ü",
+      "pos": "ครู",
+      "duty_label": "หน้าที่พิเศษ",
+      "duty_name": "หัวหน้างานทวิภาคี"
+    },
+    {
+      "teacher_index": 10,
+      "teacher_name": "",
+      "check": "ü",
+      "pos": "ครู",
+      "duty_label": "หน้าที่พิเศษ",
+      "duty_name": "หัวหน้างานความร่วมมือ"
+    },
+    {
+      "teacher_index": 11,
+      "teacher_name": "",
+      "check": "ü",
+      "pos": "ครู",
+      "duty_label": "หน้าที่พิเศษ",
+      "duty_name": ""
+    },
+    {
+      "teacher_index": 12,
+      "teacher_name": "",
+      "check": "ü",
+      "pos": "ครู",
+      "duty_label": "หน้าที่พิเศษ",
+      "duty_name": "หัวหน้างานโครงการพิเศษและบริการชุมชน"
+    },
+    {
+      "teacher_index": 13,
+      "teacher_name": "",
+      "check": "ü",
+      "pos": "ครู",
+      "duty_label": "หน้าที่พิเศษ",
+      "duty_name": ""
+    },
+    {
+      "teacher_index": 14,
+      "teacher_name": "",
+      "check": "ü",
+      "pos": "ครู",
+      "duty_label": "หน้าที่พิเศษ",
+      "duty_name": ""
+    },
+    {
+      "teacher_index": 15,
+      "teacher_name": "",
+      "check": "ü",
+      "pos": "ครู",
+      "duty_label": "หน้าที่พิเศษ",
+      "duty_name": ""
+    },
+    {
+      "teacher_index": 16,
+      "teacher_name": "",
+      "check": "ü",
+      "pos": "ครู",
+      "duty_label": "หน้าที่พิเศษ",
+      "duty_name": ""
+    },
+    {
+      "teacher_index": 17,
+      "teacher_name": "",
+      "check": "ü",
+      "pos": "ครู",
+      "duty_label": "หน้าที่พิเศษ",
+      "duty_name": ""
+    },
+    {
+      "teacher_index": 18,
+      "teacher_name": "",
+      "check": "ü",
+      "pos": "ครู",
+      "duty_label": "หน้าที่พิเศษ",
+      "duty_name": ""
+    },
+    {
+      "teacher_index": 19,
+      "teacher_name": "",
+      "check": "ü",
+      "pos": "พนง.ราชการ",
+      "duty_label": "หน้าที่พิเศษ",
+      "duty_name": "หัวหน้างานสวัสดิการ นักเรียนนักศึกษา"
+    },
+    {
+      "teacher_index": 20,
+      "teacher_name": "",
+      "check": "ü",
+      "pos": "ครูพิเศษ",
+      "duty_label": "หน้าที่พิเศษ",
+      "duty_name": ""
+    },
+    {
+      "teacher_index": 21,
+      "teacher_name": "",
+      "check": "ü",
+      "pos": "ครูพิเศษ",
+      "duty_label": "หน้าที่พิเศษ",
+      "duty_name": ""
+    },
+    {
+      "teacher_index": 22,
+      "teacher_name": "",
+      "check": "ü",
+      "pos": "ครูพิเศษ",
+      "duty_label": "หน้าที่พิเศษ",
+      "duty_name": ""
+    },
+    {
+      "teacher_index": 23,
+      "teacher_name": "",
+      "check": "ü",
+      "pos": "ครูพิเศษ",
+      "duty_label": "หน้าที่พิเศษ",
+      "duty_name": ""
+    },
+    {
+      "teacher_index": 24,
+      "teacher_name": "",
+      "check": "ü",
+      "pos": "ครูพิเศษ",
+      "duty_label": "หน้าที่พิเศษ",
+      "duty_name": ""
+    },
+    {
+      "teacher_index": 25,
+      "teacher_name": "",
+      "check": "ü",
+      "pos": "ครูพิเศษ",
+      "duty_label": "หน้าที่พิเศษ",
+      "duty_name": ""
+    },
+    {
+      "teacher_index": 26,
+      "teacher_name": "",
+      "check": "ü",
+      "pos": "ครูพิเศษ",
+      "duty_label": "หน้าที่พิเศษ",
+      "duty_name": ""
+    },
+    {
+      "teacher_index": 27,
+      "teacher_name": "",
+      "check": "ü",
+      "pos": "ครู",
+      "duty_label": "หน้าที่พิเศษ",
+      "duty_name": ""
+    }
+  ]
+}

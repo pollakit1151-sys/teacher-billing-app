@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <title>แบบฟอร์มใบสอนแทน - วิทยาลัยเทคนิคนครสวรรค์</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    @page {
+      size: A4 portrait;
+      margin: 15mm 20mm;
+    }
+    body {
+      font-family: 'Sarabun', sans-serif;
+      font-size: 15pt;
+      line-height: 1.5;
+      color: #000;
+      background-color: #fff;
+      margin: 0;
+      padding: 0;
+    }
+    .page-break {
+      page-break-after: always;
+    }
+    .header-title {
+      text-align: center;
+      font-size: 18pt;
+      font-weight: bold;
+      margin-bottom: 20px;
+    }
+    .text-right { text-align: right; }
+    .text-center { text-align: center; }
+    .dotted {
+      border-bottom: 1px dotted #333;
+      display: inline-block;
+      min-width: 80px;
+      text-align: center;
+      padding: 0 4px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 15px;
+    }
+    .signature-table td {
+      width: 50%;
+      text-align: center;
+      vertical-align: top;
+      padding: 10px;
+    }
+    .approval-box {
+      border: 1px solid #000;
+      width: 100%;
+      margin-top: 20px;
+    }
+    .approval-box td {
+      width: 50%;
+      border: 1px solid #000;
+      padding: 10px;
+      text-align: center;
+      vertical-align: top;
+    }
+    @media print {
+      .no-print { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Print Button Bar (hidden when printing) -->
+  <div class="no-print" style="background:#f1f5f9; padding:12px; text-align:center; border-bottom:1px solid #cbd5e1; position:sticky; top:0;">
+    <button onclick="window.print()" style="background:#0f172a; color:#fff; border:none; padding:8px 24px; border-radius:6px; font-size:14pt; cursor:pointer; font-weight:bold;">
+      🖨️ สั่งพิมพ์เอกสาร / บันทึกเป็น PDF
+    </button>
+    <span style="margin-left:15px; font-size:12pt; color:#64748b;">(แนะนำให้เลือกปลายทางเป็น Save as PDF หรือเครื่องพิมพ์ A4)</span>
+  </div>
+
+  <div style="padding: 10px 30px;">
+    <!-- PAGE 1: ใบขอทำการสอนแทน -->
+    <div class="header-title">วิทยาลัยเทคนิคนครสวรรค์</div>
+    <div class="text-right" style="margin-bottom: 10px;">
+      วันที่ <span class="dotted" id="docDate" style="min-width:40px;">-</span> 
+      เดือน <span class="dotted" id="docMonth" style="min-width:90px;">-</span> 
+      พ.ศ. <span class="dotted" id="docYear" style="min-width:50px;">-</span>
+    </div>
+
+    <div><strong>เรื่อง</strong> &nbsp;การทำการสอนแทน</div>
+    <div><strong>เรียน</strong> &nbsp;รองผู้อำนวยการฝ่ายวิชาการ</div>
+
+    <div style="text-indent: 40px; margin-top: 10px;">
+      เนื่องจาก <span class="dotted" id="absentTeacher" style="min-width: 220px;">-</span> ครูประจำสาขาวิชา <span class="dotted" id="deptName" style="min-width: 140px;">ช่างยนต์</span>
+    </div>
+    <div>
+      ไม่ได้ปฏิบัติราชการในวันที่ <span class="dotted" id="leaveDate" style="min-width:40px;">-</span> 
+      เดือน <span class="dotted" id="leaveMonth" style="min-width:90px;">-</span> 
+      พ.ศ. <span class="dotted" id="leaveYear" style="min-width:50px;">-</span> 
+      เนื่องจาก &nbsp;( <span id="chkDuty">✓</span> ) ไปราชการ &nbsp;( &nbsp; ) ลากิจ &nbsp;( &nbsp; ) ลาป่วย
+    </div>
+    <div>
+      ข้าพเจ้า <span class="dotted" id="subTeacher" style="min-width: 220px;">-</span> ครูประจำสาขาวิชา <span class="dotted" id="subDeptName" style="min-width: 140px;">ช่างยนต์</span> เข้าทำการสอนแทน
+    </div>
+
+    <div style="margin-top: 15px; border-top: 1px dotted #ccc; padding-top: 10px;">
+      รหัสวิชา <span class="dotted" id="subCode" style="min-width:100px;">-</span> 
+      ชื่อวิชา <span class="dotted" id="subName" style="min-width:220px;">-</span> 
+      ชั่วโมงที่ <span class="dotted" id="subPeriod" style="min-width:50px;">-</span> 
+      ระดับชั้น <span class="dotted" id="subClass" style="min-width:70px;">-</span> 
+      กลุ่ม <span class="dotted" id="subGroup" style="min-width:50px;">-</span>
+    </div>
+    <div>
+      ตั้งแต่เวลา <span class="dotted" id="normStart" style="min-width:60px;">-</span> น. 
+      ถึง <span class="dotted" id="normEnd" style="min-width:60px;">-</span> น. 
+      รวม <span class="dotted" id="normHours" style="min-width:40px;">-</span> ชั่วโมง เป็นชั่วโมงสอนปกติ
+    </div>
+    <div>
+      ตั้งแต่เวลา <span class="dotted" id="extraStart" style="min-width:60px;">-</span> น. 
+      ถึง <span class="dotted" id="extraEnd" style="min-width:60px;">-</span> น. 
+      รวม <span class="dotted" id="extraHours" style="min-width:40px;">-</span> ชั่วโมง เป็นชั่วโมงเบิกค่าสอนพิเศษ
+    </div>
+
+    <div style="text-indent: 40px; margin-top: 20px;">
+      จึงเรียนมาเพื่อโปรดพิจารณา พร้อมนี้ได้แนบสำเนาตารางสอนของครูผู้ทำการสอนแทนมาด้วยแล้ว
+    </div>
+
+    <table class="signature-table" style="margin-top: 20px;">
+      <tr>
+        <td>
+          ขอแสดงความนับถือ<br><br><br>
+          ....................................................<br>
+          ( <span id="signSubTeacher">-</span> )<br>
+          ครูผู้ทำการสอนแทน
+        </td>
+        <td>
+          ขอแสดงความนับถือ<br><br><br>
+          ....................................................<br>
+          ( นายชำนาญ แก้วจงประสิทธิ์ )<br>
+          หัวหน้าแผนกวิชาช่างยนต์
+        </td>
+      </tr>
+    </table>
+
+    <div style="font-size: 11pt; color: #555; margin-top: 15px;">
+      <strong>หมายเหตุ :</strong> ต้องส่งใบสอนแทนถึงฝ่ายวิชาการในสัปดาห์ที่สอนแทนหรือหลังจากการลาหรือไปราชการ 1 สัปดาห์
+    </div>
+
+    <table class="approval-box">
+      <tr>
+        <td>
+          ผู้ตรวจสอบ/รับรองความถูกต้อง<br><br><br>
+          ....................................................<br>
+          ( นางศิวรักษ์ บุญประเสริฐ )<br>
+          หัวหน้างานพัฒนาหลักสูตรการเรียนการสอน<br>
+          วันที่ ...... เดือน .................... พ.ศ. ........
+        </td>
+        <td>
+          ( &nbsp; ) อนุมัติ &nbsp;&nbsp;&nbsp; ( &nbsp; ) ไม่อนุมัติ<br><br><br>
+          ....................................................<br>
+          ( นายฉัตรชัย งาหอม )<br>
+          รองผู้อำนวยการฝ่ายวิชาการ<br>
+          วันที่ ...... เดือน .................... พ.ศ. ........
+        </td>
+      </tr>
+    </table>
+  </div>
+
+  <div class="page-break"></div>
+
+  <!-- PAGE 2: แบบรายงานประกอบการสอนแทน -->
+  <div style="padding: 20px 30px;">
+    <div class="header-title">แบบรายงานประกอบการสอนแทน</div>
+
+    <div style="text-indent: 40px;">
+      ตามที่ ข้าพเจ้า <span class="dotted" id="repSubTeacher" style="min-width: 220px;">-</span>
+    </div>
+    <div>
+      ได้เข้าทำการสอนแทน <span class="dotted" id="repAbsentTeacher" style="min-width: 220px;">-</span>
+    </div>
+    <div>
+      รหัสวิชา <span class="dotted" id="repSubCode" style="min-width: 100px;">-</span> 
+      ชื่อวิชา <span class="dotted" id="repSubName" style="min-width: 260px;">-</span>
+    </div>
+    <div>
+      ระดับชั้น <span class="dotted" id="repClass" style="min-width: 90px;">-</span> 
+      ชั่วโมงที่ <span class="dotted" id="repPeriod" style="min-width: 50px;">-</span> 
+      รวม <span class="dotted" id="repHours" style="min-width: 40px;">-</span> ชั่วโมง
+    </div>
+
+    <div style="margin-top: 15px;">ข้าพเจ้าได้ทำการสอนเนื้อหาวิชาโดยย่อ ดังนี้</div>
+    <div style="min-height: 120px; line-height: 2; border-bottom: 1px dotted #555; margin-bottom: 10px;">
+      ..................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................
+    </div>
+
+    <div class="text-right" style="margin: 30px 40px 20px 0;">
+      ลงชื่อ ....................................................<br>
+      ( <span id="repSignSub">-</span> )<br>
+      ครูผู้ทำการสอนแทน
+    </div>
+
+    <div style="text-indent: 40px; margin-top: 20px;">
+      นักเรียนนักศึกษาในชั้น/กลุ่มนี้มีจำนวน ........... คน มาเรียน ........... คน ขาดเรียนรวม ........... คน รายชื่อนักเรียนนักศึกษาที่ขาดเรียน คือ
+    </div>
+
+    <div style="margin-top: 10px; line-height: 1.8;">
+      1. .................................................... &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 6. ....................................................<br>
+      2. .................................................... &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 7. ....................................................<br>
+      3. .................................................... &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 8. ....................................................<br>
+      4. .................................................... &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 9. ....................................................<br>
+      5. .................................................... &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 10. ...................................................
+    </div>
+
+    <div class="text-right" style="margin: 30px 40px 0 0;">
+      ลงชื่อ ....................................................<br>
+      ( .................................................... )<br>
+      หัวหน้าชั้น/หัวหน้ากลุ่ม<br>
+      วันที่ ...... เดือน .................... พ.ศ. ........
+    </div>
+  </div>
+
+  <script>
+    const thaiMonths = ["มกราคม","กุมภาพันธ์","มีนาคม","เมษายน","พฤษภาคม","มิถุนายน","กรกฎาคม","สิงหาคม","กันยายน","ตุลาคม","พฤศจิกายน","ธันวาคม"];
+    const now = new Date();
+    
+    // Read from localStorage
+    const raw = localStorage.getItem('print_sub_data');
+    if (raw) {
+      const data = JSON.parse(raw);
+      document.getElementById('absentTeacher').innerText = data.absent_teacher_name;
+      document.getElementById('subTeacher').innerText = data.sub_teacher_name;
+      document.getElementById('signSubTeacher').innerText = data.sub_teacher_name;
+      document.getElementById('repSubTeacher').innerText = data.sub_teacher_name;
+      document.getElementById('repAbsentTeacher').innerText = data.absent_teacher_name;
+      document.getElementById('repSignSub').innerText = data.sub_teacher_name;
+
+      document.getElementById('subCode').innerText = data.code;
+      document.getElementById('subName').innerText = data.code;
+      document.getElementById('repSubCode').innerText = data.code;
+      document.getElementById('repSubName').innerText = data.code;
+
+      document.getElementById('subPeriod').innerText = `${data.start_p}-${data.end_p}`;
+      document.getElementById('repPeriod').innerText = `${data.start_p}-${data.end_p}`;
+      document.getElementById('repHours').innerText = data.hours;
+
+      document.getElementById('subClass').innerText = data.class_info;
+      document.getElementById('repClass').innerText = data.class_info;
+
+      // Date
+      document.getElementById('docDate').innerText = now.getDate();
+      document.getElementById('docMonth').innerText = thaiMonths[now.getMonth()];
+      document.getElementById('docYear').innerText = now.getFullYear() + 543;
+
+      document.getElementById('leaveDate').innerText = now.getDate();
+      document.getElementById('leaveMonth').innerText = thaiMonths[now.getMonth()];
+      document.getElementById('leaveYear').innerText = now.getFullYear() + 543;
+
+      document.getElementById('normStart').innerText = "08.10";
+      document.getElementById('normEnd').innerText = "12.10";
+      document.getElementById('normHours').innerText = data.hours;
+    }
+  </script>
+</body>
+</html>

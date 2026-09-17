@@ -1,0 +1,80 @@
+[
+  {
+    "index": 6,
+    "name": "นายวัชรัศนิ์ ไชยศาสตร์",
+    "dept": "ช่างยนต์",
+    "level": "ปวช.",
+    "group_name": null,
+    "classes": [
+      {
+        "day": "เสาร์",
+        "code": "20101-2017",
+        "subject_name": "งานเครื่องมือกลช่างยนต์",
+        "room": "สถานประกอบการ",
+        "class_info": "ชย.ทวิ 3/9 (26)",
+        "time_str": "08:10 - 11:10",
+        "start_col": 1,
+        "end_col": 3,
+        "in_vc": 3,
+        "out_vc": 0,
+        "in_vs": 0,
+        "out_vs": 0,
+        "rate_vc": 200,
+        "rate_vs": 270,
+        "note": ""
+      }
+    ]
+  },
+  {
+    "index": 10,
+    "name": "นายพลกฤต น้อยเกิด",
+    "dept": "ช่างยนต์",
+    "level": "ปวช.",
+    "group_name": null,
+    "classes": [
+      {
+        "day": "เสาร์",
+        "code": "20101-2018",
+        "subject_name": "งานปรับแต่งเครื่องยนต์",
+        "room": "สถานประกอบการ",
+        "class_info": "ชย.3/1,ชย.3/2 (26)",
+        "time_str": "08:10 - 12:10",
+        "start_col": 1,
+        "end_col": 4,
+        "in_vc": 4,
+        "out_vc": 0,
+        "in_vs": 0,
+        "out_vs": 0,
+        "rate_vc": 200,
+        "rate_vs": 270,
+        "note": ""
+      }
+    ]
+  },
+  {
+    "index": 13,
+    "name": "นายพงศ์ศิริ ธรรมาวุฒิ",
+    "dept": "ช่างยนต์",
+    "level": "ปวช.",
+    "group_name": null,
+    "classes": [
+      {
+        "day": "เสาร์",
+        "code": "20101-2020",
+        "subject_name": "งานบริการรถยนต์",
+        "room": "สถานประกอบการ",
+        "class_info": "ชย.3/3 (26)",
+        "time_str": "08:10 - 10:10",
+        "start_col": 1,
+        "end_col": 2,
+        "in_vc": 2,
+        "out_vc": 0,
+        "in_vs": 0,
+        "out_vs": 0,
+        "rate_vc": 200,
+        "rate_vs": 270,
+        "note": ""
+      }
+    ]
+  }
+]

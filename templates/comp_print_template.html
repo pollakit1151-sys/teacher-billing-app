@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <title>แบบฟอร์มการสอนชดเชย - วิทยาลัยเทคนิคนครสวรรค์</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    @page {
+      size: A4 portrait;
+      margin: 12mm 15mm 10mm 15mm;
+    }
+    body {
+      font-family: 'Sarabun', sans-serif;
+      font-size: 13.5pt;
+      line-height: 1.45;
+      color: #000;
+      background-color: #fff;
+      margin: 0;
+      padding: 0;
+    }
+    .page-break {
+      page-break-after: always;
+      break-after: page;
+    }
+    .page-container {
+      box-sizing: border-box;
+      max-height: 272mm;
+    }
+    .header-title {
+      text-align: center;
+      font-size: 17pt;
+      font-weight: bold;
+      margin-bottom: 8px;
+    }
+    .text-right { text-align: right; }
+    .text-center { text-align: center; }
+    .dotted {
+      border-bottom: 1px dotted #222;
+      display: inline-block;
+      min-width: 70px;
+      text-align: center;
+      padding: 0 4px;
+    }
+    table.comp-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+      font-size: 11.5pt;
+      text-align: center;
+    }
+    table.comp-table th, table.comp-table td {
+      border: 1px solid #000;
+      padding: 3px 2px;
+    }
+    table.comp-table th {
+      font-weight: bold;
+      background: #fff;
+    }
+    .sub-head {
+      font-size: 10pt;
+      font-weight: normal;
+    }
+    .approval-box {
+      width: 100%;
+      border: 1px solid #000;
+      border-collapse: collapse;
+      margin-top: 8px;
+      font-size: 11.5pt;
+    }
+    .approval-box td {
+      border: 1px solid #000;
+      width: 50%;
+      padding: 6px 10px;
+      text-align: center;
+      vertical-align: top;
+    }
+    .sig-row td {
+      border: none;
+      width: 50%;
+      text-align: center;
+      vertical-align: top;
+      padding: 6px 5px;
+    }
+    @media print {
+      .no-print { display: none; }
+      body { margin: 0; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="no-print" style="background:#f1f5f9; padding:12px; text-align:center; border-bottom:1px solid #cbd5e1; position:sticky; top:0; z-index:99;">
+    <button onclick="window.print()" style="background:#4f46e5; color:#fff; border:none; padding:8px 24px; border-radius:6px; font-size:14pt; cursor:pointer; font-weight:bold; box-shadow:0 2px 6px rgba(0,0,0,0.15);">
+      🖨️ สั่งพิมพ์เอกสารสอนชดเชย (2 หน้า) / บันทึกเป็น PDF
+    </button>
+  </div>
+
+  <!-- หน้า 1: แบบขอทำการสอนชดเชย -->
+  <div style="padding: 10px 25px;">
+    <div class="header-title">วิทยาลัยเทคนิคนครสวรรค์</div>
+    <div class="text-right" style="margin-bottom: 12px;">
+      วันที่ <span class="dotted" id="docDate" style="min-width:35px;">-</span> 
+      เดือน <span class="dotted" id="docMonth" style="min-width:90px;">-</span> 
+      พ.ศ. <span class="dotted" id="docYear" style="min-width:55px;">-</span>
+    </div>
+
+    <div><strong>เรื่อง</strong> &nbsp;การทำการสอนชดเชย</div>
+    <div><strong>เรียน</strong> &nbsp;รองผู้อำนวยการฝ่ายวิชาการ</div>
+
+    <div style="text-indent: 45px; margin-top: 8px; line-height: 1.8;">
+      ข้าพเจ้า <span class="dotted" id="teacherName" style="min-width: 220px;">-</span> 
+      ครูประจำสาขาวิชา <span class="dotted" id="deptName" style="min-width: 140px;">ช่างยนต์</span> 
+      ไม่ได้ปฏิบัติการสอนในวันที่ <span class="dotted" id="origDate" style="min-width: 35px;">-</span> 
+      เดือน <span class="dotted" id="origMonth" style="min-width: 80px;">-</span> 
+      พ.ศ. <span class="dotted" id="origYear" style="min-width: 50px;">-</span> 
+      เนื่องจาก <span class="dotted" id="reasonText" style="min-width: 120px;">ไปราชการ</span> 
+      ข้าพเจ้าจึงขออนุญาตทำการสอนชดเชย
+    </div>
+    <div style="line-height: 1.8;">
+      รหัสวิชา <span class="dotted" id="subCode" style="min-width: 110px;">-</span> 
+      ชื่อวิชา <span class="dotted" id="subName" style="min-width: 260px;">-</span>
+    </div>
+    <div style="line-height: 1.8;">
+      นักเรียนนักศึกษาระดับชั้น <span class="dotted" id="subClass" style="min-width: 200px;">-</span> ดังนี้
+    </div>
+
+    <!-- ตารางเปรียบเทียบ การสอนปกติ vs การสอนชดเชย (ตรงตามแบบฟอร์ม PDF) -->
+    <table class="comp-table">
+      <thead>
+        <tr>
+          <th colspan="4" style="width: 44%;">การสอนปกติ</th>
+          <th colspan="5" style="width: 56%;">การสอนชดเชย</th>
+        </tr>
+        <tr>
+          <th rowspan="2" style="width: 13%;">ว/ด/ป</th>
+          <th colspan="2" style="width: 22%;">เวลา</th>
+          <th rowspan="2" style="width: 9%;">จำนวน<br>คาบ</th>
+          <th rowspan="2" style="width: 13%;">ว/ด/ป</th>
+          <th colspan="2" style="width: 22%;">เวลา</th>
+          <th rowspan="2" style="width: 12%;">ห้องเรียน/<br>พื้นที่โรงงาน</th>
+          <th rowspan="2" style="width: 9%;">จำนวน<br>คาบ</th>
+        </tr>
+        <tr>
+          <th class="sub-head" style="width: 11%;">คาบสอนปกติ</th>
+          <th class="sub-head" style="width: 11%;">คาบเบิก</th>
+          <th class="sub-head" style="width: 11%;">คาบสอนปกติ</th>
+          <th class="sub-head" style="width: 11%;">คาบเบิก</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td id="tdOrigDate">-</td>
+          <td id="tdOrigNormTime">-</td>
+          <td id="tdOrigClaimTime">-</td>
+          <td id="tdOrigHours">-</td>
+          <td id="tdCompDate">-</td>
+          <td id="tdCompNormTime">-</td>
+          <td id="tdCompClaimTime">-</td>
+          <td id="tdCompRoom">-</td>
+          <td id="tdCompHours">-</td>
+        </tr>
+        <!-- 1 แถวว่างเหมือนในแบบฟอร์มราชการ -->
+        <tr>
+          <td style="height: 18px;"></td><td></td><td></td><td></td>
+          <td></td><td></td><td></td><td></td><td></td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div style="text-indent: 45px; margin-top: 8px; font-size: 13.5pt;">
+      จึงเรียนมาเพื่อโปรดพิจารณา พร้อมนี้ได้แนบสำเนาตารางสอนครูและตารางเรียนของนักเรียนนักศึกษามาด้วยแล้ว
+    </div>
+
+    <table style="width: 100%; border: none; margin-top: 8px; font-size: 13.5pt;">
+      <tr class="sig-row">
+        <td>
+          ขอแสดงความนับถือ<br><br>
+          ........................................................<br>
+          ( <span id="signTeacher">-</span> )<br>
+          ครูผู้ทำการสอนชดเชย
+        </td>
+        <td>
+          ขอแสดงความนับถือ<br><br>
+          ........................................................<br>
+          ( <span id="signHead">-</span> )<br>
+          หัวหน้าแผนกวิชา<span id="signHeadDept">ช่างยนต์</span>
+        </td>
+      </tr>
+    </table>
+
+    <div style="font-size: 10.5pt; color: #000; margin-top: 6px; line-height: 1.3;">
+      <strong>หมายเหตุ :</strong> การสอนชดเชย 1. ทำการสอนก่อนไปราชการ 1 สัปดาห์ หรือไปหลังราชการ 1 สัปดาห์<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;2. ทำการสอนหลังไปราชการ 2 สัปดาห์
+    </div>
+
+    <table class="approval-box">
+      <tr>
+        <td>
+          ผู้ตรวจสอบ/รับรองความถูกต้อง<br><br><br>
+          .............................................................<br>
+          (<span id="signChecker2">นางศิวรักษ์ บุญประเสริฐ</span>)<br>
+          <span id="signChecker2Title">หัวหน้างานพัฒนาหลักสูตรและการจัดการเรียนรู้</span><br>
+          วันที่..........เดือน........................พ.ศ...............
+        </td>
+        <td>
+          ( &nbsp; ) อนุมัติ &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ( &nbsp; ) ไม่อนุมัติ<br><br><br>
+          .............................................................<br>
+          (<span id="signEndorser">นายฉัตรชัย งาหอม</span>)<br>
+          <span id="signEndorserTitle">รองผู้อำนวยการฝ่ายวิชาการ</span><br>
+          วันที่..........เดือน........................พ.ศ...............
+        </td>
+      </tr>
+    </table>
+  </div>
+
+  <div class="page-break"></div>
+
+  <!-- หน้า 2: แบบรายงานประกอบการสอนชดเชย -->
+  <div style="padding: 5px 20px;">
+    <div class="header-title" style="margin-bottom: 10px;">แบบรายงานประกอบการสอนชดเชย</div>
+
+    <div style="text-indent: 45px; line-height: 1.5;">
+      ตามที่ข้าพเจ้า <span class="dotted" id="repTeacher" style="min-width: 320px;">-</span>
+    </div>
+    <div style="line-height: 1.5;">
+      ได้ทำการสอนชดเชย รหัสวิชา <span class="dotted" id="repCode" style="min-width: 140px;">-</span> 
+      ชื่อวิชา <span class="dotted" id="repName" style="min-width: 320px;">-</span>
+    </div>
+    <div style="line-height: 1.5;">
+      นักเรียนนักศึกษาระดับชั้น <span class="dotted" id="repClass" style="min-width: 200px;">-</span> 
+      คาบที่ <span class="dotted" id="repPeriod" style="min-width: 90px;">-</span> 
+      รวม <span class="dotted" id="repHours" style="min-width: 60px;">-</span> ชั่วโมง
+    </div>
+
+    <div style="margin-top: 8px; font-size: 13.5pt; font-weight: bold;">ข้าพเจ้าได้ทำการสอนเนื้อหาวิชาโดยย่อ ดังนี้</div>
+    <div style="margin-top: 4px; line-height: 1.7; font-size: 12.5pt;" id="repSummaryText">
+      <div style="border-bottom: 1px dotted #333; min-height: 24px;" id="sumLine1"></div>
+      <div style="border-bottom: 1px dotted #333; min-height: 24px;" id="sumLine2"></div>
+      <div style="border-bottom: 1px dotted #333; min-height: 24px;" id="sumLine3"></div>
+      <div style="border-bottom: 1px dotted #333; min-height: 24px;" id="sumLine4"></div>
+      <div style="border-bottom: 1px dotted #333; min-height: 24px;" id="sumLine5"></div>
+      <div style="border-bottom: 1px dotted #333; min-height: 24px;" id="sumLine6"></div>
+    </div>
+
+    <table style="width: 100%; border: none; margin-top: 10px; font-size: 13pt;">
+      <tr>
+        <td style="width: 50%; border: none;"></td>
+        <td style="width: 50%; border: none; text-align: center;">
+          ลงชื่อ .............................................................<br>
+          ( <span id="repSignTeacher">-</span> )<br>
+          ครูผู้ทำการสอนชดเชย
+        </td>
+      </tr>
+    </table>
+
+    <div style="text-indent: 45px; margin-top: 8px; line-height: 1.5; font-size: 13pt;">
+      นักเรียนนักศึกษาในชั้น/กลุ่มนี้มีจำนวน <span class="dotted" id="repStdTotal" style="min-width: 60px;">-</span> คน &nbsp;&nbsp;
+      มาเรียน <span class="dotted" id="repStdPresent" style="min-width: 60px;">-</span> คน &nbsp;&nbsp;
+      ขาดเรียนรวม <span class="dotted" id="repStdAbsent" style="min-width: 60px;">-</span> คน &nbsp;&nbsp;
+      รายชื่อนักเรียนนักศึกษาที่ขาดเรียน คือ
+    </div>
+
+    <table style="width: 100%; border: none; font-size: 12pt; line-height: 1.4; margin-top: 4px;">
+      <tr>
+        <td style="border: none; width: 50%; padding-left: 20px; vertical-align: top;" id="absentCol1">
+          1. ...........................................................................<br>
+          2. ...........................................................................<br>
+          3. ...........................................................................<br>
+          4. ...........................................................................<br>
+          5. ...........................................................................
+        </td>
+        <td style="border: none; width: 50%; padding-left: 20px; vertical-align: top;" id="absentCol2">
+          6. ...........................................................................<br>
+          7. ...........................................................................<br>
+          8. ...........................................................................<br>
+          9. ...........................................................................<br>
+          10. .........................................................................
+        </td>
+      </tr>
+    </table>
+
+    <table style="width: 100%; border: none; margin-top: 10px; font-size: 13pt;">
+      <tr>
+        <td style="width: 50%; border: none;"></td>
+        <td style="width: 50%; border: none; text-align: center;">
+          ลงชื่อ .............................................................<br>
+          ( <span class="dotted" id="repSignLeader" style="min-width: 140px;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span> )<br>
+          หัวหน้าชั้น/หัวหน้ากลุ่ม<br>
+          วันที่..........เดือน........................พ.ศ...............
+        </td>
+      </tr>
+    </table>
+  </div>
+
+  <script>
+    const thaiMonths = ["มกราคม","กุมภาพันธ์","มีนาคม","เมษายน","พฤษภาคม","มิถุนายน","กรกฎาคม","สิงหาคม","กันยายน","ตุลาคม","พฤศจิกายน","ธันวาคม"];
+    const now = new Date();
+
+    let raw = localStorage.getItem('print_comp_data');
+    if (!raw) {
+      raw = sessionStorage.getItem('print_comp_data');
+    }
+
+    if (raw) {
+      const data = JSON.parse(raw);
+
+      // 1. ข้อมูลครูและสาขาวิชา
+      const tName = data.teacher_name || '-';
+      document.getElementById('teacherName').innerText = tName;
+      document.getElementById('signTeacher').innerText = tName;
+      document.getElementById('repTeacher').innerText = tName;
+      document.getElementById('repSignTeacher').innerText = tName;
+
+      const dept = data.dept || 'ช่างยนต์';
+      document.getElementById('deptName').innerText = dept;
+      document.getElementById('signHeadDept').innerText = dept;
+
+      // หัวหน้าแผนกวิชาและผู้ลงนาม
+      let sigs = null;
+      try {
+        sigs = JSON.parse(localStorage.getItem('teacher_billing_signatories_v1') || '{}');
+      } catch (e) {}
+      if (data.signatories) sigs = Object.assign({}, sigs, data.signatories);
+
+      const isEv = dept.includes('ยานยนต์ไฟฟ้า');
+      const makerKey = isEv ? 'maker_ev' : 'maker_auto';
+      const headName = (sigs && sigs[makerKey] && sigs[makerKey].name) ? sigs[makerKey].name : (isEv ? 'นายอาทิตย์ แก้วแดง' : 'นายชำนาญ แก้วจงประสิทธิ์');
+      document.getElementById('signHead').innerText = headName;
+
+      if (sigs && sigs.checker2_a4) {
+        if (sigs.checker2_a4.name) document.getElementById('signChecker2').innerText = sigs.checker2_a4.name;
+        if (sigs.checker2_a4.title) document.getElementById('signChecker2Title').innerText = sigs.checker2_a4.title;
+      }
+      if (sigs && sigs.endorser_a4) {
+        if (sigs.endorser_a4.name) document.getElementById('signEndorser').innerText = sigs.endorser_a4.name;
+        if (sigs.endorser_a4.title) document.getElementById('signEndorserTitle').innerText = sigs.endorser_a4.title;
+      }
+
+      // 2. วันที่ไม่ได้ปฏิบัติการสอน (แยก วัน เดือน ปี)
+      const missedStr = data.orig_date || data.missed_date || '';
+      if (missedStr) {
+        const parts = missedStr.trim().split(/\s+/);
+        if (parts.length >= 3) {
+          document.getElementById('origDate').innerText = parts[0];
+          document.getElementById('origMonth').innerText = parts[1];
+          document.getElementById('origYear').innerText = parts[2];
+        } else {
+          document.getElementById('origDate').innerText = missedStr;
+          document.getElementById('origMonth').innerText = '';
+          document.getElementById('origYear').innerText = '';
+        }
+      } else {
+        document.getElementById('origDate').innerText = data.orig_day || '-';
+      }
+
+      // สาเหตุที่ไม่ได้สอน
+      document.getElementById('reasonText').innerText = data.reason || data.travel_purpose || 'ไปราชการ';
+
+      // 3. ข้อมูลวิชาและชั้นเรียน
+      document.getElementById('subCode').innerText = data.code || '-';
+      document.getElementById('subName').innerText = data.name || data.subject_name || data.code || '-';
+      document.getElementById('subClass').innerText = data.class_info || data.class_group || '-';
+
+      document.getElementById('repCode').innerText = data.code || '-';
+      document.getElementById('repName').innerText = data.name || data.subject_name || data.code || '-';
+      document.getElementById('repClass').innerText = data.class_info || data.class_group || '-';
+
+      // 4. ตารางเปรียบเทียบ
+      document.getElementById('tdOrigDate').innerText = data.orig_date || data.orig_day || '-';
+      document.getElementById('tdOrigNormTime').innerText = data.orig_norm_time || data.orig_time || data.time_str || '-';
+      document.getElementById('tdOrigClaimTime').innerText = data.orig_claim_time || '-';
+      document.getElementById('tdOrigHours').innerText = data.orig_hours || data.hours || '-';
+
+      document.getElementById('tdCompDate').innerText = data.comp_date || data.teach_date_str || data.comp_day || data.day || '-';
+      document.getElementById('tdCompNormTime').innerText = data.comp_norm_time || data.comp_time || data.time_str || '-';
+      document.getElementById('tdCompClaimTime').innerText = data.comp_claim_time || '-';
+      document.getElementById('tdCompRoom').innerText = data.room || data.comp_room || '9408';
+      document.getElementById('tdCompHours').innerText = data.comp_hours || data.hours || '-';
+
+      // วันที่ออกเอกสารปัจจุบัน
+      document.getElementById('docDate').innerText = now.getDate();
+      document.getElementById('docMonth').innerText = thaiMonths[now.getMonth()];
+      document.getElementById('docYear').innerText = now.getFullYear() + 543;
+
+      // 5. ข้อมูลแบบรายงานหน้า 2
+      document.getElementById('repPeriod').innerText = data.period_str || `คาบที่ 1 - ${data.hours || 4}`;
+      document.getElementById('repHours').innerText = data.hours || data.comp_hours || '-';
+
+      // เนื้อหาวิชาโดยย่อ
+      if (data.summary_content) {
+        document.getElementById('sumLine1').innerText = data.summary_content;
+      }
+
+      // สถิตินักเรียน
+      document.getElementById('repStdTotal').innerText = data.student_total || '-';
+      document.getElementById('repStdPresent').innerText = data.student_present || '-';
+      document.getElementById('repStdAbsent').innerText = (data.student_absent !== undefined) ? data.student_absent : '0';
+
+      // รายชื่อนักเรียนขาดเรียน
+      if (data.absent_names && data.absent_names.trim()) {
+        const names = Array.isArray(rawNames) ? rawNames : rawNames.split(/[,;\n\r]+/).map(s => s.trim()).filter(Boolean);
+        let col1 = '', col2 = '';
+        for (let i = 0; i < 5; i++) {
+          const n = names[i] || '...........................................................................';
+          col1 += `${i+1}. ${n}<br>`;
+        }
+        for (let i = 5; i < 10; i++) {
+          const n = names[i] || '...........................................................................';
+          col2 += `${i+1}. ${n}<br>`;
+        }
+        document.getElementById('absentCol1').innerHTML = col1;
+        document.getElementById('absentCol2').innerHTML = col2;
+      }
+    }
+  </script>
+</body>
+</html>
