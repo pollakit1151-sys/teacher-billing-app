@@ -633,21 +633,49 @@
         box-shadow: 0 1px 4px rgba(0, 0, 0, 0.15) !important;
       }
 
+      /* Hide bottom status footer completely on mobile */
+      footer {
+        display: none !important;
+        height: 0 !important;
+        visibility: hidden !important;
+      }
+
+      /* Mobile Edit Lock: Prevent accidental taps from focusing contenteditable cells */
+      body.mobile-edit-locked [contenteditable="true"] {
+        -webkit-user-select: none !important;
+        user-select: none !important;
+        pointer-events: none !important;
+        cursor: default !important;
+      }
+
+      body.mobile-edit-locked #allTeachersContainer,
+      body.mobile-edit-locked #teachersPaperList,
+      body.mobile-edit-locked .a4-page,
+      body.mobile-edit-locked .excel-paper,
+      body.mobile-edit-locked .a4-landscape,
+      body.mobile-edit-locked #coverHtmlPaperContainer {
+        pointer-events: auto !important;
+        -webkit-overflow-scrolling: touch !important;
+      }
+
       /* Bottom sheet modals: strictly contained in mobile screen width */
       #mobileTeacherNavModal,
       #mobileActionSheetModal,
       #mobileViewMenuModal,
       #mobileCoverPickerModal {
-        width: 100vw !important;
+        width: 100% !important;
         max-width: 100vw !important;
         box-sizing: border-box !important;
+        overflow-x: hidden !important;
       }
       #mobileTeacherNavModal > div,
       #mobileActionSheetModal > div,
       #mobileViewMenuModal > div,
       #mobileCoverPickerModal > div {
-        max-width: 100vw !important;
+        width: 100% !important;
+        max-width: 100% !important;
         box-sizing: border-box !important;
+        overflow-x: hidden !important;
       }
 
       /* Dynamic Fit-to-screen scale mode */
@@ -740,40 +768,42 @@
       </div>
     </div>
 
-    <!-- Mobile Control Bar: 5 Unified Top-Only Buttons (Zero Duplication, Maximum Screen Focus) -->
-    <div class="flex md:hidden items-center justify-between w-full gap-1 overflow-x-auto no-scrollbar py-0.5 select-none">
+    <!-- Mobile Control Bar: 6 Unified Top-Only Buttons (Maximized Screen Fit) -->
+    <div class="flex md:hidden items-center justify-between w-full gap-1 overflow-x-auto no-scrollbar py-0.5 select-none text-[11px]">
       <!-- 1. ปุ่มรอบ & สัปดาห์ -->
-      <button type="button" onclick="openMobileSidebar()" title="เลือกรอบและสัปดาห์" class="px-2 py-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 rounded-lg text-xs font-bold flex items-center gap-1 shadow-2xs cursor-pointer shrink-0 active:scale-95 transition">
+      <button type="button" onclick="openMobileSidebar()" title="เลือกรอบและสัปดาห์" class="px-1.5 py-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 rounded-lg font-bold flex items-center gap-1 shadow-2xs cursor-pointer shrink-0 active:scale-95 transition">
         <i data-lucide="calendar" class="w-3.5 h-3.5 text-indigo-600 shrink-0"></i>
         <span id="mobileHeaderWeekLabel">สัปดาห์ 1</span>
-        <i data-lucide="chevron-down" class="w-3 h-3 text-indigo-400 shrink-0"></i>
       </button>
 
       <!-- 2. ปุ่มเลือกรูปแบบเอกสาร -->
-      <button type="button" onclick="openMobileViewMenu()" title="เลือกรูปแบบเอกสารและตัวกรอง" class="px-2 py-1 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 rounded-lg text-xs font-bold flex items-center gap-1 shadow-2xs cursor-pointer shrink-0 active:scale-95 transition">
+      <button type="button" onclick="openMobileViewMenu()" title="เลือกรูปแบบเอกสารและตัวกรอง" class="px-1.5 py-1 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 rounded-lg font-bold flex items-center gap-1 shadow-2xs cursor-pointer shrink-0 active:scale-95 transition">
         <i data-lucide="file-text" class="w-3.5 h-3.5 text-blue-600 shrink-0"></i>
-        <span id="mobileHeaderViewLabel" class="truncate max-w-[76px]">ใบเบิก A4</span>
-        <i data-lucide="chevron-down" class="w-3 h-3 text-blue-400 shrink-0"></i>
+        <span id="mobileHeaderViewLabel" class="truncate max-w-[62px]">ใบเบิก</span>
       </button>
 
       <!-- 3. ปุ่มเลือกครู (สำหรับใบเบิก A4) -->
-      <button id="mobileHeaderTeacherChip" type="button" onclick="openMobileTeacherNav()" title="เลือกรายชื่อครู" class="px-2 py-1 bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200 rounded-lg text-xs font-bold flex items-center gap-1 shadow-2xs cursor-pointer shrink-0 active:scale-95 transition">
-        <i data-lucide="user" class="w-3.5 h-3.5 text-purple-600 shrink-0"></i>
-        <span id="mobileHeaderTeacherNum" class="truncate max-w-[76px]">ครู 1/13</span>
-        <i data-lucide="chevron-down" class="w-3 h-3 text-purple-400 shrink-0"></i>
+      <button id="mobileHeaderTeacherChip" type="button" onclick="openMobileTeacherNav()" title="เลือกรายชื่อครูและกลุ่ม" class="px-1.5 py-1 bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200 rounded-lg font-bold flex items-center gap-1 shadow-2xs cursor-pointer shrink-0 active:scale-95 transition">
+        <i data-lucide="users" class="w-3.5 h-3.5 text-purple-600 shrink-0"></i>
+        <span id="mobileHeaderTeacherNum" class="truncate max-w-[85px]">1/13 ชำนาญ</span>
       </button>
 
       <!-- 3B. ปุ่มเลือกชุดงบหน้ารวม (สำหรับงบหน้ารวม 8 ชุด) -->
-      <button id="mobileHeaderCoverChip" type="button" onclick="openMobileCoverPicker()" title="เลือกชุดงบหน้ารวม 1-8" class="hidden px-2 py-1 bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200 rounded-lg text-xs font-bold items-center gap-1 shadow-2xs cursor-pointer shrink-0 active:scale-95 transition">
+      <button id="mobileHeaderCoverChip" type="button" onclick="openMobileCoverPicker()" title="เลือกชุดงบหน้ารวม 1-8" class="hidden px-1.5 py-1 bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200 rounded-lg font-bold items-center gap-1 shadow-2xs cursor-pointer shrink-0 active:scale-95 transition">
         <i data-lucide="folder" class="w-3.5 h-3.5 text-purple-600 shrink-0"></i>
-        <span id="mobileHeaderCoverNum" class="truncate max-w-[76px]">ไฟล์ 1/8</span>
-        <i data-lucide="chevron-down" class="w-3 h-3 text-purple-400 shrink-0"></i>
+        <span id="mobileHeaderCoverNum" class="truncate max-w-[70px]">ไฟล์ 1/8</span>
       </button>
 
       <!-- 4. ปุ่มสลับซูม พอดีจอ / 100% -->
-      <button id="mobileHeaderZoomBtn" type="button" onclick="toggleMobileFitScreen()" title="สลับมุมมอง พอดีจอ ↔ 100%" class="px-2 py-1 bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 rounded-lg text-xs font-bold flex items-center gap-1 shadow-2xs cursor-pointer shrink-0 active:scale-95 transition">
+      <button id="mobileHeaderZoomBtn" type="button" onclick="toggleMobileFitScreen()" title="สลับมุมมอง พอดีจอ ↔ 100%" class="px-1.5 py-1 bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 rounded-lg font-bold flex items-center gap-1 shadow-2xs cursor-pointer shrink-0 active:scale-95 transition">
         <i data-lucide="scaling" class="w-3.5 h-3.5 text-amber-600 shrink-0"></i>
-        <span id="mobileHeaderZoomText">พอดีจอ</span>
+        <span id="mobileHeaderZoomText">100%</span>
+      </button>
+
+      <!-- 4B. ปุ่มเปิด/ปิด โหมดแก้ไขข้อความ (กันการกดผิดบนมือถือ) -->
+      <button id="mobileHeaderEditBtn" type="button" onclick="toggleMobileEditMode()" title="เปิด/ปิด โหมดแก้ไขข้อความ (กันการกดผิดขณะเลื่อนดู)" class="px-1.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 rounded-lg font-bold flex items-center gap-1 shadow-2xs cursor-pointer shrink-0 active:scale-95 transition">
+        <i id="mobileHeaderEditIcon" data-lucide="edit-3" class="w-3.5 h-3.5 text-slate-600 shrink-0"></i>
+        <span id="mobileHeaderEditText">แก้ไข</span>
       </button>
 
       <!-- 5. ปุ่มเครื่องมือ & บันทึก (เปิดแผงเครื่องมือครบครัน) -->
@@ -784,13 +814,13 @@
 
     <!-- Desktop Right: Backup & Profile Buttons -->
     <div class="hidden md:flex items-center gap-2 shrink-0">
-      <button type="button" onclick="openBackupModal()" title="สำรองและกู้คืนข้อมูล (ดาวน์โหลด/อัปโหลดไฟล์ JSON)" class="px-2.5 py-1.5 bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200 rounded-lg text-xs font-bold shadow-2xs items-center gap-1 transition cursor-pointer">
-        <i data-lucide="database-backup" class="w-4 h-4 text-purple-600"></i>
-        <span>💾 สำรอง/กู้คืน</span>
+      <button type="button" onclick="openBackupModal()" title="สำรองและกู้คืนข้อมูล (ดาวน์โหลด/อัปโหลดไฟล์ JSON)" class="px-2.5 py-1.5 bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200 rounded-lg text-xs font-bold shadow-2xs flex items-center gap-1.5 transition cursor-pointer">
+        <i data-lucide="database-backup" class="w-3.5 h-3.5 text-purple-600 shrink-0"></i>
+        <span>สำรอง/กู้คืน</span>
       </button>
-      <button type="button" onclick="openTeacherProfileModal()" title="จัดการรายชื่อและตำแหน่งครู" class="px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 rounded-lg text-xs font-bold shadow-2xs items-center gap-1 transition cursor-pointer">
-        <i data-lucide="user-cog" class="w-4 h-4 text-indigo-600"></i>
-        <span>👤 ตำแหน่งครู</span>
+      <button type="button" onclick="openTeacherProfileModal()" title="จัดการรายชื่อและตำแหน่งครู" class="px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 rounded-lg text-xs font-bold shadow-2xs flex items-center gap-1.5 transition cursor-pointer">
+        <i data-lucide="user-cog" class="w-3.5 h-3.5 text-indigo-600 shrink-0"></i>
+        <span>ตำแหน่งครู</span>
       </button>
     </div>
   </header>
@@ -1652,8 +1682,8 @@
 
   </main>
 
-  <!-- FOOTER: Clean Status Bar -->
-  <footer class="h-9 bg-white border-t border-indigo-100 px-4 flex items-center justify-between z-20 shrink-0 text-xs text-slate-500 no-print">
+  <!-- FOOTER: Clean Status Bar (Desktop only, hidden completely on mobile) -->
+  <footer class="hidden md:flex h-9 bg-white border-t border-indigo-100 px-4 items-center justify-between z-20 shrink-0 text-xs text-slate-500 no-print">
     <div class="flex items-center gap-2 font-medium">
       <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
       <span>ระบบเบิกจ่ายค่าสอนและแบบฟอร์มเอกสารราชการ A4 เสมือนจริง 100%</span>
@@ -3175,6 +3205,10 @@
         }
       } else if (qModal === 'backup' || qModal === 'restore') {
         openBackupModal();
+      } else if (qModal === 'teacher_nav') {
+        setTimeout(openMobileTeacherNav, 300);
+      } else if (qModal === 'actions') {
+        setTimeout(openMobileActionSheet, 300);
       }
 
       if (urlParams.get('test_click_target')) {
@@ -4579,18 +4613,10 @@
 
     function setLevelFilter(lvl) {
       currentLevelFilter = lvl;
-      ['Pvc', 'Pvs', 'All'].forEach(id => {
-        const btn = document.getElementById(`toggleLevel${id}`);
-        if (btn) {
-          if ((id === 'Pvc' && lvl === 'ปวช.') || (id === 'Pvs' && lvl === 'ปวส.') || (id === 'All' && lvl === 'all')) {
-            btn.className = "px-1.5 py-0.5 rounded-md transition bg-emerald-600 text-white shadow-xs flex items-center gap-1 cursor-pointer font-bold text-[11px]";
-          } else {
-            btn.className = "px-1.5 py-0.5 rounded-md transition text-slate-600 hover:text-slate-900 flex items-center gap-1 cursor-pointer font-bold text-[11px]";
-          }
-        }
-      });
+      if (typeof syncAllFilterControls === 'function') syncAllFilterControls();
       updateActiveFileBadge();
       renderAllTeachersInGroup();
+      if (typeof updateMobileHeaderTeacherLabel === 'function') updateMobileHeaderTeacherLabel();
       if (typeof lucide !== 'undefined') lucide.createIcons();
     }
 
@@ -9372,14 +9398,18 @@ function selectRound(roundNum) {
 
     function setDepartmentFilter(dept) {
       currentDeptFilter = dept;
-      const btnAuto = document.getElementById('toggleDeptAuto');
-      const btnEv = document.getElementById('toggleDeptEv');
-      if (dept === 'ช่างยนต์') {
-        if (btnAuto) btnAuto.className = "px-1.5 py-0.5 rounded-md transition bg-blue-600 text-white shadow-xs flex items-center gap-1 cursor-pointer font-bold text-[11px]";
-        if (btnEv) btnEv.className = "px-1.5 py-0.5 rounded-md transition text-slate-600 hover:text-slate-900 flex items-center gap-1 cursor-pointer font-bold text-[11px]";
+      if (typeof syncAllFilterControls === 'function') {
+        syncAllFilterControls();
       } else {
-        if (btnAuto) btnAuto.className = "px-1.5 py-0.5 rounded-md transition text-slate-600 hover:text-slate-900 flex items-center gap-1 cursor-pointer font-bold text-[11px]";
-        if (btnEv) btnEv.className = "px-1.5 py-0.5 rounded-md transition bg-amber-500 text-white shadow-xs flex items-center gap-1 cursor-pointer font-bold text-[11px]";
+        const btnAuto = document.getElementById('toggleDeptAuto');
+        const btnEv = document.getElementById('toggleDeptEv');
+        if (dept === 'ช่างยนต์') {
+          if (btnAuto) btnAuto.className = "px-1.5 py-0.5 rounded-md transition bg-blue-600 text-white shadow-xs flex items-center gap-1 cursor-pointer font-bold text-[11px]";
+          if (btnEv) btnEv.className = "px-1.5 py-0.5 rounded-md transition text-slate-600 hover:text-slate-900 flex items-center gap-1 cursor-pointer font-bold text-[11px]";
+        } else {
+          if (btnAuto) btnAuto.className = "px-1.5 py-0.5 rounded-md transition text-slate-600 hover:text-slate-900 flex items-center gap-1 cursor-pointer font-bold text-[11px]";
+          if (btnEv) btnEv.className = "px-1.5 py-0.5 rounded-md transition bg-amber-500 text-white shadow-xs flex items-center gap-1 cursor-pointer font-bold text-[11px]";
+        }
       }
 
       updateActiveFileBadge();
@@ -9400,19 +9430,24 @@ function selectRound(roundNum) {
       } else {
         renderAllTeachersInGroup();
       }
+      if (typeof updateMobileHeaderTeacherLabel === 'function') updateMobileHeaderTeacherLabel();
       if (typeof lucide !== 'undefined') lucide.createIcons();
     }
 
     function setTeacherTypeFilter(type) {
       currentTeacherTypeFilter = type;
-      const btnReg = document.getElementById('toggleTypeRegular');
-      const btnSp = document.getElementById('toggleTypeSpecial');
-      if (type === 'ครูประจำ') {
-        if (btnReg) btnReg.className = "px-1.5 py-0.5 rounded-md transition bg-indigo-600 text-white shadow-xs flex items-center gap-1 cursor-pointer font-bold text-[11px]";
-        if (btnSp) btnSp.className = "px-1.5 py-0.5 rounded-md transition text-slate-600 hover:text-slate-900 flex items-center gap-1 cursor-pointer font-bold text-[11px]";
+      if (typeof syncAllFilterControls === 'function') {
+        syncAllFilterControls();
       } else {
-        if (btnReg) btnReg.className = "px-1.5 py-0.5 rounded-md transition text-slate-600 hover:text-slate-900 flex items-center gap-1 cursor-pointer font-bold text-[11px]";
-        if (btnSp) btnSp.className = "px-1.5 py-0.5 rounded-md transition bg-indigo-600 text-white shadow-xs flex items-center gap-1 cursor-pointer font-bold text-[11px]";
+        const btnReg = document.getElementById('toggleTypeRegular');
+        const btnSp = document.getElementById('toggleTypeSpecial');
+        if (type === 'ครูประจำ') {
+          if (btnReg) btnReg.className = "px-1.5 py-0.5 rounded-md transition bg-indigo-600 text-white shadow-xs flex items-center gap-1 cursor-pointer font-bold text-[11px]";
+          if (btnSp) btnSp.className = "px-1.5 py-0.5 rounded-md transition text-slate-600 hover:text-slate-900 flex items-center gap-1 cursor-pointer font-bold text-[11px]";
+        } else {
+          if (btnReg) btnReg.className = "px-1.5 py-0.5 rounded-md transition text-slate-600 hover:text-slate-900 flex items-center gap-1 cursor-pointer font-bold text-[11px]";
+          if (btnSp) btnSp.className = "px-1.5 py-0.5 rounded-md transition bg-indigo-600 text-white shadow-xs flex items-center gap-1 cursor-pointer font-bold text-[11px]";
+        }
       }
       updateActiveFileBadge();
       if (currentSubViewMode === 'covers') {
@@ -9422,6 +9457,7 @@ function selectRound(roundNum) {
       } else {
         renderAllTeachersInGroup();
       }
+      if (typeof updateMobileHeaderTeacherLabel === 'function') updateMobileHeaderTeacherLabel();
       if (typeof lucide !== 'undefined') lucide.createIcons();
     }
 
@@ -10964,6 +11000,12 @@ function selectRound(roundNum) {
         </button>
       </div>
 
+      <!-- Toggle Edit Lock in Action Sheet -->
+      <button type="button" id="mobileSheetEditToggleBtn" onclick="toggleMobileEditMode(); closeMobileActionSheet();" class="w-full py-2.5 bg-amber-50 hover:bg-amber-100 border border-amber-200 text-amber-900 rounded-xl text-xs font-bold flex items-center justify-center gap-2 cursor-pointer shadow-2xs transition">
+        <i id="mobileSheetEditIcon" data-lucide="edit-3" class="w-4 h-4 text-amber-600"></i>
+        <span id="mobileSheetEditText">เปิดโหมดแก้ไขข้อความ (แตะพิมพ์ในตาราง)</span>
+      </button>
+
       <button type="button" onclick="toggleMobileFitScreen(); closeMobileActionSheet();" class="w-full py-2.5 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-2 cursor-pointer shadow-sm">
         <i data-lucide="scaling" class="w-4 h-4 text-amber-400"></i>
         <span>สลับมุมมอง: พอดีหน้าจอ ↔ ชัดเต็มตา 100%</span>
@@ -10981,7 +11023,7 @@ function selectRound(roundNum) {
           </div>
           <div>
             <h3 class="font-bold text-slate-900 text-sm">เลือกรายชื่อครู</h3>
-            <p class="text-[10px] text-slate-500">สลับดูรายคน หรือดูแบบเรียงทุกคน</p>
+            <p class="text-[10px] text-slate-500">เลือกกลุ่ม แผนก ระดับ และสลับดูรายคนหรือเรียงทุกคน</p>
           </div>
         </div>
         <button type="button" onclick="closeMobileTeacherNav()" class="text-slate-400 hover:text-slate-600 p-1.5 rounded-lg hover:bg-slate-100 cursor-pointer">
@@ -10989,35 +11031,55 @@ function selectRound(roundNum) {
         </button>
       </div>
 
-      <!-- Mode Segmented Control: โฟกัสรายคน vs ดูเรียงทุกคน -->
-      <div class="flex items-center bg-slate-100 p-1 rounded-xl gap-1 shrink-0">
-        <button type="button" id="mBtnModeSingle" onclick="setMobileA4ViewMode('single')" class="flex-1 py-2 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1.5 bg-white text-purple-700 shadow-2xs cursor-pointer">
-          <i data-lucide="user" class="w-3.5 h-3.5"></i>
-          <span>โฟกัสรายคน</span>
-        </button>
-        <button type="button" id="mBtnModeAll" onclick="setMobileA4ViewMode('all')" class="flex-1 py-2 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1.5 text-slate-600 hover:text-slate-900 cursor-pointer">
-          <i data-lucide="layers" class="w-3.5 h-3.5"></i>
-          <span>ดูเรียงทุกคน</span>
-        </button>
+      <!-- Group Filters inside Teacher Modal (Like Desktop: แผนก / ระดับ / ประเภท) -->
+      <div class="bg-slate-50 p-2 rounded-2xl border border-slate-200 space-y-1.5 shrink-0 text-xs">
+        <!-- Row 1: แผนก & ประเภท -->
+        <div class="flex items-center justify-between gap-1">
+          <div class="flex items-center gap-1">
+            <span class="text-[10px] font-bold text-slate-500 shrink-0">แผนก:</span>
+            <button type="button" id="mTeacherModalDeptAuto" onclick="setMobileTeacherModalGroup('dept', 'ช่างยนต์')" class="px-2 py-0.5 rounded-md text-[11px] font-bold bg-blue-600 text-white shadow-2xs cursor-pointer transition">ช่างยนต์</button>
+            <button type="button" id="mTeacherModalDeptEv" onclick="setMobileTeacherModalGroup('dept', 'ยานยนต์ไฟฟ้า')" class="px-2 py-0.5 rounded-md text-[11px] font-bold bg-slate-200 text-slate-700 hover:bg-slate-300 cursor-pointer transition">EV</button>
+          </div>
+          <div class="flex items-center gap-1">
+            <button type="button" id="mTeacherModalTypeReg" onclick="setMobileTeacherModalGroup('type', 'ครูประจำ')" class="px-2 py-0.5 rounded-md text-[11px] font-bold bg-indigo-600 text-white shadow-2xs cursor-pointer transition">ประจำ</button>
+            <button type="button" id="mTeacherModalTypeSpec" onclick="setMobileTeacherModalGroup('type', 'ครูพิเศษ')" class="px-2 py-0.5 rounded-md text-[11px] font-bold bg-slate-200 text-slate-700 hover:bg-slate-300 cursor-pointer transition">พิเศษ</button>
+          </div>
+        </div>
+
+        <!-- Row 2: ระดับชั้น & จำนวนครู -->
+        <div class="flex items-center justify-between gap-1">
+          <div class="flex items-center gap-1">
+            <span class="text-[10px] font-bold text-slate-500 shrink-0">ระดับ:</span>
+            <button type="button" id="mTeacherModalLvlPvc" onclick="setMobileTeacherModalGroup('level', 'ปวช.')" class="px-2 py-0.5 rounded-md text-[11px] font-bold bg-emerald-600 text-white shadow-2xs cursor-pointer transition">ปวช.</button>
+            <button type="button" id="mTeacherModalLvlPvs" onclick="setMobileTeacherModalGroup('level', 'ปวส.')" class="px-2 py-0.5 rounded-md text-[11px] font-bold bg-slate-200 text-slate-700 hover:bg-slate-300 cursor-pointer transition">ปวส.</button>
+            <button type="button" id="mTeacherModalLvlAll" onclick="setMobileTeacherModalGroup('level', 'all')" class="px-2 py-0.5 rounded-md text-[11px] font-bold bg-slate-200 text-slate-700 hover:bg-slate-300 cursor-pointer transition">ทั้งหมด</button>
+          </div>
+          <span id="mTeacherModalGroupCountBadge" class="text-[10px] font-bold text-slate-600 bg-white px-2 py-0.5 rounded-md border border-slate-200 shadow-2xs">13 ท่าน</span>
+        </div>
+
+        <!-- Row 3: Mode Switch (โฟกัสรายคน vs ดูเรียงทุกคนในกลุ่มนี้) -->
+        <div class="flex items-center gap-1.5 pt-1 border-t border-slate-200/80">
+          <button type="button" id="mBtnModeSingle" onclick="setMobileA4ViewMode('single')" class="flex-1 py-1.5 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1 bg-white text-purple-700 border border-purple-200 shadow-2xs cursor-pointer">
+            <i data-lucide="user" class="w-3.5 h-3.5"></i>
+            <span>โฟกัสรายคน</span>
+          </button>
+          <button type="button" id="mBtnModeAll" onclick="setMobileA4ViewMode('all')" class="flex-1 py-1.5 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1 bg-purple-600 text-white shadow-2xs cursor-pointer">
+            <i data-lucide="layers" class="w-3.5 h-3.5"></i>
+            <span id="mTeacherModalViewAllBtnText">ดูเรียงกลุ่มนี้</span>
+          </button>
+        </div>
       </div>
 
       <!-- Quick Prev / Next Buttons -->
       <div class="flex items-center gap-2 shrink-0">
-        <button type="button" onclick="navigateTeacherMobile(-1)" class="flex-1 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs flex items-center justify-center gap-1 cursor-pointer active:scale-95 transition">
+        <button type="button" onclick="navigateTeacherMobile(-1)" class="flex-1 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs flex items-center justify-center gap-1 cursor-pointer active:scale-95 transition">
           <i data-lucide="chevron-left" class="w-4 h-4"></i>
           <span>◀ คนก่อนหน้า</span>
         </button>
-        <button type="button" onclick="navigateTeacherMobile(1)" class="flex-1 py-2 bg-purple-600 hover:bg-purple-700 text-white font-bold rounded-xl text-xs flex items-center justify-center gap-1 shadow-xs cursor-pointer active:scale-95 transition">
+        <button type="button" onclick="navigateTeacherMobile(1)" class="flex-1 py-1.5 bg-purple-100 hover:bg-purple-200 text-purple-800 font-bold rounded-xl text-xs flex items-center justify-center gap-1 cursor-pointer active:scale-95 transition">
           <span>คนถัดไป ▶</span>
           <i data-lucide="chevron-right" class="w-4 h-4"></i>
         </button>
-      </div>
-
-      <!-- Quick Dept Filter Tabs inside Teacher Picker -->
-      <div class="flex items-center gap-1.5 pb-1 shrink-0 overflow-x-auto no-scrollbar text-xs">
-        <button type="button" id="mTabTeacherAll" onclick="filterMobileTeacherTab('all')" class="px-2.5 py-1 rounded-lg font-bold bg-purple-600 text-white shadow-2xs cursor-pointer">ทั้งหมด (29)</button>
-        <button type="button" id="mTabTeacherAuto" onclick="filterMobileTeacherTab('ช่างยนต์')" class="px-2.5 py-1 rounded-lg font-bold bg-slate-100 text-slate-700 hover:bg-slate-200 cursor-pointer">ช่างยนต์</button>
-        <button type="button" id="mTabTeacherEv" onclick="filterMobileTeacherTab('ยานยนต์ไฟฟ้า')" class="px-2.5 py-1 rounded-lg font-bold bg-slate-100 text-slate-700 hover:bg-slate-200 cursor-pointer">ยานยนต์ไฟฟ้า</button>
       </div>
 
       <!-- List of All Teachers -->
@@ -11056,21 +11118,32 @@ function selectRound(roundNum) {
     // ==========================================
     // MOBILE RESPONSIVE UI CONTROLLER
     // ==========================================
-    let isMobileFitScreen = false;
+    let isMobileFitScreen = true;
+    let isMobileEditLocked = true;
     let currentMobileTeacherFilter = 'all';
 
     function initMobileUI() {
       updateMobileScale();
       window.addEventListener('resize', updateMobileScale);
       
-      // Default: authentic 100% full screen table rendering (not miniature 47% fit)
-      isMobileFitScreen = false;
-      document.body.classList.remove('mobile-fit-screen');
-      const zoomText = document.getElementById('mobileZoomText');
-      const hZoomText = document.getElementById('mobileHeaderZoomText');
-      if (zoomText) zoomText.innerText = 'พอดีจอ';
-      if (hZoomText) hZoomText.innerText = 'พอดีจอ';
+      if (window.innerWidth < 768) {
+        isMobileFitScreen = true;
+        document.body.classList.add('mobile-fit-screen');
+        isMobileEditLocked = true;
+        document.body.classList.add('mobile-edit-locked');
+        const zoomText = document.getElementById('mobileZoomText');
+        const hZoomText = document.getElementById('mobileHeaderZoomText');
+        if (zoomText) zoomText.innerText = '100%';
+        if (hZoomText) hZoomText.innerText = '100%';
+      } else {
+        isMobileFitScreen = false;
+        document.body.classList.remove('mobile-fit-screen');
+        isMobileEditLocked = false;
+        document.body.classList.remove('mobile-edit-locked');
+      }
 
+      updateMobileEditButtonState();
+      syncAllFilterControls();
       updateMobileHeaderWeekLabel();
       updateMobileHeaderViewLabel();
       updateMobileHeaderTeacherLabel();
@@ -11109,6 +11182,67 @@ function selectRound(roundNum) {
       }
     }
 
+    function toggleMobileEditMode() {
+      isMobileEditLocked = !isMobileEditLocked;
+      updateMobileEditButtonState();
+      if (isMobileEditLocked) {
+        showToast("ล็อคข้อความแล้ว 🔒", "ป้องกันการกดผิดขณะเลื่อนดู (แตะ 'แก้ไข' เพื่อพิมพ์)", true);
+        if (typeof saveAllTeacherCustomEdits === 'function') {
+          saveAllTeacherCustomEdits();
+        }
+      } else {
+        showToast("เปิดโหมดแก้ไขแล้ว ✏️", "แตะที่ข้อความในตารางเพื่อแก้ไขได้ แตะ 'ล็อค' เมื่อเสร็จ", true);
+      }
+    }
+
+    function updateMobileEditButtonState() {
+      const btn = document.getElementById('mobileHeaderEditBtn');
+      const txt = document.getElementById('mobileHeaderEditText');
+      const icon = document.getElementById('mobileHeaderEditIcon');
+      const sheetBtn = document.getElementById('mobileSheetEditToggleBtn');
+      const sheetTxt = document.getElementById('mobileSheetEditText');
+      const sheetIcon = document.getElementById('mobileSheetEditIcon');
+
+      if (isMobileEditLocked) {
+        document.body.classList.add('mobile-edit-locked');
+        if (btn) {
+          btn.className = "px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 rounded-lg text-xs font-bold flex items-center gap-1 shadow-2xs cursor-pointer shrink-0 active:scale-95 transition";
+        }
+        if (txt) txt.innerText = "แก้ไข";
+        if (icon) {
+          icon.setAttribute('data-lucide', 'edit-3');
+          icon.className = "w-3.5 h-3.5 text-slate-600 shrink-0";
+        }
+        if (sheetBtn) {
+          sheetBtn.className = "w-full py-2.5 bg-amber-50 hover:bg-amber-100 border border-amber-200 text-amber-900 rounded-xl text-xs font-bold flex items-center justify-center gap-2 cursor-pointer shadow-2xs transition";
+        }
+        if (sheetTxt) sheetTxt.innerText = "เปิดโหมดแก้ไขข้อความ (แตะพิมพ์ในตาราง)";
+        if (sheetIcon) {
+          sheetIcon.setAttribute('data-lucide', 'edit-3');
+          sheetIcon.className = "w-4 h-4 text-amber-600";
+        }
+      } else {
+        document.body.classList.remove('mobile-edit-locked');
+        if (btn) {
+          btn.className = "px-2 py-1 bg-amber-500 hover:bg-amber-600 text-white border border-amber-600 rounded-lg text-xs font-bold flex items-center gap-1 shadow-xs cursor-pointer shrink-0 active:scale-95 transition animate-pulse";
+        }
+        if (txt) txt.innerText = "ล็อค";
+        if (icon) {
+          icon.setAttribute('data-lucide', 'lock');
+          icon.className = "w-3.5 h-3.5 text-white shrink-0";
+        }
+        if (sheetBtn) {
+          sheetBtn.className = "w-full py-2.5 bg-emerald-50 hover:bg-emerald-100 border border-emerald-300 text-emerald-900 rounded-xl text-xs font-bold flex items-center justify-center gap-2 cursor-pointer shadow-2xs transition";
+        }
+        if (sheetTxt) sheetTxt.innerText = "ล็อคข้อความและบันทึก (กันการกดผิด)";
+        if (sheetIcon) {
+          sheetIcon.setAttribute('data-lucide', 'lock');
+          sheetIcon.className = "w-4 h-4 text-emerald-600";
+        }
+      }
+      if (typeof lucide !== 'undefined') lucide.createIcons();
+    }
+
     function updateMobileHeaderWeekLabel(w) {
       const lbl = document.getElementById('mobileHeaderWeekLabel');
       if (lbl) {
@@ -11136,7 +11270,7 @@ function selectRound(roundNum) {
     }
 
     function openMobileViewMenu() {
-      updateMobileFilterBadges();
+      syncAllFilterControls();
       const modal = document.getElementById('mobileViewMenuModal');
       if (modal) {
         modal.classList.remove('hidden');
@@ -11162,8 +11296,8 @@ function selectRound(roundNum) {
     function updateMobileHeaderViewLabel() {
       const labelEl = document.getElementById('mobileHeaderViewLabel');
       const curMode = (typeof currentSubViewMode !== 'undefined') ? currentSubViewMode : 'a4_form';
-      let text = 'ใบเบิก A4';
-      if (curMode === 'covers') text = 'งบหน้ารวม';
+      let text = 'ใบเบิก';
+      if (curMode === 'covers') text = 'งบหน้า';
       else if (curMode === 'distribution') text = 'จัดสรรเงิน';
       else if (curMode === 'summary') text = 'สรุปรายรอบ';
       if (labelEl) labelEl.innerText = text;
@@ -11192,17 +11326,17 @@ function selectRound(roundNum) {
       const cNumEl = document.getElementById('mobileHeaderCoverNum');
       
       if (tNumEl) {
+        const filtered = populateTeacherSelectDropdown() || [];
         if (a4ViewMode === 'all') {
-          const pool = (calculatedData && calculatedData.length > 0) ? calculatedData : masterTeachers;
-          const totalCount = pool ? pool.length : 29;
-          tNumEl.innerText = `ดูทุกคน (${totalCount})`;
+          const lvlStr = (currentLevelFilter && currentLevelFilter !== 'all') ? ` (${currentLevelFilter})` : '';
+          tNumEl.innerText = `ดูเรียง ${filtered.length} คน${lvlStr}`;
         } else {
-          const pool = (calculatedData && calculatedData.length > 0) ? calculatedData : masterTeachers;
-          const t = pool ? pool.find(x => x.index === currentA4TeacherIndex) : null;
+          const t = filtered.find(x => x.index === currentA4TeacherIndex) || filtered[0];
           if (t) {
             const nameParts = t.name.replace(/^(นาย|นาง|นางสาว)\s*/, '').trim().split(' ');
             const shortName = nameParts[0] || t.name;
-            tNumEl.innerText = `${t.index}.${shortName}`;
+            const curIdx = filtered.findIndex(x => x.index === t.index) + 1;
+            tNumEl.innerText = `${curIdx}/${filtered.length} ${shortName}`;
           } else {
             const counterEl = document.getElementById('a4TeacherCounterBadge');
             tNumEl.innerText = (counterEl && counterEl.innerText) ? `ครู ${counterEl.innerText}` : 'เลือกครู';
@@ -11215,60 +11349,137 @@ function selectRound(roundNum) {
       }
     }
 
-    function updateMobileFilterBadges() {
-      // Dept
+    function syncAllFilterControls() {
+      // 1. Dept
       const isAuto = (currentDeptFilter === 'ช่างยนต์' || (currentDeptFilter && currentDeptFilter.includes('ช่างยนต์')));
-      const btnAuto = document.getElementById('mDeptAutoBtn');
-      const btnEv = document.getElementById('mDeptEvBtn');
-      if (btnAuto && btnEv) {
-        btnAuto.className = isAuto ? "px-2.5 py-1 rounded-lg text-xs font-bold bg-blue-600 text-white shadow-2xs cursor-pointer" : "px-2.5 py-1 rounded-lg text-xs font-bold bg-slate-100 text-slate-700 hover:bg-slate-200 cursor-pointer";
-        btnEv.className = !isAuto ? "px-2.5 py-1 rounded-lg text-xs font-bold bg-amber-600 text-white shadow-2xs cursor-pointer" : "px-2.5 py-1 rounded-lg text-xs font-bold bg-slate-100 text-slate-700 hover:bg-slate-200 cursor-pointer";
+      
+      const btnAutoD = document.getElementById('toggleDeptAuto');
+      const btnEvD = document.getElementById('toggleDeptEv');
+      if (btnAutoD && btnEvD) {
+        btnAutoD.className = isAuto ? "px-1.5 py-0.5 rounded-md transition bg-blue-600 text-white shadow-xs flex items-center gap-1 cursor-pointer font-bold text-[11px]" : "px-1.5 py-0.5 rounded-md transition text-slate-600 hover:text-slate-900 flex items-center gap-1 cursor-pointer font-bold text-[11px]";
+        btnEvD.className = !isAuto ? "px-1.5 py-0.5 rounded-md transition bg-amber-500 text-white shadow-xs flex items-center gap-1 cursor-pointer font-bold text-[11px]" : "px-1.5 py-0.5 rounded-md transition text-slate-600 hover:text-slate-900 flex items-center gap-1 cursor-pointer font-bold text-[11px]";
       }
 
-      // Teacher Type
+      const btnAutoM = document.getElementById('mDeptAutoBtn');
+      const btnEvM = document.getElementById('mDeptEvBtn');
+      if (btnAutoM && btnEvM) {
+        btnAutoM.className = isAuto ? "px-2.5 py-1 rounded-lg text-xs font-bold bg-blue-600 text-white shadow-2xs cursor-pointer" : "px-2.5 py-1 rounded-lg text-xs font-bold bg-slate-100 text-slate-700 hover:bg-slate-200 cursor-pointer";
+        btnEvM.className = !isAuto ? "px-2.5 py-1 rounded-lg text-xs font-bold bg-amber-600 text-white shadow-2xs cursor-pointer" : "px-2.5 py-1 rounded-lg text-xs font-bold bg-slate-100 text-slate-700 hover:bg-slate-200 cursor-pointer";
+      }
+
+      const mTmAuto = document.getElementById('mTeacherModalDeptAuto');
+      const mTmEv = document.getElementById('mTeacherModalDeptEv');
+      if (mTmAuto && mTmEv) {
+        mTmAuto.className = isAuto ? "px-2.5 py-1 rounded-lg text-xs font-bold bg-blue-600 text-white shadow-2xs cursor-pointer transition" : "px-2.5 py-1 rounded-lg text-xs font-bold bg-slate-200 text-slate-700 hover:bg-slate-300 cursor-pointer transition";
+        mTmEv.className = !isAuto ? "px-2.5 py-1 rounded-lg text-xs font-bold bg-amber-600 text-white shadow-2xs cursor-pointer transition" : "px-2.5 py-1 rounded-lg text-xs font-bold bg-slate-200 text-slate-700 hover:bg-slate-300 cursor-pointer transition";
+      }
+
+      // 2. Type
       const isReg = (currentTeacherTypeFilter === 'ครูประจำ');
-      const btnReg = document.getElementById('mTypeBtnReg');
-      const btnSpec = document.getElementById('mTypeBtnSpec');
-      if (btnReg && btnSpec) {
-        btnReg.className = isReg ? "px-2.5 py-1 rounded-lg text-xs font-bold bg-indigo-600 text-white shadow-2xs cursor-pointer" : "px-2.5 py-1 rounded-lg text-xs font-bold bg-slate-100 text-slate-700 hover:bg-slate-200 cursor-pointer";
-        btnSpec.className = !isReg ? "px-2.5 py-1 rounded-lg text-xs font-bold bg-purple-600 text-white shadow-2xs cursor-pointer" : "px-2.5 py-1 rounded-lg text-xs font-bold bg-slate-100 text-slate-700 hover:bg-slate-200 cursor-pointer";
+      const btnRegD = document.getElementById('toggleTypeRegular');
+      const btnSpD = document.getElementById('toggleTypeSpecial');
+      if (btnRegD && btnSpD) {
+        btnRegD.className = isReg ? "px-1.5 py-0.5 rounded-md transition bg-indigo-600 text-white shadow-xs flex items-center gap-1 cursor-pointer font-bold text-[11px]" : "px-1.5 py-0.5 rounded-md transition text-slate-600 hover:text-slate-900 flex items-center gap-1 cursor-pointer font-bold text-[11px]";
+        btnSpD.className = !isReg ? "px-1.5 py-0.5 rounded-md transition bg-indigo-600 text-white shadow-xs flex items-center gap-1 cursor-pointer font-bold text-[11px]" : "px-1.5 py-0.5 rounded-md transition text-slate-600 hover:text-slate-900 flex items-center gap-1 cursor-pointer font-bold text-[11px]";
       }
 
-      // Level
+      const btnRegM = document.getElementById('mTypeBtnReg');
+      const btnSpecM = document.getElementById('mTypeBtnSpec');
+      if (btnRegM && btnSpecM) {
+        btnRegM.className = isReg ? "px-2.5 py-1 rounded-lg text-xs font-bold bg-indigo-600 text-white shadow-2xs cursor-pointer" : "px-2.5 py-1 rounded-lg text-xs font-bold bg-slate-100 text-slate-700 hover:bg-slate-200 cursor-pointer";
+        btnSpecM.className = !isReg ? "px-2.5 py-1 rounded-lg text-xs font-bold bg-purple-600 text-white shadow-2xs cursor-pointer" : "px-2.5 py-1 rounded-lg text-xs font-bold bg-slate-100 text-slate-700 hover:bg-slate-200 cursor-pointer";
+      }
+
+      const mTmReg = document.getElementById('mTeacherModalTypeReg');
+      const mTmSpec = document.getElementById('mTeacherModalTypeSpec');
+      if (mTmReg && mTmSpec) {
+        mTmReg.className = isReg ? "px-2 py-1 rounded-lg text-xs font-bold bg-indigo-600 text-white shadow-2xs cursor-pointer transition" : "px-2 py-1 rounded-lg text-xs font-bold bg-slate-200 text-slate-700 hover:bg-slate-300 cursor-pointer transition";
+        mTmSpec.className = !isReg ? "px-2 py-1 rounded-lg text-xs font-bold bg-slate-200 text-slate-700 hover:bg-slate-300 cursor-pointer transition" : "px-2 py-1 rounded-lg text-xs font-bold bg-indigo-600 text-white shadow-2xs cursor-pointer transition";
+      }
+
+      // 3. Level
       const curLvl = currentLevelFilter || 'all';
-      const btnPvc = document.getElementById('mLevelBtnPvc');
-      const btnPvs = document.getElementById('mLevelBtnPvs');
-      const btnAll = document.getElementById('mLevelBtnAll');
-      const activeLvl = "px-2 py-1 rounded-lg text-xs font-bold bg-emerald-600 text-white shadow-2xs cursor-pointer";
-      const inactiveLvl = "px-2 py-1 rounded-lg text-xs font-bold bg-slate-100 text-slate-700 hover:bg-slate-200 cursor-pointer";
-      if (btnPvc) btnPvc.className = (curLvl === 'ปวช.') ? activeLvl : inactiveLvl;
-      if (btnPvs) btnPvs.className = (curLvl === 'ปวส.') ? activeLvl : inactiveLvl;
-      if (btnAll) btnAll.className = (curLvl === 'all') ? activeLvl : inactiveLvl;
+      ['Pvc', 'Pvs', 'All'].forEach(id => {
+        const lvlVal = (id === 'Pvc' ? 'ปวช.' : (id === 'Pvs' ? 'ปวส.' : 'all'));
+        const isAct = (curLvl === lvlVal);
+
+        const btnD = document.getElementById(`toggleLevel${id}`);
+        if (btnD) {
+          btnD.className = isAct ? "px-1.5 py-0.5 rounded-md transition bg-emerald-600 text-white shadow-xs flex items-center gap-1 cursor-pointer font-bold text-[11px]" : "px-1.5 py-0.5 rounded-md transition text-slate-600 hover:text-slate-900 flex items-center gap-1 cursor-pointer font-bold text-[11px]";
+        }
+
+        const btnM = document.getElementById(`mLevelBtn${id}`);
+        if (btnM) {
+          btnM.className = isAct ? "px-2 py-1 rounded-lg text-xs font-bold bg-emerald-600 text-white shadow-2xs cursor-pointer" : "px-2 py-1 rounded-lg text-xs font-bold bg-slate-100 text-slate-700 hover:bg-slate-200 cursor-pointer";
+        }
+
+        const btnTm = document.getElementById(`mTeacherModalLvl${id}`);
+        if (btnTm) {
+          btnTm.className = isAct ? "px-2 py-1 rounded-lg text-xs font-bold bg-emerald-600 text-white shadow-2xs cursor-pointer transition" : "px-2 py-1 rounded-lg text-xs font-bold bg-slate-200 text-slate-700 hover:bg-slate-300 cursor-pointer transition";
+        }
+      });
+
+      updateActiveFileBadge();
+      if (typeof lucide !== 'undefined') lucide.createIcons();
+    }
+
+    function updateMobileFilterBadges() {
+      syncAllFilterControls();
+    }
+
+    function setMobileTeacherModalGroup(field, value) {
+      if (field === 'dept') {
+        currentDeptFilter = value;
+      } else if (field === 'type') {
+        currentTeacherTypeFilter = value;
+      } else if (field === 'level') {
+        currentLevelFilter = value;
+      }
+      syncAllFilterControls();
+      populateTeacherSelectDropdown();
+      populateMobileTeacherList();
+      updateMobileTeacherModalSummary();
+      if (a4ViewMode === 'all') {
+        renderAllTeachersInGroup();
+        updateMobileHeaderTeacherLabel();
+      }
+    }
+
+    function updateMobileTeacherModalSummary() {
+      const filtered = populateTeacherSelectDropdown() || [];
+      const btnAllText = document.getElementById('mTeacherModalViewAllBtnText');
+      const countBadge = document.getElementById('mTeacherModalGroupCountBadge');
+      if (btnAllText) {
+        btnAllText.innerText = `ดูเรียงกลุ่มนี้ (${filtered.length} ท่าน)`;
+      }
+      if (countBadge) {
+        countBadge.innerText = `${filtered.length} ท่าน`;
+      }
     }
 
     function setMobileA4ViewMode(mode) {
-      if (mode === 'all') {
-        if (currentMobileTeacherFilter && currentMobileTeacherFilter !== 'all') {
-          currentDeptFilter = currentMobileTeacherFilter;
-        } else {
-          currentDeptFilter = '';
+      a4ViewMode = mode;
+      if (currentSubViewMode !== 'a4_form' && typeof switchSubViewMode === 'function') {
+        switchSubViewMode('a4_form');
+      }
+      const filtered = populateTeacherSelectDropdown() || [];
+      if (mode === 'single' && filtered.length > 0) {
+        if (!filtered.some(t => t.index === currentA4TeacherIndex)) {
+          currentA4TeacherIndex = filtered[0].index;
         }
-        currentTeacherTypeFilter = '';
-        currentLevelFilter = 'all';
       }
-      if (typeof setA4ViewMode === 'function') {
-        setA4ViewMode(mode);
-      } else {
-        a4ViewMode = mode;
-        renderAllTeachersInGroup();
-      }
+      renderAllTeachersInGroup();
       updateMobileA4ModeButtons();
       updateMobileHeaderTeacherLabel();
       closeMobileTeacherNav();
 
-      const count = document.querySelectorAll('.a4-page').length;
-      showToast(mode === 'all' ? "โหมดดูเรียงทุกคน" : "โหมดโฟกัสรายคน", 
-                mode === 'all' ? `แสดงแบบฟอร์มครูทุกคนเรียงต่อกัน (${count} ท่าน)` : "แสดงทีละ 1 ท่านตามที่เลือก", true);
+      const count = (a4ViewMode === 'all') ? document.querySelectorAll('.a4-page').length : 1;
+      const groupLabel = `${currentDeptFilter || 'ทุกแผนก'} ${currentTeacherTypeFilter || ''} ${currentLevelFilter !== 'all' ? currentLevelFilter : ''}`.trim();
+      showToast(
+        mode === 'all' ? `โหมดดูเรียงทุกคน (${groupLabel})` : "โหมดโฟกัสรายคน",
+        mode === 'all' ? `แสดงแบบฟอร์มครูเรียงต่อกัน (${count} ท่าน)` : "แสดงทีละ 1 ท่านตามที่เลือก",
+        true
+      );
     }
 
     function updateMobileA4ModeButtons() {
@@ -11276,11 +11487,11 @@ function selectRound(roundNum) {
       const btnAll = document.getElementById('mBtnModeAll');
       if (btnSingle && btnAll) {
         if (a4ViewMode === 'all') {
-          btnAll.className = "flex-1 py-2 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1.5 bg-purple-600 text-white shadow-xs cursor-pointer";
-          btnSingle.className = "flex-1 py-2 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1.5 text-slate-600 hover:text-slate-900 cursor-pointer";
+          btnAll.className = "flex-1 py-1.5 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1 bg-purple-600 text-white shadow-xs cursor-pointer";
+          btnSingle.className = "flex-1 py-1.5 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1 bg-white text-slate-600 hover:text-slate-900 border border-slate-200 cursor-pointer";
         } else {
-          btnSingle.className = "flex-1 py-2 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1.5 bg-white text-purple-700 shadow-2xs cursor-pointer";
-          btnAll.className = "flex-1 py-2 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1.5 text-slate-600 hover:text-slate-900 cursor-pointer";
+          btnSingle.className = "flex-1 py-1.5 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1 bg-white text-purple-700 border border-purple-200 shadow-2xs cursor-pointer";
+          btnAll.className = "flex-1 py-1.5 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1 bg-slate-100 text-slate-600 hover:text-slate-900 cursor-pointer";
         }
       }
     }
@@ -11302,7 +11513,9 @@ function selectRound(roundNum) {
     function openMobileTeacherNav() {
       const modal = document.getElementById('mobileTeacherNavModal');
       if (modal) {
+        syncAllFilterControls();
         updateMobileA4ModeButtons();
+        updateMobileTeacherModalSummary();
         populateMobileTeacherList();
         modal.classList.remove('hidden');
         if (typeof lucide !== 'undefined') lucide.createIcons();
@@ -11314,32 +11527,15 @@ function selectRound(roundNum) {
       if (modal) modal.classList.add('hidden');
     }
 
-    function filterMobileTeacherTab(dept) {
-      currentMobileTeacherFilter = dept;
-      const btnAll = document.getElementById('mTabTeacherAll');
-      const btnAuto = document.getElementById('mTabTeacherAuto');
-      const btnEv = document.getElementById('mTabTeacherEv');
-      const activeCls = "px-2.5 py-1 rounded-lg font-bold bg-purple-600 text-white shadow-2xs cursor-pointer";
-      const inActiveCls = "px-2.5 py-1 rounded-lg font-bold bg-slate-100 text-slate-700 hover:bg-slate-200 cursor-pointer";
-      if (btnAll) btnAll.className = (dept === 'all') ? activeCls : inActiveCls;
-      if (btnAuto) btnAuto.className = (dept === 'ช่างยนต์') ? activeCls : inActiveCls;
-      if (btnEv) btnEv.className = (dept === 'ยานยนต์ไฟฟ้า') ? activeCls : inActiveCls;
-      populateMobileTeacherList();
-    }
-
     function navigateTeacherMobile(dir) {
-      const pool = (calculatedData && calculatedData.length > 0) ? calculatedData : masterTeachers;
-      let list = pool || [];
-      if (currentMobileTeacherFilter && currentMobileTeacherFilter !== 'all') {
-        list = list.filter(t => (t.dept || 'ช่างยนต์').includes(currentMobileTeacherFilter));
-      }
-      if (!list || list.length === 0) return;
-      let curIdx = list.findIndex(t => t.index === currentA4TeacherIndex);
+      const filtered = populateTeacherSelectDropdown() || [];
+      if (!filtered || filtered.length === 0) return;
+      let curIdx = filtered.findIndex(t => t.index === currentA4TeacherIndex);
       if (curIdx < 0) curIdx = 0;
       let nextIdx = curIdx + dir;
-      if (nextIdx < 0) nextIdx = list.length - 1;
-      if (nextIdx >= list.length) nextIdx = 0;
-      selectTeacherMobile(list[nextIdx].index);
+      if (nextIdx < 0) nextIdx = filtered.length - 1;
+      if (nextIdx >= filtered.length) nextIdx = 0;
+      selectTeacherMobile(filtered[nextIdx].index);
     }
 
     function selectTeacherMobile(teacherIndex) {
@@ -11347,110 +11543,52 @@ function selectRound(roundNum) {
       const t = pool ? pool.find(x => x.index === teacherIndex) : null;
       if (!t) return;
 
-      // 1. Determine target department
-      const targetDept = (t.dept && t.dept.includes('ยานยนต์ไฟฟ้า')) ? 'ยานยนต์ไฟฟ้า' : 'ช่างยนต์';
-      
-      // 2. Determine target type
-      const type = String(t.teacher_type || '').trim();
-      const pos = String(t.position || '').trim();
-      let isSpecial = false;
-      if (type === 'ครูพิเศษ') isSpecial = true;
-      else if (type === 'ครูประจำ') isSpecial = false;
-      else if (pos.includes('พนักงานราชการ') || type.includes('พนักงานราชการ')) isSpecial = false;
-      else if (pos.includes('พิเศษ') || type.includes('พิเศษ')) isSpecial = true;
-      else if (t.index >= 23) isSpecial = true;
-      const targetType = isSpecial ? 'ครูพิเศษ' : 'ครูประจำ';
-
-      // 3. Determine target level
-      const targetLevel = t.level || 'all';
-
-      // 4. Update global filter variables
-      currentDeptFilter = targetDept;
-      currentTeacherTypeFilter = targetType;
-      currentLevelFilter = targetLevel;
-
-      // 5. Synchronize desktop filter buttons
-      const btnAuto = document.getElementById('toggleDeptAuto');
-      const btnEv = document.getElementById('toggleDeptEv');
-      if (targetDept === 'ช่างยนต์') {
-        if (btnAuto) btnAuto.className = "px-1.5 py-0.5 rounded-md transition bg-blue-600 text-white shadow-xs flex items-center gap-1 cursor-pointer font-bold text-[11px]";
-        if (btnEv) btnEv.className = "px-1.5 py-0.5 rounded-md transition text-slate-600 hover:text-slate-900 flex items-center gap-1 cursor-pointer font-bold text-[11px]";
-      } else {
-        if (btnAuto) btnAuto.className = "px-1.5 py-0.5 rounded-md transition text-slate-600 hover:text-slate-900 flex items-center gap-1 cursor-pointer font-bold text-[11px]";
-        if (btnEv) btnEv.className = "px-1.5 py-0.5 rounded-md transition bg-amber-500 text-white shadow-xs flex items-center gap-1 cursor-pointer font-bold text-[11px]";
-      }
-
-      const btnReg = document.getElementById('toggleTypeRegular');
-      const btnSp = document.getElementById('toggleTypeSpecial');
-      if (targetType === 'ครูประจำ') {
-        if (btnReg) btnReg.className = "px-1.5 py-0.5 rounded-md transition bg-indigo-600 text-white shadow-xs flex items-center gap-1 cursor-pointer font-bold text-[11px]";
-        if (btnSp) btnSp.className = "px-1.5 py-0.5 rounded-md transition text-slate-600 hover:text-slate-900 flex items-center gap-1 cursor-pointer font-bold text-[11px]";
-      } else {
-        if (btnReg) btnReg.className = "px-1.5 py-0.5 rounded-md transition text-slate-600 hover:text-slate-900 flex items-center gap-1 cursor-pointer font-bold text-[11px]";
-        if (btnSp) btnSp.className = "px-1.5 py-0.5 rounded-md transition bg-indigo-600 text-white shadow-xs flex items-center gap-1 cursor-pointer font-bold text-[11px]";
-      }
-
-      ['Pvc', 'Pvs', 'All'].forEach(id => {
-        const btn = document.getElementById(`toggleLevel${id}`);
-        if (btn) {
-          if ((id === 'Pvc' && targetLevel === 'ปวช.') || (id === 'Pvs' && targetLevel === 'ปวส.') || (id === 'All' && targetLevel === 'all')) {
-            btn.className = "px-1.5 py-0.5 rounded-md transition bg-emerald-600 text-white shadow-xs flex items-center gap-1 cursor-pointer font-bold text-[11px]";
-          } else {
-            btn.className = "px-1.5 py-0.5 rounded-md transition text-slate-600 hover:text-slate-900 flex items-center gap-1 cursor-pointer font-bold text-[11px]";
-          }
-        }
-      });
-
-      // 6. Ensure subview is 'a4_form'
       if (currentSubViewMode !== 'a4_form' && typeof switchSubViewMode === 'function') {
         switchSubViewMode('a4_form');
       }
 
-      // 7. Force 'single' focus mode so mobile shows only this teacher cleanly
       a4ViewMode = 'single';
-      const btnSingle = document.getElementById('btnA4ModeFocus');
-      const btnAll = document.getElementById('btnA4ModeAll');
-      if (btnSingle) btnSingle.className = "px-1.5 py-0.5 rounded-md bg-blue-600 text-white font-bold flex items-center gap-1 cursor-pointer text-[11px]";
-      if (btnAll) btnAll.className = "px-1.5 py-0.5 rounded-md text-slate-600 hover:text-slate-900 font-semibold flex items-center gap-1 cursor-pointer text-[11px]";
-      const navGroup = document.getElementById('a4TeacherNavGroup');
-      if (navGroup) navGroup.classList.remove('hidden');
-
-      // 8. Set teacher index
       currentA4TeacherIndex = t.index;
 
-      // 9. Re-populate dropdown and re-render card
       populateTeacherSelectDropdown();
       const dropdown = document.getElementById('teacherSelectDropdown');
       if (dropdown) dropdown.value = t.index;
 
       renderAllTeachersInGroup();
-      updateActiveFileBadge();
-      updateMobileFilterBadges();
+      syncAllFilterControls();
       updateMobileTeacherSelectionUI();
       updateMobileHeaderViewLabel();
       updateMobileHeaderTeacherLabel();
       updateMobileA4ModeButtons();
       closeMobileTeacherNav();
 
-      // 10. Scroll smoothly to top
       const mainPreview = document.getElementById('mainPreviewArea');
       if (mainPreview) mainPreview.scrollTop = 0;
       window.scrollTo({ top: 0, behavior: 'smooth' });
 
-      showToast(`ครู ${t.name}`, `${t.dept || 'ช่างยนต์'} • ${targetType} • ${t.level || 'ปวช.'}`, true);
+      showToast(`ครู ${t.name}`, `${t.dept || 'ช่างยนต์'} • ${t.level || 'ปวช.'}`, true);
     }
 
     function populateMobileTeacherList() {
       const container = document.getElementById('mobileTeacherItemsList');
       if (!container) return;
-      const pool = (calculatedData && calculatedData.length > 0) ? calculatedData : masterTeachers;
-      let list = pool || [];
-      if (currentMobileTeacherFilter && currentMobileTeacherFilter !== 'all') {
-        list = list.filter(t => (t.dept || 'ช่างยนต์').includes(currentMobileTeacherFilter));
-      }
+      const filtered = populateTeacherSelectDropdown() || [];
       container.innerHTML = '';
-      list.forEach(t => {
-        const isCurrent = (t.index === currentA4TeacherIndex);
+      
+      if (filtered.length === 0) {
+        container.innerHTML = `
+          <div class="p-6 text-center text-slate-500 font-semibold bg-slate-50 rounded-xl border border-slate-200 my-2">
+            <i data-lucide="search-x" class="w-6 h-6 text-slate-400 mx-auto mb-1"></i>
+            <div class="text-xs">ไม่พบรายชื่อในกลุ่มนี้</div>
+            <div class="text-[10px] text-slate-400 mt-0.5">ลองเปลี่ยน แผนก / ประเภท / ระดับ ด้านบน</div>
+          </div>
+        `;
+        if (typeof lucide !== 'undefined') lucide.createIcons();
+        return;
+      }
+
+      filtered.forEach((t, i) => {
+        const isCurrent = (t.index === currentA4TeacherIndex && a4ViewMode === 'single');
         const item = document.createElement('button');
         item.type = 'button';
         item.className = `w-full text-left p-2.5 rounded-xl border flex items-center justify-between transition cursor-pointer ${isCurrent ? 'bg-purple-600 text-white border-purple-600 font-bold shadow-xs' : 'bg-slate-50 hover:bg-slate-100 text-slate-800 border-slate-200'}`;
@@ -11462,10 +11600,10 @@ function selectRound(roundNum) {
         const deptBg = isCurrent ? 'bg-purple-700 text-white' : (isEv ? 'bg-amber-100 text-amber-800' : 'bg-blue-100 text-blue-800');
         
         item.innerHTML = `
-          <div class="flex items-center gap-2.5">
-            <span class="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold ${isCurrent ? 'bg-white text-purple-700' : 'bg-slate-200 text-slate-700'}">${t.index}</span>
-            <div>
-              <span class="text-xs block ${isCurrent ? 'text-white' : 'text-slate-900'} font-bold">${t.name}</span>
+          <div class="flex items-center gap-2 min-w-0">
+            <span class="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 ${isCurrent ? 'bg-white text-purple-700' : 'bg-slate-200 text-slate-700'}">${i + 1}</span>
+            <div class="min-w-0">
+              <span class="text-xs block ${isCurrent ? 'text-white' : 'text-slate-900'} font-bold truncate">${t.name}</span>
               <div class="flex items-center gap-1.5 mt-0.5">
                 <span class="text-[9px] px-1.5 py-0.5 rounded font-medium ${deptBg}">${badgeDept}</span>
                 <span class="text-[10px] ${isCurrent ? 'text-purple-100' : 'text-slate-500'}">${t.teacher_type || (t.index >= 23 ? 'ครูพิเศษ' : 'ครูประจำ')} • ${t.level || 'ปวช.'}</span>
