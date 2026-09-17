@@ -3321,10 +3321,12 @@
       const day = today.getDay();
       const diff = today.getDate() - day + (day === 0 ? -6 : 1);
       const monday = new Date(today.setDate(diff));
+      monday.setHours(12, 0, 0, 0);
       const sunday = new Date(monday);
       sunday.setDate(monday.getDate() + 6);
+      sunday.setHours(12, 0, 0, 0);
 
-      const fmt = d => d.toISOString().split('T')[0];
+      const fmt = d => formatDateToYMD(d);
       document.getElementById('startDatePicker').value = fmt(monday);
       document.getElementById('endDatePicker').value = fmt(sunday);
       updateDateRangeDisplay();
@@ -3333,11 +3335,13 @@
     }
 
     function onStartDateChange() {
-      const s = new Date(document.getElementById('startDatePicker').value);
+      const s = parseYMD(document.getElementById('startDatePicker').value);
       if (!isNaN(s)) {
+        s.setHours(12, 0, 0, 0);
         const f = new Date(s);
         f.setDate(s.getDate() + 6); // 7-day week: Mon to Sun
-        const fmt = d => d.toISOString().split('T')[0];
+        f.setHours(12, 0, 0, 0);
+        const fmt = d => formatDateToYMD(d);
         document.getElementById('endDatePicker').value = fmt(f);
         
         const curWk = getCurrentWeekNum();
@@ -8760,7 +8764,8 @@
       const day = today.getDay();
       const diff = today.getDate() - day + (day === 0 ? -6 : 1);
       const mon = new Date(today.setDate(diff));
-      const fmt = d => d.toISOString().split('T')[0];
+      mon.setHours(12, 0, 0, 0);
+      const fmt = d => formatDateToYMD(d);
       
       const el = document.getElementById('startDatePicker');
       if (el) {
@@ -8893,25 +8898,30 @@
     // Skip current week (+7 days for this week and all subsequent weeks)
     function onIndividualWeekStartChange(wkNum, newStartStr) {
       if (!newStartStr) return;
-      const fmt = d => d.toISOString().split('T')[0];
-      const s = new Date(newStartStr);
+      const fmt = d => formatDateToYMD(d);
+      const s = parseYMD(newStartStr);
+      s.setHours(12, 0, 0, 0);
       const e = new Date(s);
       e.setDate(s.getDate() + 6);
+      e.setHours(12, 0, 0, 0);
 
       const oldStartStr = weekDateMap[wkNum] ? weekDateMap[wkNum].start : '';
       weekDateMap[wkNum] = { start: fmt(s), end: fmt(e) };
 
       if (oldStartStr) {
-        const oldS = new Date(oldStartStr);
+        const oldS = parseYMD(oldStartStr);
+        oldS.setHours(12, 0, 0, 0);
         const diffDays = Math.round((s - oldS) / (1000 * 60 * 60 * 24));
         if (diffDays !== 0) {
           // Cascade ripple to all subsequent weeks
           for (let w = wkNum + 1; w <= 25; w++) {
             if (weekDateMap[w]) {
-              const ws = new Date(weekDateMap[w].start);
+              const ws = parseYMD(weekDateMap[w].start);
               ws.setDate(ws.getDate() + diffDays);
+              ws.setHours(12, 0, 0, 0);
               const we = new Date(ws);
               we.setDate(ws.getDate() + 6);
+              we.setHours(12, 0, 0, 0);
               weekDateMap[w] = { start: fmt(ws), end: fmt(we) };
             }
           }
@@ -8944,15 +8954,17 @@
     }
 
     function skipWeek(startWk) {
-      const fmt = d => d.toISOString().split('T')[0];
+      const fmt = d => formatDateToYMD(d);
       
       // Shift startWk and all subsequent weeks forward by 7 days
       for (let w = startWk; w <= 25; w++) {
         if (weekDateMap[w]) {
-          const s = new Date(weekDateMap[w].start);
+          const s = parseYMD(weekDateMap[w].start);
           s.setDate(s.getDate() + 7);
+          s.setHours(12, 0, 0, 0);
           const e = new Date(s);
           e.setDate(s.getDate() + 6);
+          e.setHours(12, 0, 0, 0);
           weekDateMap[w] = { start: fmt(s), end: fmt(e) };
         }
       }
@@ -8981,15 +8993,17 @@
     }
 
     function unshiftWeek(startWk) {
-      const fmt = d => d.toISOString().split('T')[0];
+      const fmt = d => formatDateToYMD(d);
       
       // Shift startWk and all subsequent weeks back by 7 days
       for (let w = startWk; w <= 25; w++) {
         if (weekDateMap[w]) {
-          const s = new Date(weekDateMap[w].start);
+          const s = parseYMD(weekDateMap[w].start);
           s.setDate(s.getDate() - 7);
+          s.setHours(12, 0, 0, 0);
           const e = new Date(s);
           e.setDate(s.getDate() + 6);
+          e.setHours(12, 0, 0, 0);
           weekDateMap[w] = { start: fmt(s), end: fmt(e) };
         }
       }
@@ -9018,17 +9032,21 @@
     }
 
     function resetAllWeeksToContinuous() {
-      const s0 = new Date(document.getElementById('startDatePicker').value || new Date());
+      const s0 = parseYMD(document.getElementById('startDatePicker').value || new Date());
+      s0.setHours(12, 0, 0, 0);
       const curWk = getCurrentWeekNum();
       const w1Start = new Date(s0);
       w1Start.setDate(w1Start.getDate() - ((curWk - 1) * 7));
+      w1Start.setHours(12, 0, 0, 0);
       
-      const fmt = d => d.toISOString().split('T')[0];
+      const fmt = d => formatDateToYMD(d);
       for (let w = 1; w <= 25; w++) {
         const s = new Date(w1Start);
         s.setDate(w1Start.getDate() + ((w - 1) * 7));
+        s.setHours(12, 0, 0, 0);
         const e = new Date(s);
         e.setDate(s.getDate() + 6);
+        e.setHours(12, 0, 0, 0);
         weekDateMap[w] = { start: fmt(s), end: fmt(e) };
       }
 
@@ -9065,20 +9083,24 @@
 
     function onCustomWeekDateChange(wkNum, newStartDateStr) {
       if (!newStartDateStr) return;
-      const fmt = d => d.toISOString().split('T')[0];
-      const s = new Date(newStartDateStr);
+      const fmt = d => formatDateToYMD(d);
+      const s = parseYMD(newStartDateStr);
       if (isNaN(s)) return;
+      s.setHours(12, 0, 0, 0);
       
-      const oldStart = new Date(weekDateMap[wkNum].start);
+      const oldStart = parseYMD(weekDateMap[wkNum].start);
+      oldStart.setHours(12, 0, 0, 0);
       const diffDays = Math.round((s - oldStart) / (1000 * 60 * 60 * 24));
       
       // Shift wkNum and ripple to subsequent weeks
       for (let w = wkNum; w <= 25; w++) {
         if (weekDateMap[w]) {
-          const ws = new Date(weekDateMap[w].start);
+          const ws = parseYMD(weekDateMap[w].start);
           ws.setDate(ws.getDate() + diffDays);
+          ws.setHours(12, 0, 0, 0);
           const we = new Date(ws);
           we.setDate(ws.getDate() + 6);
+          we.setHours(12, 0, 0, 0);
           weekDateMap[w] = { start: fmt(ws), end: fmt(we) };
         }
       }
