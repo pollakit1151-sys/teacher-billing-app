@@ -198,6 +198,35 @@ async def read_root():
         html = html.replace('<head>', f'<head>\n  {injected_script}', 1)
     return HTMLResponse(content=html)
 
+
+@app.get("/api/git_info")
+async def api_git_info():
+    import subprocess
+    commit = "unknown"
+    try:
+        commit = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=BASE_DIR).decode().strip()
+    except Exception as e:
+        commit = str(e)
+    html_p = os.path.join(TEMPLATES_DIR, "index.html")
+    has_bottom_nav = False
+    has_week_label = False
+    file_size = 0
+    try:
+        file_size = os.path.getsize(html_p)
+        with open(html_p, "r", encoding="utf-8") as f:
+            t = f.read()
+            has_bottom_nav = "mobileBottomNav" in t
+            has_week_label = "mobileHeaderWeekLabel" in t
+    except Exception as e:
+        pass
+    return {
+        "commit": commit,
+        "file_size": file_size,
+        "has_mobile_bottom_nav": has_bottom_nav,
+        "has_mobile_week_label": has_week_label,
+        "server_time": datetime.datetime.now().isoformat()
+    }
+
 @app.get("/api/custom_overrides")
 async def api_get_custom_overrides():
     return JSONResponse(content={"status": "success", "data": load_custom_overrides()})
