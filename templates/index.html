@@ -553,6 +553,104 @@
     .summary-hours-table [contenteditable="true"] {
       white-space: pre !important;
     }
+
+    /* ========================================================= */
+    /* MOBILE RESPONSIVE OPTIMIZATIONS (< 768px)                */
+    /* ========================================================= */
+    @media (max-width: 767px) {
+      body {
+        overflow: hidden !important;
+      }
+      
+      main.app-main-layout {
+        height: calc(100vh - 48px - 56px) !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        gap: 0 !important;
+      }
+
+      /* Mobile Drawer for Left Sidebar */
+      #leftSidebar {
+        position: fixed !important;
+        top: 0 !important;
+        left: 0 !important;
+        bottom: 0 !important;
+        width: 88vw !important;
+        max-width: 380px !important;
+        height: 100vh !important;
+        z-index: 70 !important;
+        background: #f8fafc !important;
+        padding: 12px 14px 70px 14px !important;
+        box-shadow: 10px 0 35px rgba(0, 0, 0, 0.3) !important;
+        transform: translateX(-100%) !important;
+        transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1) !important;
+        overflow-y: auto !important;
+        -webkit-overflow-scrolling: touch !important;
+      }
+      #leftSidebar.mobile-open {
+        transform: translateX(0) !important;
+      }
+
+      /* Hide desktop filter bars and action toolbars on mobile for full-screen paper focus */
+      #topControlsBar,
+      #a4ActionToolbar {
+        display: none !important;
+      }
+
+      /* Paper containers on mobile */
+      #allTeachersContainer,
+      #viewCoversTable,
+      #viewDistributionContainer,
+      #viewMasterSummary {
+        padding: 6px 4px 60px 4px !important;
+        overflow-x: auto !important;
+        -webkit-overflow-scrolling: touch !important;
+      }
+
+      /* Dynamic Fit-to-screen scale mode */
+      .mobile-fit-screen .a4-page,
+      .mobile-fit-screen .excel-paper,
+      .mobile-fit-screen .a4-landscape,
+      .mobile-fit-screen #coverHtmlPaperContainer {
+        zoom: var(--mobile-scale, 0.47);
+        margin: 0 auto 16px auto !important;
+      }
+      @supports not (zoom: 1) {
+        .mobile-fit-screen .a4-page,
+        .mobile-fit-screen .excel-paper,
+        .mobile-fit-screen .a4-landscape,
+        .mobile-fit-screen #coverHtmlPaperContainer {
+          transform-origin: top left !important;
+          transform: scale(var(--mobile-scale, 0.47)) !important;
+          margin-bottom: calc(-1 * var(--mobile-scale-offset, 550px)) !important;
+        }
+      }
+
+      /* Modal responsive constraints */
+      .modal-responsive-card {
+        max-width: 95vw !important;
+        width: 95vw !important;
+        max-height: 88vh !important;
+        margin: auto !important;
+      }
+
+      /* Hide print preview mode borders/paddings on mobile */
+      .no-scrollbar::-webkit-scrollbar {
+        display: none !important;
+      }
+      .no-scrollbar {
+        -ms-overflow-style: none !important;
+        scrollbar-width: none !important;
+      }
+
+      @keyframes slideUp {
+        from { transform: translateY(100%); opacity: 0; }
+        to { transform: translateY(0); opacity: 1; }
+      }
+      .animate-slide-up {
+        animation: slideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+      }
+    }
   </style>
   <style id="printOrientationStyle">
     @page { size: A4 portrait; margin: 8mm 11.5mm 8mm 11.5mm; }
@@ -584,39 +682,85 @@
   </div>
 
   <!-- Top Navbar -->
-  <header class="bg-white border-b border-slate-200 px-4 py-2 flex items-center justify-between shadow-xs sticky top-0 z-30 no-print gap-2">
-    <div class="flex items-center gap-2.5">
-      <button onclick="toggleSidebar()" title="ซ่อน/แสดง เมนูควบคุม" class="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 transition">
+  <header class="bg-white border-b border-slate-200 px-2.5 md:px-4 py-2 flex items-center justify-between shadow-xs sticky top-0 z-30 no-print gap-2">
+    <div class="flex items-center gap-1.5 md:gap-2.5 min-w-0">
+      <!-- Mobile Drawer Open Button (visible on mobile) -->
+      <button type="button" onclick="openMobileSidebar()" title="เปิดเมนูตั้งค่าและเลือกรอบ" class="md:hidden p-1.5 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 transition cursor-pointer shrink-0">
+        <i data-lucide="menu" class="w-5 h-5"></i>
+      </button>
+      <!-- Desktop Sidebar Toggle Button (visible on desktop) -->
+      <button type="button" onclick="toggleSidebar()" title="ซ่อน/แสดง เมนูควบคุม" class="hidden md:flex p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 transition cursor-pointer shrink-0">
         <i data-lucide="panel-left-close" id="sidebarToggleIcon" class="w-4 h-4"></i>
       </button>
-      <div class="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center text-white font-bold shadow-md shadow-blue-500/20 shrink-0">
+      <div class="w-7 h-7 md:w-8 md:h-8 rounded-lg bg-blue-600 flex items-center justify-center text-white font-bold shadow-md shadow-blue-500/20 shrink-0">
         <i data-lucide="calculator" class="w-4 h-4"></i>
       </div>
-      <div>
-        <h1 class="text-sm font-bold text-slate-900 leading-tight">ระบบเบิกค่าสอน & จัดหาครูสอนแทน/สอนชดเชย</h1>
-        <p class="text-[10px] text-slate-500">วิทยาลัยเทคนิคนครสวรรค์</p>
+      <div class="min-w-0">
+        <h1 class="text-xs md:text-sm font-bold text-slate-900 leading-tight truncate">ระบบเบิกค่าสอน & ครูแทน</h1>
+        <p class="text-[9px] md:text-[10px] text-slate-500 truncate">วิทยาลัยเทคนิคนครสวรรค์</p>
       </div>
     </div>
 
-    <div class="flex items-center gap-2 shrink-0">
-      <button type="button" onclick="openBackupModal()" title="สำรองและกู้คืนข้อมูล (ดาวน์โหลด/อัปโหลดไฟล์ JSON)" class="px-3 py-1.5 bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200 rounded-lg text-xs font-bold shadow-2xs flex items-center gap-1.5 transition cursor-pointer">
-        <i data-lucide="database-backup" class="w-4 h-4 text-purple-600"></i>
-        <span>💾 สำรอง / กู้คืนข้อมูล</span>
+    <div class="flex items-center gap-1 md:gap-2 shrink-0">
+      <!-- Mobile Quick View Switcher Pill -->
+      <button type="button" onclick="openMobileViewMenu()" class="md:hidden px-2 py-1 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 rounded-lg text-[11px] font-bold flex items-center gap-1 shadow-2xs cursor-pointer">
+        <span id="mobileHeaderViewLabel" class="truncate max-w-[95px]">1. ใบเบิก A4</span>
+        <i data-lucide="chevron-down" class="w-3 h-3 text-blue-500 shrink-0"></i>
       </button>
-      <button type="button" onclick="openTeacherProfileModal()" title="จัดการรายชื่อและตำแหน่งครู" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 rounded-lg text-xs font-bold shadow-2xs flex items-center gap-1.5 transition cursor-pointer">
+
+      <!-- Mobile Quick Teacher Selector Chip (Active in A4 Form mode) -->
+      <button id="mobileHeaderTeacherChip" type="button" onclick="openMobileTeacherNav()" class="md:hidden px-2 py-1 bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200 rounded-lg text-[11px] font-bold flex items-center gap-1 shadow-2xs cursor-pointer">
+        <i data-lucide="user" class="w-3 h-3 text-purple-600 shrink-0"></i>
+        <span id="mobileHeaderTeacherNum" class="truncate max-w-[75px]">ครู 1/13</span>
+        <i data-lucide="chevron-down" class="w-3 h-3 text-purple-400 shrink-0"></i>
+      </button>
+
+      <!-- Mobile Quick Cover File Chip (Active in Covers mode) -->
+      <button id="mobileHeaderCoverChip" type="button" onclick="openMobileCoverPicker()" class="md:hidden hidden px-2 py-1 bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200 rounded-lg text-[11px] font-bold items-center gap-1 shadow-2xs cursor-pointer">
+        <i data-lucide="folder" class="w-3 h-3 text-purple-600 shrink-0"></i>
+        <span id="mobileHeaderCoverNum" class="truncate max-w-[75px]">ไฟล์ 1/8</span>
+        <i data-lucide="chevron-down" class="w-3 h-3 text-purple-400 shrink-0"></i>
+      </button>
+
+      <!-- Mobile Quick Save Button -->
+      <button type="button" onclick="saveAllTeacherCustomEdits()" title="💾 บันทึกการแก้ไข" class="md:hidden p-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 rounded-lg shadow-2xs flex items-center justify-center transition cursor-pointer">
+        <i data-lucide="save" class="w-4 h-4 text-emerald-600"></i>
+      </button>
+
+      <!-- Desktop only header buttons -->
+      <button type="button" onclick="openBackupModal()" title="สำรองและกู้คืนข้อมูล (ดาวน์โหลด/อัปโหลดไฟล์ JSON)" class="hidden md:flex px-2.5 py-1.5 bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200 rounded-lg text-xs font-bold shadow-2xs items-center gap-1 transition cursor-pointer">
+        <i data-lucide="database-backup" class="w-4 h-4 text-purple-600"></i>
+        <span>💾 สำรอง/กู้คืน</span>
+      </button>
+      <button type="button" onclick="openTeacherProfileModal()" title="จัดการรายชื่อและตำแหน่งครู" class="hidden md:flex px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 rounded-lg text-xs font-bold shadow-2xs items-center gap-1 transition cursor-pointer">
         <i data-lucide="user-cog" class="w-4 h-4 text-indigo-600"></i>
-        <span>👤 จัดการตำแหน่งครู</span>
+        <span>👤 ตำแหน่งครู</span>
       </button>
     </div>
   </header>
 
+  <!-- Mobile Sidebar Backdrop Overlay -->
+  <div id="mobileSidebarBackdrop" onclick="closeMobileSidebar()" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-[65] hidden transition-opacity duration-300 md:hidden"></div>
+
   <!-- Main Container: 2-Panel Split Layout -->
-  <main class="flex-1 flex flex-col md:flex-row p-3 gap-3 overflow-hidden" style="height: calc(100vh - 54px - 48px);">
+  <main class="app-main-layout flex-1 flex flex-col md:flex-row p-1 md:p-3 gap-1 md:gap-3 overflow-hidden" style="height: calc(100vh - 54px);">
     
     <!-- LEFT PANEL: Control Panel (340px) -->
-    <aside id="leftSidebar" class="w-full md:w-[340px] xl:w-[360px] flex flex-col gap-3 overflow-y-auto pr-1 shrink-0 no-print transition-all duration-200">
+    <aside id="leftSidebar" class="w-full md:w-[340px] xl:w-[360px] flex flex-col gap-3 overflow-y-auto pr-1 shrink-0 no-print transition-all duration-300">
       
-            <!-- Card -1: Intuitive Round & Week Manager (Default 5,5,5,2 for ปวช. and 5,5,5 for ปวส.) -->
+      <!-- Mobile Drawer Close Header (Visible only on mobile) -->
+      <div class="md:hidden flex items-center justify-between bg-indigo-700 text-white p-3 rounded-xl shadow-xs mb-1 shrink-0">
+        <div class="flex items-center gap-2">
+          <i data-lucide="sliders-horizontal" class="w-4 h-4"></i>
+          <span class="font-bold text-xs">เมนูควบคุม & กำหนดรอบ</span>
+        </div>
+        <button type="button" onclick="closeMobileSidebar()" class="px-2.5 py-1 bg-white/20 hover:bg-white/30 text-white rounded-lg font-bold text-xs flex items-center gap-1 cursor-pointer">
+          <i data-lucide="x" class="w-3.5 h-3.5"></i>
+          <span>ปิดเมนู</span>
+        </button>
+      </div>
+
+      <!-- Card -1: Intuitive Round & Week Manager (Default 5,5,5,2 for ปวช. and 5,5,5 for ปวส.) -->
       <div class="bg-gradient-to-br from-indigo-50/90 to-blue-50/80 rounded-2xl border-2 border-indigo-200 p-3.5 shadow-xs space-y-3">
         <div class="flex items-center justify-between border-b border-indigo-200/80 pb-2">
           <h2 class="font-bold text-slate-900 flex items-center gap-1.5 text-xs">
@@ -636,8 +780,8 @@
             <label class="block text-[10px] font-bold text-slate-600 mb-0.5">ปีการศึกษา:</label>
             <input type="text" id="inputYear" value="2569" onchange="updateRoundSummary()" class="w-full px-2 py-1 border border-slate-300 rounded text-xs font-bold text-center bg-white focus:ring-2 focus:ring-indigo-500">
           </div>
-          <input type="hidden" id="inputRoundNum" value="1">
         </div>
+        <input type="hidden" id="inputRoundNum" value="1">
 
         <!-- Generated Rounds List -->
         <div class="space-y-1 pt-1 border-t border-indigo-100">
@@ -995,9 +1139,9 @@
     <section class="flex-1 h-full min-h-0 bg-white rounded-2xl border border-slate-200 shadow-xs flex flex-col overflow-hidden min-w-0">
       
       <!-- Permanent Controls Bar with View Mode Switcher, Sticky Week Selector & Teacher Jump -->
-      <div id="topControlsBar" class="shrink-0 z-30 border-b border-slate-200 bg-white/95 backdrop-blur-md shadow-xs no-print">
+      <div id="topControlsBar" class="hidden md:block shrink-0 z-30 border-b border-slate-200 bg-white/95 backdrop-blur-md shadow-xs no-print">
         <!-- Main Controls Row: Filters and 3 Main Views strictly on the SAME LINE (Fit Screen) -->
-        <div class="px-2 py-1 flex items-center justify-between gap-1 overflow-x-hidden no-scrollbar text-[11px]">
+        <div class="px-2 py-1 flex items-center justify-between gap-1 overflow-x-auto no-scrollbar text-[11px]">
           <!-- Left: Filters for Department, Teacher Type, and Level -->
           <div class="flex items-center gap-1 shrink-0">
             <!-- Department Filter -->
@@ -1037,8 +1181,8 @@
             </div>
           </div>
 
-          <!-- Middle: 4 Main Views -->
-          <div class="flex items-center bg-slate-200/90 p-0.5 rounded-lg text-[11px] font-bold shrink-0">
+          <!-- Middle: 4 Main Views (Desktop only, mobile uses bottom nav & header pill) -->
+          <div class="hidden md:flex items-center bg-slate-200/90 p-0.5 rounded-lg text-[11px] font-bold shrink-0">
             <button id="btnViewA4Form" type="button" onclick="switchSubViewMode('a4_form')" class="px-2 py-0.5 rounded-md transition bg-white text-blue-700 shadow-xs flex items-center gap-1 font-bold cursor-pointer text-[11px]">
               <i data-lucide="file-text" class="w-3.5 h-3.5 text-blue-600"></i> <span>1. แบบฟอร์มใบเบิก A4</span>
             </button>
@@ -1077,7 +1221,7 @@
       <div id="viewSingleTeacher" class="flex-1 h-full min-h-0 flex flex-col overflow-hidden">
         
         <!-- Action & Navigation Toolbar for A4 Weekly Claim Form: Strictly on the SAME LINE (Fit Screen) -->
-        <div id="a4ActionToolbar" class="px-2 py-1 bg-blue-50/80 border-b border-blue-200 flex items-center justify-between gap-1 overflow-x-hidden no-scrollbar text-[11px] shrink-0 no-print">
+        <div id="a4ActionToolbar" class="hidden md:flex px-2 py-1 bg-blue-50/80 border-b border-blue-200 items-center justify-between gap-1 overflow-x-auto no-scrollbar text-[11px] shrink-0 no-print">
           <!-- Left: View Mode (Focus 1 person vs All Stacked) + Navigation -->
           <div class="flex items-center gap-1 shrink-0">
             <div class="flex items-center bg-white p-0.5 rounded-lg border border-blue-200 shadow-2xs font-semibold text-[11px]">
@@ -3391,7 +3535,9 @@
         });
 
         // Also refresh top dropdown jump
-        populateTeacherDropdown();
+        if (typeof populateTeacherSelectDropdown === 'function') {
+          populateTeacherSelectDropdown();
+        }
 
         await recalculateAll();
         setDepartmentFilter(currentDeptFilter);
@@ -4591,7 +4737,7 @@
       const prevVal = currentA4TeacherIndex || dropdown.value;
       dropdown.innerHTML = '';
 
-      let filtered = calculatedData || [];
+      let filtered = (calculatedData && calculatedData.length > 0) ? calculatedData : (masterTeachers || []);
       if (currentDeptFilter) {
         filtered = filtered.filter(t => {
           const tDept = t.dept || 'ช่างยนต์';
@@ -9298,6 +9444,8 @@ function selectRound(roundNum) {
       }
 
       updateActiveFileBadge();
+      if (typeof updateMobileHeaderViewLabel === 'function') updateMobileHeaderViewLabel();
+      if (typeof updateMobileScale === 'function') setTimeout(updateMobileScale, 80);
       if (typeof lucide !== 'undefined') lucide.createIcons();
     }
 
@@ -10637,5 +10785,604 @@ function selectRound(roundNum) {
     </div>
   </div>
 
+  <!-- ========================================================= -->
+  <!-- MOBILE BOTTOM NAVIGATION & FLOATING CONTROLS (md:hidden)  -->
+  <!-- ========================================================= -->
+
+
+  <!-- Mobile Bottom Navigation Bar -->
+  <nav id="mobileBottomNav" class="md:hidden fixed bottom-0 left-0 right-0 h-[56px] bg-white border-t border-slate-200 z-40 flex items-center justify-around px-1 shadow-[0_-4px_12px_rgba(0,0,0,0.06)] select-none">
+    <!-- 1. แบบฟอร์ม -->
+    <button type="button" onclick="openMobileViewMenu()" class="flex flex-col items-center justify-center flex-1 py-1 text-slate-600 hover:text-blue-600 active:scale-95 transition cursor-pointer">
+      <i data-lucide="file-text" class="w-5 h-5 text-blue-600"></i>
+      <span class="text-[10px] font-bold mt-0.5" id="mobileNavViewTitle">แบบฟอร์ม</span>
+    </button>
+
+    <!-- 2. รอบ/สัปดาห์ -->
+    <button type="button" onclick="openMobileSidebar()" class="flex flex-col items-center justify-center flex-1 py-1 text-slate-600 hover:text-indigo-600 active:scale-95 transition cursor-pointer">
+      <i data-lucide="calendar" class="w-5 h-5 text-indigo-600"></i>
+      <span class="text-[10px] font-bold mt-0.5">รอบ/สัปดาห์</span>
+    </button>
+
+    <!-- 3. Contextual Button (Teacher / Cover File / Calculation) -->
+    <button type="button" onclick="handleMobileB3Click()" class="flex flex-col items-center justify-center flex-1 py-1 text-slate-600 hover:text-purple-600 active:scale-95 transition cursor-pointer">
+      <i data-lucide="users" id="mobileNavB3Icon" class="w-5 h-5 text-purple-600"></i>
+      <span class="text-[10px] font-bold mt-0.5" id="mobileNavB3Title">เลือกครู</span>
+    </button>
+
+    <!-- 4. ซูม/พอดีจอ -->
+    <button type="button" onclick="toggleMobileFitScreen()" class="flex flex-col items-center justify-center flex-1 py-1 text-slate-600 hover:text-amber-600 active:scale-95 transition cursor-pointer">
+      <i data-lucide="scaling" id="mobileZoomNavIcon" class="w-5 h-5 text-amber-600"></i>
+      <span class="text-[10px] font-bold mt-0.5" id="mobileZoomText">100%</span>
+    </button>
+
+    <!-- 5. เครื่องมือ -->
+    <button type="button" onclick="openMobileActionSheet()" class="flex flex-col items-center justify-center flex-1 py-1 text-slate-600 hover:text-emerald-600 active:scale-95 transition cursor-pointer">
+      <i data-lucide="zap" class="w-5 h-5 text-emerald-600"></i>
+      <span class="text-[10px] font-bold mt-0.5">เครื่องมือ</span>
+    </button>
+  </nav>
+
+  <!-- Mobile Modal 1: View Selector Bottom Sheet -->
+  <div id="mobileViewMenuModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-end sm:items-center justify-center z-[85] hidden p-0 sm:p-4 transition-all duration-200">
+    <div class="bg-white rounded-t-3xl sm:rounded-2xl shadow-2xl max-w-lg w-full p-4 pb-8 sm:pb-5 border border-slate-200 space-y-3.5 max-h-[85vh] flex flex-col animate-slide-up">
+      <div class="flex items-center justify-between border-b border-slate-100 pb-2.5 shrink-0">
+        <div class="flex items-center gap-2">
+          <div class="w-8 h-8 rounded-xl bg-blue-100 text-blue-700 flex items-center justify-center font-bold">
+            <i data-lucide="layers" class="w-4 h-4"></i>
+          </div>
+          <div>
+            <h3 class="font-bold text-slate-900 text-sm">เลือกรูปแบบเอกสารที่ต้องการดู</h3>
+            <p class="text-[10px] text-slate-500">แตะเพื่อเปลี่ยนหน้ากระดาษแบบฟอร์ม</p>
+          </div>
+        </div>
+        <button type="button" onclick="closeMobileViewMenu()" class="text-slate-400 hover:text-slate-600 p-1.5 rounded-lg hover:bg-slate-100 cursor-pointer">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <div class="space-y-2 overflow-y-auto flex-1 pr-1">
+        <button type="button" onclick="selectMobileView('a4_form')" class="w-full text-left p-3 rounded-xl border border-blue-200 bg-blue-50/50 hover:bg-blue-100 flex items-center justify-between transition cursor-pointer">
+          <div class="flex items-center gap-3">
+            <div class="w-9 h-9 rounded-lg bg-blue-600 text-white flex items-center justify-center font-bold shadow-xs shrink-0">
+              <i data-lucide="file-text" class="w-5 h-5"></i>
+            </div>
+            <div>
+              <span class="font-bold text-slate-900 text-xs block">1. แบบฟอร์มใบเบิก A4 (รายคน)</span>
+              <span class="text-[10px] text-slate-500">ใบเบิกเงินค่าสอนพิเศษแยกรายบุคคลตามสัปดาห์</span>
+            </div>
+          </div>
+          <i data-lucide="chevron-right" class="w-4 h-4 text-slate-400 shrink-0"></i>
+        </button>
+
+        <button type="button" onclick="selectMobileView('covers')" class="w-full text-left p-3 rounded-xl border border-purple-200 bg-purple-50/50 hover:bg-purple-100 flex items-center justify-between transition cursor-pointer">
+          <div class="flex items-center gap-3">
+            <div class="w-9 h-9 rounded-lg bg-purple-600 text-white flex items-center justify-center font-bold shadow-xs shrink-0">
+              <i data-lucide="folder-check" class="w-5 h-5"></i>
+            </div>
+            <div>
+              <span class="font-bold text-slate-900 text-xs block">2. งบหน้ารวม (A4 แนวนอน 8 ชุด)</span>
+              <span class="text-[10px] text-slate-500">หลักฐานการเบิกจ่ายเงินค่าสอนพิเศษและเกินภาระ</span>
+            </div>
+          </div>
+          <i data-lucide="chevron-right" class="w-4 h-4 text-slate-400 shrink-0"></i>
+        </button>
+
+        <button type="button" onclick="selectMobileView('distribution')" class="w-full text-left p-3 rounded-xl border border-amber-200 bg-amber-50/50 hover:bg-amber-100 flex items-center justify-between transition cursor-pointer">
+          <div class="flex items-center gap-3">
+            <div class="w-9 h-9 rounded-lg bg-amber-600 text-white flex items-center justify-center font-bold shadow-xs shrink-0">
+              <i data-lucide="pie-chart" class="w-5 h-5"></i>
+            </div>
+            <div>
+              <span class="font-bold text-slate-900 text-xs block">3. ตารางจัดสรรเงิน (PDF ภายใน)</span>
+              <span class="text-[10px] text-slate-500">ตารางจัดสรรเงินค่าสอนพิเศษรายวิชา/กลุ่มเรียน</span>
+            </div>
+          </div>
+          <i data-lucide="chevron-right" class="w-4 h-4 text-slate-400 shrink-0"></i>
+        </button>
+
+        <button type="button" onclick="selectMobileView('summary')" class="w-full text-left p-3 rounded-xl border border-indigo-200 bg-indigo-50/50 hover:bg-indigo-100 flex items-center justify-between transition cursor-pointer">
+          <div class="flex items-center gap-3">
+            <div class="w-9 h-9 rounded-lg bg-indigo-600 text-white flex items-center justify-center font-bold shadow-xs shrink-0">
+              <i data-lucide="table-2" class="w-5 h-5"></i>
+            </div>
+            <div>
+              <span class="font-bold text-slate-900 text-xs block">4. สรุปแจงเงินรายรอบ</span>
+              <span class="text-[10px] text-slate-500">ตารางวิเคราะห์เงินรายรับ-รายจ่ายและเงินคงเหลือ</span>
+            </div>
+          </div>
+          <i data-lucide="chevron-right" class="w-4 h-4 text-slate-400 shrink-0"></i>
+        </button>
+      </div>
+
+      <!-- Quick Filter Bar inside View Modal -->
+      <div class="border-t border-slate-100 pt-3 space-y-2 shrink-0">
+        <div class="flex items-center justify-between text-xs">
+          <span class="font-bold text-slate-700">แผนกวิชา:</span>
+          <div class="flex gap-1.5">
+            <button type="button" onclick="setDepartmentFilter('ช่างยนต์'); closeMobileViewMenu();" class="px-2.5 py-1 rounded-lg text-xs font-bold bg-blue-600 text-white shadow-2xs cursor-pointer">ช่างยนต์</button>
+            <button type="button" onclick="setDepartmentFilter('ยานยนต์ไฟฟ้า'); closeMobileViewMenu();" class="px-2.5 py-1 rounded-lg text-xs font-bold bg-slate-100 text-slate-700 hover:bg-slate-200 cursor-pointer">ยานยนต์ไฟฟ้า</button>
+          </div>
+        </div>
+        <div class="flex items-center justify-between text-xs">
+          <span class="font-bold text-slate-700">ประเภทครู:</span>
+          <div class="flex gap-1.5" id="mobileTypeFilterGroup">
+            <button type="button" id="mTypeBtnReg" onclick="setTeacherTypeFilter('ครูประจำ'); closeMobileViewMenu(); updateMobileFilterBadges();" class="px-2.5 py-1 rounded-lg text-xs font-bold bg-indigo-600 text-white shadow-2xs cursor-pointer">ครูประจำ</button>
+            <button type="button" id="mTypeBtnSpec" onclick="setTeacherTypeFilter('ครูพิเศษ'); closeMobileViewMenu(); updateMobileFilterBadges();" class="px-2.5 py-1 rounded-lg text-xs font-bold bg-slate-100 text-slate-700 hover:bg-slate-200 cursor-pointer">ครูพิเศษ</button>
+          </div>
+        </div>
+        <div class="flex items-center justify-between text-xs">
+          <span class="font-bold text-slate-700">ระดับการศึกษา:</span>
+          <div class="flex gap-1.5" id="mobileLevelFilterGroup">
+            <button type="button" id="mLevelBtnPvc" onclick="setLevelFilter('ปวช.'); closeMobileViewMenu(); updateMobileFilterBadges();" class="px-2 py-1 rounded-lg text-xs font-bold bg-emerald-600 text-white shadow-2xs cursor-pointer">ปวช.</button>
+            <button type="button" id="mLevelBtnPvs" onclick="setLevelFilter('ปวส.'); closeMobileViewMenu(); updateMobileFilterBadges();" class="px-2 py-1 rounded-lg text-xs font-bold bg-slate-100 text-slate-700 hover:bg-slate-200 cursor-pointer">ปวส.</button>
+            <button type="button" id="mLevelBtnAll" onclick="setLevelFilter('all'); closeMobileViewMenu(); updateMobileFilterBadges();" class="px-2 py-1 rounded-lg text-xs font-bold bg-slate-100 text-slate-700 hover:bg-slate-200 cursor-pointer">ทั้งหมด</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Mobile Modal 2: Tools & Action Sheet -->
+  <div id="mobileActionSheetModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-end sm:items-center justify-center z-[85] hidden p-0 sm:p-4 transition-all duration-200">
+    <div class="bg-white rounded-t-3xl sm:rounded-2xl shadow-2xl max-w-lg w-full p-4 pb-8 sm:pb-5 border border-slate-200 space-y-3 max-h-[85vh] flex flex-col animate-slide-up">
+      <div class="flex items-center justify-between border-b border-slate-100 pb-2 shrink-0">
+        <div class="flex items-center gap-2">
+          <div class="w-8 h-8 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold">
+            <i data-lucide="zap" class="w-4 h-4"></i>
+          </div>
+          <div>
+            <h3 class="font-bold text-slate-900 text-sm">เครื่องมือและการจัดการ</h3>
+            <p class="text-[10px] text-slate-500">บันทึก ส่งออก และจัดการระบบ</p>
+          </div>
+        </div>
+        <button type="button" onclick="closeMobileActionSheet()" class="text-slate-400 hover:text-slate-600 p-1.5 rounded-lg hover:bg-slate-100 cursor-pointer">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <div class="grid grid-cols-2 gap-2 overflow-y-auto flex-1 pr-1 text-xs">
+        <button type="button" onclick="saveAllTeacherCustomEdits(); closeMobileActionSheet();" class="p-3 bg-purple-50 hover:bg-purple-100 text-purple-900 border border-purple-200 rounded-xl font-bold flex flex-col items-center justify-center gap-1.5 text-center shadow-2xs cursor-pointer">
+          <i data-lucide="save" class="w-5 h-5 text-purple-600"></i>
+          <span>💾 บันทึกการแก้ไข</span>
+        </button>
+
+        <button type="button" onclick="saveAsPdf(); closeMobileActionSheet();" class="p-3 bg-indigo-50 hover:bg-indigo-100 text-indigo-900 border border-indigo-200 rounded-xl font-bold flex flex-col items-center justify-center gap-1.5 text-center shadow-2xs cursor-pointer">
+          <i data-lucide="file-down" class="w-5 h-5 text-indigo-600"></i>
+          <span>📥 บันทึกไฟล์ PDF</span>
+        </button>
+
+        <button type="button" onclick="exportToExcel(); closeMobileActionSheet();" class="p-3 bg-emerald-50 hover:bg-emerald-100 text-emerald-900 border border-emerald-200 rounded-xl font-bold flex flex-col items-center justify-center gap-1.5 text-center shadow-2xs cursor-pointer">
+          <i data-lucide="file-spreadsheet" class="w-5 h-5 text-emerald-600"></i>
+          <span>📊 ดาวน์โหลด Excel</span>
+        </button>
+
+        <button type="button" onclick="revertCurrentTeacherEdits(); closeMobileActionSheet();" class="p-3 bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 rounded-xl font-bold flex flex-col items-center justify-center gap-1.5 text-center shadow-2xs cursor-pointer">
+          <i data-lucide="rotate-ccw" class="w-5 h-5 text-slate-500"></i>
+          <span>↺ คืนค่าเดิมตาราง</span>
+        </button>
+
+        <button type="button" onclick="openCompensatoryModal(); closeMobileActionSheet();" class="p-3 bg-pink-50 hover:bg-pink-100 text-pink-900 border border-pink-200 rounded-xl font-bold flex flex-col items-center justify-center gap-1.5 text-center shadow-2xs cursor-pointer">
+          <i data-lucide="calendar-plus" class="w-5 h-5 text-pink-600"></i>
+          <span>📝 บันทึกสอนชดเชย</span>
+        </button>
+
+        <button type="button" onclick="openSignatoriesModal(); closeMobileActionSheet();" class="p-3 bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-200 rounded-xl font-bold flex flex-col items-center justify-center gap-1.5 text-center shadow-2xs cursor-pointer">
+          <i data-lucide="pen-tool" class="w-5 h-5 text-amber-600"></i>
+          <span>✍️ จัดการผู้ลงนาม</span>
+        </button>
+
+        <button type="button" onclick="openBackupModal(); closeMobileActionSheet();" class="p-3 bg-blue-50 hover:bg-blue-100 text-blue-900 border border-blue-200 rounded-xl font-bold flex flex-col items-center justify-center gap-1.5 text-center shadow-2xs cursor-pointer">
+          <i data-lucide="database-backup" class="w-5 h-5 text-blue-600"></i>
+          <span>💾 สำรอง/กู้คืนข้อมูล</span>
+        </button>
+
+        <button type="button" onclick="openTeacherProfileModal(); closeMobileActionSheet();" class="p-3 bg-teal-50 hover:bg-teal-100 text-teal-900 border border-teal-200 rounded-xl font-bold flex flex-col items-center justify-center gap-1.5 text-center shadow-2xs cursor-pointer">
+          <i data-lucide="user-cog" class="w-5 h-5 text-teal-600"></i>
+          <span>👤 จัดการตำแหน่งครู</span>
+        </button>
+
+        <button type="button" onclick="toggleMobileA4Mode(); closeMobileActionSheet();" class="p-3 bg-sky-50 hover:bg-sky-100 text-sky-900 border border-sky-200 rounded-xl font-bold flex flex-col items-center justify-center gap-1.5 text-center shadow-2xs cursor-pointer">
+          <i data-lucide="layers" class="w-5 h-5 text-sky-600"></i>
+          <span id="mobileA4ModeBtnText">👁️ ดูเรียงทุกคน</span>
+        </button>
+
+        <button type="button" onclick="toggleFontResizerBar(); closeMobileActionSheet();" class="p-3 bg-orange-50 hover:bg-orange-100 text-orange-900 border border-orange-200 rounded-xl font-bold flex flex-col items-center justify-center gap-1.5 text-center shadow-2xs cursor-pointer">
+          <i data-lucide="type" class="w-5 h-5 text-orange-600"></i>
+          <span>🔠 ปรับขนาดฟอนต์</span>
+        </button>
+      </div>
+
+      <button type="button" onclick="toggleMobileFitScreen(); closeMobileActionSheet();" class="w-full py-2.5 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-2 cursor-pointer shadow-sm">
+        <i data-lucide="scaling" class="w-4 h-4 text-amber-400"></i>
+        <span>สลับมุมมอง: พอดีหน้าจอ ↔ ชัดเต็มตา 100%</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Mobile Modal 3: Teacher Switcher Bottom Sheet -->
+  <div id="mobileTeacherNavModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-end sm:items-center justify-center z-[85] hidden p-0 sm:p-4 transition-all duration-200">
+    <div class="bg-white rounded-t-3xl sm:rounded-2xl shadow-2xl max-w-lg w-full p-4 pb-8 sm:pb-5 border border-slate-200 space-y-3 max-h-[85vh] flex flex-col animate-slide-up">
+      <div class="flex items-center justify-between border-b border-slate-100 pb-2 shrink-0">
+        <div class="flex items-center gap-2">
+          <div class="w-8 h-8 rounded-xl bg-purple-100 text-purple-700 flex items-center justify-center font-bold">
+            <i data-lucide="users" class="w-4 h-4"></i>
+          </div>
+          <div>
+            <h3 class="font-bold text-slate-900 text-sm">เลือกรายชื่อครู</h3>
+            <p class="text-[10px] text-slate-500">สลับดูแบบฟอร์มใบเบิกรายบุคคล</p>
+          </div>
+        </div>
+        <button type="button" onclick="closeMobileTeacherNav()" class="text-slate-400 hover:text-slate-600 p-1.5 rounded-lg hover:bg-slate-100 cursor-pointer">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <!-- Quick Prev / Next Buttons -->
+      <div class="flex items-center gap-2 shrink-0">
+        <button type="button" onclick="navigateA4Teacher(-1); updateMobileTeacherSelectionUI();" class="flex-1 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs flex items-center justify-center gap-1 cursor-pointer">
+          <i data-lucide="chevron-left" class="w-4 h-4"></i>
+          <span>คนก่อนหน้า</span>
+        </button>
+        <button type="button" onclick="navigateA4Teacher(1); updateMobileTeacherSelectionUI();" class="flex-1 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl text-xs flex items-center justify-center gap-1 shadow-xs cursor-pointer">
+          <span>คนถัดไป</span>
+          <i data-lucide="chevron-right" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <!-- List of All Teachers -->
+      <div class="space-y-1.5 overflow-y-auto flex-1 pr-1 text-xs" id="mobileTeacherItemsList">
+        <!-- Rendered dynamically by JS -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Mobile Modal 4: Cover Sheet Picker Bottom Sheet -->
+  <div id="mobileCoverPickerModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-end sm:items-center justify-center z-[85] hidden p-0 sm:p-4 transition-all duration-200">
+    <div class="bg-white rounded-t-3xl sm:rounded-2xl shadow-2xl max-w-lg w-full p-4 pb-8 sm:pb-5 border border-slate-200 space-y-3 max-h-[85vh] flex flex-col animate-slide-up">
+      <div class="flex items-center justify-between border-b border-slate-100 pb-2 shrink-0">
+        <div class="flex items-center gap-2">
+          <div class="w-8 h-8 rounded-xl bg-purple-100 text-purple-700 flex items-center justify-center font-bold">
+            <i data-lucide="folder-check" class="w-4 h-4"></i>
+          </div>
+          <div>
+            <h3 class="font-bold text-slate-900 text-sm">เลือกงบหน้ารวม (8 ชุดเบิก)</h3>
+            <p class="text-[10px] text-slate-500">เลือกดูหลักฐานการเบิกจ่ายตามแผนกและประเภท</p>
+          </div>
+        </div>
+        <button type="button" onclick="closeMobileCoverPicker()" class="text-slate-400 hover:text-slate-600 p-1.5 rounded-lg hover:bg-slate-100 cursor-pointer">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <!-- List of 8 Cover Files -->
+      <div class="space-y-1.5 overflow-y-auto flex-1 pr-1 text-xs" id="mobileCoverItemsList">
+        <!-- Rendered dynamically by JS -->
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ==========================================
+    // MOBILE RESPONSIVE UI CONTROLLER
+    // ==========================================
+    let isMobileFitScreen = true;
+
+    function initMobileUI() {
+      updateMobileScale();
+      window.addEventListener('resize', updateMobileScale);
+      
+      if (window.innerWidth < 768) {
+        document.body.classList.add('mobile-fit-screen');
+        isMobileFitScreen = true;
+        const zoomText = document.getElementById('mobileZoomText');
+        if (zoomText) zoomText.innerText = '100%';
+      }
+      updateMobileHeaderViewLabel();
+      updateMobileHeaderTeacherLabel();
+    }
+
+    function updateMobileScale() {
+      if (window.innerWidth >= 768) {
+        document.body.classList.remove('mobile-fit-screen');
+        return;
+      }
+      const availW = Math.max(300, window.innerWidth - 12);
+      const isLandscape = (typeof currentSubViewMode !== 'undefined' && (currentSubViewMode === 'covers' || currentSubViewMode === 'summary' || currentSubViewMode === 'distribution'));
+      const paperW = isLandscape ? 1122 : 794;
+      const paperH = isLandscape ? 794 : 1122;
+      const scale = Math.min(1.0, availW / paperW);
+      const heightOffset = paperH * (1 - scale);
+      document.documentElement.style.setProperty('--mobile-scale', scale.toFixed(3));
+      document.documentElement.style.setProperty('--mobile-scale-offset', `${Math.round(heightOffset)}px`);
+    }
+
+    function toggleMobileFitScreen() {
+      isMobileFitScreen = !isMobileFitScreen;
+      const zoomText = document.getElementById('mobileZoomText');
+      if (isMobileFitScreen) {
+        document.body.classList.add('mobile-fit-screen');
+        updateMobileScale();
+        if (zoomText) zoomText.innerText = '100%';
+        showToast("โหมดพอดีจอ", "ย่อหน้ากระดาษให้เห็นเต็มความกว้างของหน้าจอมือถือแล้ว", true);
+      } else {
+        document.body.classList.remove('mobile-fit-screen');
+        if (zoomText) zoomText.innerText = 'พอดีจอ';
+        showToast("โหมด 100%", "แสดงขนาดตัวหนังสือจริง คมชัด สามารถเลื่อนดูได้", true);
+      }
+    }
+
+    function openMobileSidebar() {
+      const sb = document.getElementById('leftSidebar');
+      const backdrop = document.getElementById('mobileSidebarBackdrop');
+      if (sb) {
+        sb.classList.remove('hidden');
+        sb.classList.add('mobile-open');
+      }
+      if (backdrop) backdrop.classList.remove('hidden');
+      if (typeof lucide !== 'undefined') lucide.createIcons();
+    }
+
+    function closeMobileSidebar() {
+      const sb = document.getElementById('leftSidebar');
+      const backdrop = document.getElementById('mobileSidebarBackdrop');
+      if (sb) sb.classList.remove('mobile-open');
+      if (backdrop) backdrop.classList.add('hidden');
+    }
+
+    function openMobileViewMenu() {
+      updateMobileFilterBadges();
+      const modal = document.getElementById('mobileViewMenuModal');
+      if (modal) {
+        modal.classList.remove('hidden');
+        if (typeof lucide !== 'undefined') lucide.createIcons();
+      }
+    }
+
+    function closeMobileViewMenu() {
+      const modal = document.getElementById('mobileViewMenuModal');
+      if (modal) modal.classList.add('hidden');
+    }
+
+    function selectMobileView(viewName) {
+      if (typeof switchSubViewMode === 'function') {
+        switchSubViewMode(viewName);
+      }
+      closeMobileViewMenu();
+      updateMobileHeaderViewLabel();
+      updateMobileHeaderTeacherLabel();
+      setTimeout(updateMobileScale, 80);
+    }
+
+    function updateMobileHeaderViewLabel() {
+      const labelEl = document.getElementById('mobileHeaderViewLabel');
+      const navLabelEl = document.getElementById('mobileNavViewTitle');
+      const curMode = (typeof currentSubViewMode !== 'undefined') ? currentSubViewMode : 'a4_form';
+      let text = '1. ใบเบิก A4';
+      if (curMode === 'covers') text = '2. งบหน้ารวม';
+      else if (curMode === 'distribution') text = '3. จัดสรรเงิน';
+      else if (curMode === 'summary') text = '4. สรุปรายรอบ';
+      if (labelEl) labelEl.innerText = text;
+      if (navLabelEl) navLabelEl.innerText = text;
+
+      // Adjust mobile bottom nav button 3 contextual behavior
+      const teacherChip = document.getElementById('mobileHeaderTeacherChip');
+      const coverChip = document.getElementById('mobileHeaderCoverChip');
+      const b3Text = document.getElementById('mobileNavB3Title');
+      const b3Icon = document.getElementById('mobileNavB3Icon');
+
+      if (curMode === 'a4_form') {
+        if (teacherChip) teacherChip.classList.remove('hidden');
+        if (coverChip) coverChip.classList.add('hidden');
+        if (b3Text) b3Text.innerText = 'เลือกครู';
+        if (b3Icon) b3Icon.setAttribute('data-lucide', 'users');
+      } else if (curMode === 'covers') {
+        if (teacherChip) teacherChip.classList.add('hidden');
+        if (coverChip) coverChip.classList.remove('hidden');
+        if (b3Text) b3Text.innerText = 'ไฟล์ 1-8';
+        if (b3Icon) b3Icon.setAttribute('data-lucide', 'folder-check');
+      } else {
+        if (teacherChip) teacherChip.classList.add('hidden');
+        if (coverChip) coverChip.classList.add('hidden');
+        if (b3Text) b3Text.innerText = 'จัดสรร';
+        if (b3Icon) b3Icon.setAttribute('data-lucide', 'pie-chart');
+      }
+      if (typeof lucide !== 'undefined') lucide.createIcons();
+    }
+
+    function handleMobileB3Click() {
+      const curMode = (typeof currentSubViewMode !== 'undefined') ? currentSubViewMode : 'a4_form';
+      if (curMode === 'a4_form') {
+        openMobileTeacherNav();
+      } else if (curMode === 'covers') {
+        openMobileCoverPicker();
+      } else {
+        openMobileViewMenu();
+      }
+    }
+
+    function updateMobileHeaderTeacherLabel() {
+      const tNumEl = document.getElementById('mobileHeaderTeacherNum');
+      const cNumEl = document.getElementById('mobileHeaderCoverNum');
+      
+      const counterEl = document.getElementById('a4TeacherCounterBadge');
+      if (tNumEl && counterEl && counterEl.innerText) {
+        tNumEl.innerText = `ครู ${counterEl.innerText}`;
+      }
+
+      if (cNumEl && typeof currentCoverFileIndex !== 'undefined') {
+        cNumEl.innerText = `ไฟล์ ${currentCoverFileIndex + 1}/8`;
+      }
+    }
+
+    function updateMobileFilterBadges() {
+      // Dept
+      const isAuto = (currentDeptFilter === 'ช่างยนต์' || (currentDeptFilter && currentDeptFilter.includes('ช่างยนต์')));
+      const btnAuto = document.getElementById('mDeptAutoBtn');
+      const btnEv = document.getElementById('mDeptEvBtn');
+      if (btnAuto && btnEv) {
+        btnAuto.className = isAuto ? "px-2.5 py-1 rounded-lg text-xs font-bold bg-blue-600 text-white shadow-2xs cursor-pointer" : "px-2.5 py-1 rounded-lg text-xs font-bold bg-slate-100 text-slate-700 hover:bg-slate-200 cursor-pointer";
+        btnEv.className = !isAuto ? "px-2.5 py-1 rounded-lg text-xs font-bold bg-amber-600 text-white shadow-2xs cursor-pointer" : "px-2.5 py-1 rounded-lg text-xs font-bold bg-slate-100 text-slate-700 hover:bg-slate-200 cursor-pointer";
+      }
+
+      // Teacher Type
+      const isReg = (currentTeacherTypeFilter === 'ครูประจำ');
+      const btnReg = document.getElementById('mTypeBtnReg');
+      const btnSpec = document.getElementById('mTypeBtnSpec');
+      if (btnReg && btnSpec) {
+        btnReg.className = isReg ? "px-2.5 py-1 rounded-lg text-xs font-bold bg-indigo-600 text-white shadow-2xs cursor-pointer" : "px-2.5 py-1 rounded-lg text-xs font-bold bg-slate-100 text-slate-700 hover:bg-slate-200 cursor-pointer";
+        btnSpec.className = !isReg ? "px-2.5 py-1 rounded-lg text-xs font-bold bg-purple-600 text-white shadow-2xs cursor-pointer" : "px-2.5 py-1 rounded-lg text-xs font-bold bg-slate-100 text-slate-700 hover:bg-slate-200 cursor-pointer";
+      }
+
+      // Level
+      const curLvl = currentLevelFilter || 'all';
+      const btnPvc = document.getElementById('mLevelBtnPvc');
+      const btnPvs = document.getElementById('mLevelBtnPvs');
+      const btnAll = document.getElementById('mLevelBtnAll');
+      const activeLvl = "px-2 py-1 rounded-lg text-xs font-bold bg-emerald-600 text-white shadow-2xs cursor-pointer";
+      const inactiveLvl = "px-2 py-1 rounded-lg text-xs font-bold bg-slate-100 text-slate-700 hover:bg-slate-200 cursor-pointer";
+      if (btnPvc) btnPvc.className = (curLvl === 'ปวช.') ? activeLvl : inactiveLvl;
+      if (btnPvs) btnPvs.className = (curLvl === 'ปวส.') ? activeLvl : inactiveLvl;
+      if (btnAll) btnAll.className = (curLvl === 'all') ? activeLvl : inactiveLvl;
+    }
+
+    function toggleMobileA4Mode() {
+      const newMode = (a4ViewMode === 'single') ? 'all' : 'single';
+      if (typeof setA4ViewMode === 'function') {
+        setA4ViewMode(newMode);
+      } else {
+        a4ViewMode = newMode;
+        renderAllTeachersInGroup();
+      }
+      const label = document.getElementById('mobileA4ModeBtnText');
+      if (label) {
+        label.innerText = (newMode === 'single') ? '👁️ ดูเรียงทุกคน' : '🎯 โฟกัสรายคน';
+      }
+      showToast(newMode === 'single' ? "โหมดโฟกัสรายคน" : "โหมดดูเรียงทุกคน", 
+                newMode === 'single' ? "แสดงทีละ 1 ท่าน เลื่อนหรือกดเปลี่ยนได้" : "แสดงครูทุกคนเรียงต่อกันในหน้าเดียว", true);
+    }
+
+    function openMobileActionSheet() {
+      const modal = document.getElementById('mobileActionSheetModal');
+      if (modal) {
+        modal.classList.remove('hidden');
+        if (typeof lucide !== 'undefined') lucide.createIcons();
+      }
+    }
+
+    function closeMobileActionSheet() {
+      const modal = document.getElementById('mobileActionSheetModal');
+      if (modal) modal.classList.add('hidden');
+    }
+
+    function openMobileTeacherNav() {
+      const modal = document.getElementById('mobileTeacherNavModal');
+      if (modal) {
+        populateMobileTeacherList();
+        modal.classList.remove('hidden');
+        if (typeof lucide !== 'undefined') lucide.createIcons();
+      }
+    }
+
+    function closeMobileTeacherNav() {
+      const modal = document.getElementById('mobileTeacherNavModal');
+      if (modal) modal.classList.add('hidden');
+    }
+
+    function populateMobileTeacherList() {
+      const container = document.getElementById('mobileTeacherItemsList');
+      if (!container) return;
+      const list = (typeof masterTeachers !== 'undefined') ? masterTeachers : [];
+      container.innerHTML = '';
+      list.forEach(t => {
+        const isCurrent = (t.index === currentA4TeacherIndex);
+        const item = document.createElement('button');
+        item.type = 'button';
+        item.className = `w-full text-left p-2.5 rounded-xl border flex items-center justify-between transition cursor-pointer ${isCurrent ? 'bg-blue-600 text-white border-blue-600 font-bold shadow-xs' : 'bg-slate-50 hover:bg-slate-100 text-slate-800 border-slate-200'}`;
+        item.onclick = () => {
+          currentA4TeacherIndex = t.index;
+          const dropdown = document.getElementById('teacherSelectDropdown');
+          if (dropdown) dropdown.value = t.index;
+          if (typeof renderAllTeachersInGroup === 'function') renderAllTeachersInGroup();
+          updateMobileTeacherSelectionUI();
+          updateMobileHeaderTeacherLabel();
+          closeMobileTeacherNav();
+        };
+        item.innerHTML = `
+          <div class="flex items-center gap-2.5">
+            <span class="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold ${isCurrent ? 'bg-white text-blue-700' : 'bg-slate-200 text-slate-700'}">${t.index}</span>
+            <div>
+              <span class="text-xs block ${isCurrent ? 'text-white' : 'text-slate-900'} font-bold">${t.name}</span>
+              <span class="text-[10px] ${isCurrent ? 'text-blue-100' : 'text-slate-500'}">${t.position || 'ครู'} • ${t.dept || 'ช่างยนต์'} • ${t.level || 'ปวช.'}</span>
+            </div>
+          </div>
+          ${isCurrent ? '<i data-lucide="check" class="w-4 h-4 text-white shrink-0"></i>' : '<i data-lucide="chevron-right" class="w-4 h-4 text-slate-400 shrink-0"></i>'}
+        `;
+        container.appendChild(item);
+      });
+      if (typeof lucide !== 'undefined') lucide.createIcons();
+    }
+
+    function updateMobileTeacherSelectionUI() {
+      populateMobileTeacherList();
+      updateMobileHeaderTeacherLabel();
+    }
+
+    // Cover Sheet Picker
+    function openMobileCoverPicker() {
+      populateMobileCoverList();
+      const modal = document.getElementById('mobileCoverPickerModal');
+      if (modal) {
+        modal.classList.remove('hidden');
+        if (typeof lucide !== 'undefined') lucide.createIcons();
+      }
+    }
+
+    function closeMobileCoverPicker() {
+      const modal = document.getElementById('mobileCoverPickerModal');
+      if (modal) modal.classList.add('hidden');
+    }
+
+    function populateMobileCoverList() {
+      const container = document.getElementById('mobileCoverItemsList');
+      if (!container || typeof COVER_8_FILES === 'undefined') return;
+      container.innerHTML = '';
+      COVER_8_FILES.forEach((f, idx) => {
+        const isCurrent = (idx === currentCoverFileIndex);
+        const item = document.createElement('button');
+        item.type = 'button';
+        item.className = `w-full text-left p-2.5 rounded-xl border flex items-center justify-between transition cursor-pointer ${isCurrent ? 'bg-purple-600 text-white border-purple-600 font-bold shadow-xs' : 'bg-slate-50 hover:bg-slate-100 text-slate-800 border-slate-200'}`;
+        item.onclick = () => {
+          currentCoverFileIndex = idx;
+          const sel = document.getElementById('coverFileSelect8');
+          if (sel) sel.value = String(idx);
+          if (typeof onCoverFileSelectChange === 'function') {
+            onCoverFileSelectChange(idx);
+          } else if (typeof renderCoverSheetView === 'function') {
+            renderCoverSheetView();
+          }
+          closeMobileCoverPicker();
+          updateMobileHeaderTeacherLabel();
+        };
+        item.innerHTML = `
+          <div class="flex items-center gap-2.5">
+            <span class="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold ${isCurrent ? 'bg-white text-purple-700' : 'bg-purple-100 text-purple-800'}">${idx + 1}</span>
+            <div>
+              <span class="text-xs block ${isCurrent ? 'text-white' : 'text-slate-900'} font-bold">${f.name}</span>
+              <span class="text-[10px] ${isCurrent ? 'text-purple-100' : 'text-slate-500'}">งบหน้ารวมชุดที่ ${idx + 1}</span>
+            </div>
+          </div>
+          ${isCurrent ? '<i data-lucide="check" class="w-4 h-4 text-white shrink-0"></i>' : '<i data-lucide="chevron-right" class="w-4 h-4 text-slate-400 shrink-0"></i>'}
+        `;
+        container.appendChild(item);
+      });
+      if (typeof lucide !== 'undefined') lucide.createIcons();
+    }
+
+    // Initialize Mobile UI upon page load
+    document.addEventListener('DOMContentLoaded', () => {
+      initMobileUI();
+    });
+  </script>
 </body>
 </html>
