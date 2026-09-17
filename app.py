@@ -235,7 +235,7 @@ async def api_get_custom_overrides():
 async def api_save_custom_overrides(payload: dict):
     current = load_custom_overrides()
     replace_all = payload.get("replace_all", True)
-    for k in ["text_edits", "template_overrides", "font_sizes", "font_weights"]:
+    for k in ["text_edits", "template_overrides", "font_sizes", "font_weights", "student_counts"]:
         if k in payload:
             if replace_all:
                 current[k] = payload[k]
@@ -248,6 +248,23 @@ async def api_save_custom_overrides(payload: dict):
                     current[k] = payload[k]
     save_custom_overrides(current)
     return JSONResponse(content={"status": "success", "message": "บันทึกการปรับแต่งฟอร์มเรียบร้อยแล้ว", "data": current})
+
+@app.get("/api/student_counts")
+async def api_get_student_counts():
+    current = load_custom_overrides()
+    counts = current.get("student_counts", {})
+    return JSONResponse(content={"status": "success", "data": counts})
+
+@app.post("/api/save_student_counts")
+async def api_save_student_counts(payload: dict):
+    current = load_custom_overrides()
+    counts = payload.get("counts", payload.get("student_counts", {}))
+    if isinstance(counts, dict):
+        if "student_counts" not in current or not isinstance(current["student_counts"], dict):
+            current["student_counts"] = {}
+        current["student_counts"].update(counts)
+        save_custom_overrides(current)
+    return JSONResponse(content={"status": "success", "message": "บันทึกข้อมูลจำนวนนักเรียนเรียบร้อยแล้ว", "data": current.get("student_counts", {})})
 
 @app.get("/api/compensations")
 async def api_get_compensations():

@@ -1191,13 +1191,6 @@
               <p class="text-xs font-semibold text-slate-700">คลิกหรือลากไฟล์ Excel/PDF ตารางสอนมาวาง</p>
               <p class="text-[10px] text-slate-500">ระบบจะจัดเก็บและประมวลผลตารางสอน</p>
             </div>
-            <!-- ปุ่มแยก: 1. วิเคราะห์ตารางสอน  2. บันทึกตารางสอน -->
-            <div class="space-y-1.5 mt-2">
-              <button type="button" onclick="document.getElementById('inputSchedulePdf').click()" class="w-full py-2 px-3 bg-purple-600 hover:bg-purple-700 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 shadow-sm transition cursor-pointer">
-                <i data-lucide="search" class="w-4 h-4"></i>
-                <span>🔍 วิเคราะห์ตารางสอน</span>
-              </button>
-            </div>
           </div>
 
           <!-- Dropzone 2: ข้อมูลจำนวนนักเรียน -->
@@ -1213,6 +1206,11 @@
               <p class="text-xs font-semibold text-slate-700">คลิกหรือลากไฟล์ข้อมูลนักเรียนมาวาง</p>
               <p class="text-[10px] text-slate-500">รองรับไฟล์ .XLSX, .XLS, .PDF, .CSV</p>
             </div>
+            <!-- ปุ่มกำหนดจำนวนนักเรียนแบบแมนนวล (กำหนดเอง) -->
+            <button type="button" onclick="openManualStudentCountModal()" class="w-full mt-2 py-1.5 px-3 bg-blue-50 hover:bg-blue-100 text-blue-800 border border-blue-200 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 shadow-2xs transition cursor-pointer">
+              <i data-lucide="edit-3" class="w-3.5 h-3.5 text-blue-600"></i>
+              <span>✏️ กำหนดจำนวนนักเรียน (กำหนดเอง)</span>
+            </button>
           </div>
 
           <!-- Notification status box -->
@@ -1676,23 +1674,9 @@
             </div>
           </div>
         </div>
-      </div>
-
     </section>
 
   </main>
-
-  <!-- FOOTER: Clean Status Bar (Desktop only, hidden completely on mobile) -->
-  <footer class="hidden md:flex h-9 bg-white border-t border-indigo-100 px-4 items-center justify-between z-20 shrink-0 text-xs text-slate-500 no-print">
-    <div class="flex items-center gap-2 font-medium">
-      <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
-      <span>ระบบเบิกจ่ายค่าสอนและแบบฟอร์มเอกสารราชการ A4 เสมือนจริง 100%</span>
-    </div>
-
-    <div class="flex items-center gap-2 font-semibold text-slate-600">
-      <span id="footerDeptBadge">แผนกวิชาช่างยนต์ (25 ท่าน) • วิทยาลัยเทคนิคนครสวรรค์</span>
-    </div>
-  </footer>
 
   <script>
     window.currentSelectedWeek = 1;
@@ -3086,7 +3070,7 @@
       "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม"
     ];
 
-    function getRoundMondayToFridayDateRange(roundNum) {
+    function getRoundMondayToFridayDateRange(roundNum, targetTeachers) {
       const curR = roundNum || parseInt(document.getElementById('inputRoundNum')?.value) || 1;
       const r = (typeof currentRoundSchedule !== 'undefined' && currentRoundSchedule && currentRoundSchedule.length) 
         ? (currentRoundSchedule.find(x => x.round === curR) || currentRoundSchedule[0])
@@ -3094,24 +3078,75 @@
       const sWk = r.startWeek || 1;
       const eWk = r.endWeek || sWk;
       
-      // 1. Check roundDateRanges first
-      if (typeof roundDateRanges !== 'undefined' && roundDateRanges && roundDateRanges[curR] && roundDateRanges[curR].start && roundDateRanges[curR].end) {
-        const s = parseYMD(roundDateRanges[curR].start);
-        const e = parseYMD(roundDateRanges[curR].end);
-        if (!isNaN(s) && !isNaN(e)) {
-          return `${s.getDate()} ${thaiMonths[s.getMonth()]} ${s.getFullYear() + 543} - ${e.getDate()} ${thaiMonths[e.getMonth()]} ${e.getFullYear() + 543}`;
-        }
-      }
-
-      // 2. Check weekDateMap
       if (typeof weekDateMap === 'undefined' || !weekDateMap) return "";
       const wStart = weekDateMap[sWk];
       const wEnd = weekDateMap[eWk];
       if (!wStart || !wStart.start) return "";
       
       const sMon = parseYMD(wStart.start);
-      // Use the actual end date of the end week (Sunday / round end)
-      const eEnd = (wEnd && wEnd.end) ? parseYMD(wEnd.end) : ((wEnd && wEnd.start) ? parseYMD(wEnd.start) : new Date(sMon.getTime()));
+      sMon.setHours(12, 0, 0, 0);
+
+      // Determine teachers to check for latest teaching day
+      let teachersToCheck = [];
+      if (targetTeachers && Array.isArray(targetTeachers) && targetTeachers.length > 0) {
+        teachersToCheck = targetTeachers;
+      } else if (typeof calculatedData !== 'undefined' && calculatedData && calculatedData.length > 0) {
+        teachersToCheck = calculatedData;
+      } else if (typeof masterTeachers !== 'undefined' && masterTeachers && masterTeachers.length > 0) {
+        teachersToCheck = masterTeachers;
+      }
+
+      const dayNumMap = {
+        'จันทร์': 1, 'อังคาร': 2, 'พุธ': 3, 'พฤหัสบดี': 4, 'พฤหัส': 4, 'ศุกร์': 5, 'เสาร์': 6, 'อาทิตย์': 7
+      };
+
+      // Base end day is Friday (5)
+      let maxEndDayNum = 5;
+
+      teachersToCheck.forEach(t => {
+        // 1. Check regular schedule classes
+        const classes = t.schedule || t.classes || [];
+        classes.forEach(c => {
+          if (c && c.day && dayNumMap[c.day]) {
+            if (dayNumMap[c.day] > maxEndDayNum) {
+              maxEndDayNum = dayNumMap[c.day];
+            }
+          }
+        });
+
+        // 2. Check compensatory teaching in endWeek or throughout the round
+        if (typeof compensationsList !== 'undefined' && Array.isArray(compensationsList)) {
+          const tComps = compensationsList.filter(cp => (Number(cp.teacher_idx) === Number(t.index) || Number(cp.teacher_index) === Number(t.index)));
+          tComps.forEach(cp => {
+            if (cp.comp_day && dayNumMap[cp.comp_day]) {
+              if (dayNumMap[cp.comp_day] > maxEndDayNum) {
+                maxEndDayNum = dayNumMap[cp.comp_day];
+              }
+            }
+            if (cp.comp_date) {
+              const cpDate = parseYMD(cp.comp_date);
+              const day = cpDate.getDay();
+              const mappedNum = (day === 0) ? 7 : day;
+              if (mappedNum > maxEndDayNum) {
+                maxEndDayNum = mappedNum;
+              }
+            }
+          });
+        }
+      });
+
+      // Day offset from Monday:
+      // Friday (5) -> offset 4
+      // Saturday (6) -> offset 5
+      // Sunday (7) -> offset 6
+      const endDayOffset = Math.max(4, Math.min(6, maxEndDayNum - 1));
+
+      const eMon = (wEnd && wEnd.start) ? parseYMD(wEnd.start) : new Date(sMon.getTime());
+      eMon.setHours(12, 0, 0, 0);
+
+      const eEnd = new Date(eMon.getTime());
+      eEnd.setDate(eMon.getDate() + endDayOffset);
+      eEnd.setHours(12, 0, 0, 0);
       
       const sDay = sMon.getDate();
       const sMonth = thaiMonths[sMon.getMonth()];
@@ -3605,8 +3640,193 @@
       }
     }
 
+    // --- MANUAL STUDENT COUNT MANAGEMENT ---
+    let manualStudentCounts = {};
+    let defaultStudentCount = 26;
+
+    async function loadInitialStudentCounts() {
+      try {
+        // 1. LocalStorage
+        const local = localStorage.getItem('app_manual_student_counts');
+        if (local) {
+          try { Object.assign(manualStudentCounts, JSON.parse(local)); } catch (e) {}
+        }
+        // 2. Server API
+        const res = await fetch('/api/student_counts');
+        if (res.ok) {
+          const json = await res.json();
+          if (json.data && typeof json.data === 'object') {
+            Object.assign(manualStudentCounts, json.data);
+          }
+        }
+      } catch (e) {
+        console.warn('Could not load student counts:', e);
+      }
+    }
+
+    function openManualStudentCountModal() {
+      const modal = document.getElementById('modalManualStudentCount');
+      if (!modal) return;
+
+      // Extract all distinct class names from calculatedData / masterTeachers
+      const teachersPool = (calculatedData && calculatedData.length > 0) ? calculatedData : masterTeachers;
+      teachersPool.forEach(t => {
+        (t.schedule || t.classes || []).forEach(c => {
+          let cls = c.class_info || c.class_group || '';
+          if (!cls) return;
+          const m = cls.match(/\(\s*(\d+)\s*\)/);
+          const raw = cls.replace(/\s*\(\s*\d+\s*\)$/, '').trim();
+          if (raw) {
+            if (m && (!manualStudentCounts[raw] || manualStudentCounts[raw] === 26)) {
+              manualStudentCounts[raw] = parseInt(m[1], 10);
+            } else if (!manualStudentCounts[raw]) {
+              manualStudentCounts[raw] = defaultStudentCount;
+            }
+          }
+        });
+      });
+
+      renderManualStudentCountList();
+      modal.classList.remove('hidden');
+      if (typeof lucide !== 'undefined') lucide.createIcons();
+    }
+
+    function closeManualStudentCountModal() {
+      const modal = document.getElementById('modalManualStudentCount');
+      if (modal) modal.classList.add('hidden');
+    }
+
+    function renderManualStudentCountList(filterText = '') {
+      const tbody = document.getElementById('studentCountTableBody');
+      const badge = document.getElementById('studentCountSummaryBadge');
+      if (!tbody) return;
+
+      tbody.innerHTML = '';
+      const keys = Object.keys(manualStudentCounts).sort((a, b) => a.localeCompare(b, 'th'));
+      const q = (filterText || '').trim().toLowerCase();
+      const filtered = q ? keys.filter(k => k.toLowerCase().includes(q)) : keys;
+
+      if (badge) badge.innerText = `พบทั้งหมด ${keys.length} ห้องเรียน (แสดง ${filtered.length} ห้อง)`;
+
+      if (filtered.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-slate-400">ไม่พบห้องเรียนที่ค้นหา</td></tr>`;
+        return;
+      }
+
+      filtered.forEach((cls, idx) => {
+        const count = manualStudentCounts[cls] || defaultStudentCount;
+        const tr = document.createElement('tr');
+        tr.className = "hover:bg-blue-50/40 transition border-b border-slate-100";
+        tr.innerHTML = `
+          <td class="p-2.5 pl-3 text-slate-400 font-mono">${idx + 1}</td>
+          <td class="p-2.5 font-semibold text-slate-800">${cls}</td>
+          <td class="p-2.5 text-center">
+            <div class="inline-flex items-center gap-1.5 justify-center">
+              <input type="number" min="1" max="150" value="${count}" 
+                     onchange="onClassStudentCountChange('${cls.replace(/'/g, "\\'")}', this.value)" 
+                     class="w-20 px-2 py-1 text-center font-bold border border-slate-300 rounded-lg text-xs bg-white focus:ring-2 focus:ring-blue-400 focus:outline-hidden">
+              <span class="text-slate-500 text-[11px]">คน</span>
+            </div>
+          </td>
+          <td class="p-2.5 text-center">
+            <button type="button" onclick="removeClassFromStudentCount('${cls.replace(/'/g, "\\'")}')" class="text-rose-500 hover:text-rose-700 p-1.5 rounded-lg hover:bg-rose-50 transition cursor-pointer" title="ลบห้องนี้">
+              <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+            </button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+
+      if (typeof lucide !== 'undefined') lucide.createIcons();
+    }
+
+    function filterStudentCountList(val) {
+      renderManualStudentCountList(val);
+    }
+
+    function onClassStudentCountChange(cls, val) {
+      const num = parseInt(val, 10);
+      if (!isNaN(num) && num > 0) {
+        manualStudentCounts[cls] = num;
+      }
+    }
+
+    function removeClassFromStudentCount(cls) {
+      if (confirm(`ต้องการลบห้องเรียน "${cls}" ออกจากรายการกำหนดจำนวนนักเรียนหรือไม่?`)) {
+        delete manualStudentCounts[cls];
+        renderManualStudentCountList(document.getElementById('searchStudentClassInput')?.value || '');
+      }
+    }
+
+    function addNewClassToStudentCountList() {
+      const name = prompt("ระบุชื่อห้อง/กลุ่มเรียนใหม่ (เช่น ปวช.1/1 ชย.):");
+      if (!name || !name.trim()) return;
+      const clean = name.trim().replace(/\s*\(\s*\d+\s*\)$/, '');
+      if (!manualStudentCounts[clean]) {
+        manualStudentCounts[clean] = defaultStudentCount;
+      }
+      renderManualStudentCountList(document.getElementById('searchStudentClassInput')?.value || '');
+    }
+
+    function applyBatchStudentCount() {
+      const batchInput = document.getElementById('inputBatchStudentCount');
+      const num = parseInt(batchInput?.value, 10);
+      if (isNaN(num) || num <= 0) {
+        showToast("ข้อผิดพลาด", "กรุณาระบุจำนวนนักเรียนที่ถูกต้อง", false);
+        return;
+      }
+      defaultStudentCount = num;
+      Object.keys(manualStudentCounts).forEach(k => {
+        manualStudentCounts[k] = num;
+      });
+      renderManualStudentCountList(document.getElementById('searchStudentClassInput')?.value || '');
+      showToast("ปรับปรุงสำเร็จ", `กำหนดจำนวนนักเรียนทุกห้องเป็น ${num} คนเรียบร้อย (กดบันทึกเพื่อนำไปใช้)`, true);
+    }
+
+    async function saveManualStudentCounts() {
+      // 1. Save to localStorage
+      localStorage.setItem('app_manual_student_counts', JSON.stringify(manualStudentCounts));
+
+      // 2. Save to server
+      try {
+        await fetch('/api/save_student_counts', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ counts: manualStudentCounts })
+        });
+      } catch (e) {
+        console.warn('Server save failed, saved locally:', e);
+      }
+
+      // 3. Update all teachers in calculatedData & masterTeachers
+      const teachersPool = (calculatedData && calculatedData.length > 0) ? calculatedData : masterTeachers;
+      teachersPool.forEach(t => {
+        const updateClasses = (arr) => {
+          (arr || []).forEach(c => {
+            const raw = (c.class_info || c.class_group || '').replace(/\s*\(\s*\d+\s*\)$/, '').trim();
+            if (raw && manualStudentCounts[raw]) {
+              c.class_info = `${raw} (${manualStudentCounts[raw]})`;
+            }
+          });
+        };
+        updateClasses(t.classes);
+        updateClasses(t.schedule);
+      });
+
+      // 4. Save teacher custom edits & re-render
+      if (typeof saveAllTeacherCustomEdits === 'function') {
+        saveAllTeacherCustomEdits();
+      }
+      if (typeof recalculateAll === 'function') {
+        await recalculateAll();
+      }
+      closeManualStudentCountModal();
+      showToast("บันทึกเรียบร้อย", `บันทึกข้อมูลจำนวนนักเรียน ${Object.keys(manualStudentCounts).length} ห้องเรียบร้อยแล้ว`, true);
+    }
+
     async function loadInitialMasterData() {
       try {
+        await loadInitialStudentCounts();
         const res = await fetch('/api/teachers');
         masterTeachers = await res.json();
 
@@ -4421,6 +4641,18 @@
         c[field] = parseFloat(val) || 0;
       } else {
         c[field] = val;
+        if (field === 'class_info') {
+          const m = val.match(/\(\s*(\d+)\s*\)$/);
+          if (m) {
+            const count = parseInt(m[1], 10);
+            const rawClass = val.replace(/\s*\(\s*\d+\s*\)$/, '').trim();
+            if (rawClass && !isNaN(count)) {
+              if (typeof manualStudentCounts === 'undefined') manualStudentCounts = {};
+              manualStudentCounts[rawClass] = count;
+              try { localStorage.setItem('app_manual_student_counts', JSON.stringify(manualStudentCounts)); } catch (e) {}
+            }
+          }
+        }
       }
       
       // Auto-calculate rates & amounts for this row
@@ -5478,8 +5710,17 @@
                 classDisplay = '';
                 timeStr = '';
               }
-              if (classDisplay && !/\(\s*\d+\s*\)$/.test(classDisplay.trim())) {
-                classDisplay = `${classDisplay.trim()} (26)`;
+              if (classDisplay) {
+                const cleanName = classDisplay.replace(/\s*\(\s*\d+\s*\)$/, '').trim();
+                const m = classDisplay.trim().match(/\(\s*(\d+)\s*\)$/);
+                if (m) {
+                  classDisplay = classDisplay.trim();
+                } else if (cleanName && typeof manualStudentCounts !== 'undefined' && manualStudentCounts[cleanName]) {
+                  classDisplay = `${cleanName} (${manualStudentCounts[cleanName]})`;
+                } else {
+                  const fallbackCount = (typeof defaultStudentCount !== 'undefined') ? defaultStudentCount : 26;
+                  classDisplay = `${cleanName} (${fallbackCount})`;
+                }
               }
               if (timeStr) {
                 timeStr = timeStr.replace(/:/g, '.').replace(/\s*-\s*/g, '-').trim();
@@ -5593,8 +5834,17 @@
               const rowBg = isComp ? 'background-color: #F2DCDB !important;' : 'background-color: #ffffff;';
               const codeStr = (isHoli && slot === 0 && !c.code) ? 'วันหยุด' : (isCompFiller ? '' : (c.code || ''));
               let classDisplay = isCompFiller ? '' : (c.class_info || '');
-              if (!isCompFiller && classDisplay && !/\(\s*\d+\s*\)$/.test(classDisplay.trim())) {
-                classDisplay = `${classDisplay.trim()} (26)`;
+              if (!isCompFiller && classDisplay) {
+                const cleanName = classDisplay.replace(/\s*\(\s*\d+\s*\)$/, '').trim();
+                const m = classDisplay.trim().match(/\(\s*(\d+)\s*\)$/);
+                if (m) {
+                  classDisplay = classDisplay.trim();
+                } else if (cleanName && typeof manualStudentCounts !== 'undefined' && manualStudentCounts[cleanName]) {
+                  classDisplay = `${cleanName} (${manualStudentCounts[cleanName]})`;
+                } else {
+                  const fallbackCount = (typeof defaultStudentCount !== 'undefined') ? defaultStudentCount : 26;
+                  classDisplay = `${cleanName} (${fallbackCount})`;
+                }
               }
 
               const rawTime = isCompFiller ? '' : (c.time_str || '');
@@ -8120,7 +8370,7 @@
       const rInfo = currentRoundSchedule.find(r => r.round === curRoundNum) || { weeksCount: 5, startWeek: 1, endWeek: 5 };
       const roundWeeks = rInfo.weeksCount || 5;
 
-      let rDateStr = (typeof getRoundMondayToFridayDateRange === 'function') ? getRoundMondayToFridayDateRange(curRoundNum) : '';
+      let rDateStr = (typeof getRoundMondayToFridayDateRange === 'function') ? getRoundMondayToFridayDateRange(curRoundNum, filtered) : '';
       if (!rDateStr) {
         const rDates = roundDateRanges[curRoundNum];
         if (rDates && rDates.start && rDates.end) {
@@ -10343,6 +10593,82 @@ function selectRound(roundNum) {
         </button>
       </div>
     </div>
+  <!-- Modal: Manual Student Count (กำหนดข้อมูลจำนวนนักเรียนแบบกำหนดเอง) -->
+  <div id="modalManualStudentCount" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-50 hidden p-3 sm:p-5">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full p-5 sm:p-6 border border-slate-200 space-y-4 max-h-[90vh] flex flex-col">
+      <!-- Header -->
+      <div class="flex items-center justify-between border-b border-slate-100 pb-3 shrink-0">
+        <div class="flex items-center gap-2.5">
+          <div class="w-9 h-9 rounded-xl bg-blue-100 text-blue-700 flex items-center justify-center font-bold shadow-2xs">
+            <i data-lucide="users" class="w-5 h-5"></i>
+          </div>
+          <div>
+            <h3 class="font-bold text-slate-900 text-sm flex items-center gap-2">
+              <span>👥 กำหนดข้อมูลจำนวนนักเรียน (กำหนดเอง)</span>
+            </h3>
+            <p class="text-[11px] text-slate-500">กำหนดจำนวนนักเรียนแยกตามห้อง/กลุ่มเรียน หรือแก้ใน ( ) ในตารางใบเบิก A4 ได้โดยตรง</p>
+          </div>
+        </div>
+        <button type="button" onclick="closeManualStudentCountModal()" class="text-slate-400 hover:text-slate-600 p-1.5 rounded-lg hover:bg-slate-100 cursor-pointer">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <!-- Quick Batch Setting Card -->
+      <div class="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-3 flex flex-wrap items-center justify-between gap-2 shrink-0 text-xs">
+        <div class="flex items-center gap-2">
+          <span class="font-bold text-blue-950">⚡ กำหนดจำนวนเท่ากันทุกห้อง:</span>
+          <input type="number" id="inputBatchStudentCount" min="1" max="100" value="26" class="w-16 px-2 py-1 text-center font-bold bg-white border border-blue-300 rounded-lg shadow-2xs focus:ring-2 focus:ring-blue-400 focus:outline-hidden">
+          <span class="text-blue-800">คน</span>
+        </div>
+        <button type="button" onclick="applyBatchStudentCount()" class="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold shadow-2xs transition cursor-pointer flex items-center gap-1">
+          <span>นำไปใช้กับทุกห้อง</span>
+        </button>
+      </div>
+
+      <!-- Class list search & add new -->
+      <div class="flex items-center justify-between gap-2 shrink-0 text-xs">
+        <div class="relative flex-1">
+          <input type="text" id="searchStudentClassInput" oninput="filterStudentCountList(this.value)" placeholder="ค้นหาห้อง/ชั้นเรียน..." class="w-full pl-8 pr-3 py-1.5 border border-slate-200 rounded-lg text-xs focus:ring-2 focus:ring-blue-400 focus:outline-hidden">
+          <i data-lucide="search" class="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-2.5"></i>
+        </div>
+        <button type="button" onclick="addNewClassToStudentCountList()" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-lg border border-slate-300 transition cursor-pointer flex items-center gap-1 shrink-0">
+          <i data-lucide="plus" class="w-3.5 h-3.5 text-slate-600"></i>
+          <span>+ เพิ่มห้องเรียน</span>
+        </button>
+      </div>
+
+      <!-- Scrollable List of Rooms/Classes -->
+      <div class="flex-1 overflow-y-auto pr-1 border border-slate-200 rounded-xl divide-y divide-slate-100 bg-slate-50/50 max-h-80">
+        <table class="w-full text-xs text-left">
+          <thead class="bg-slate-100 text-slate-600 font-bold sticky top-0 z-10">
+            <tr>
+              <th class="p-2.5 pl-3 w-12">ลำดับ</th>
+              <th class="p-2.5">ห้อง / กลุ่มเรียน</th>
+              <th class="p-2.5 text-center w-36">จำนวนนักเรียน (คน)</th>
+              <th class="p-2.5 text-center w-16">ลบ</th>
+            </tr>
+          </thead>
+          <tbody id="studentCountTableBody" class="bg-white divide-y divide-slate-100">
+            <!-- Populated via JS -->
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Footer Buttons -->
+      <div class="flex items-center justify-between border-t border-slate-100 pt-3 shrink-0">
+        <span id="studentCountSummaryBadge" class="text-[11px] text-slate-500 font-medium">พบทั้งหมด 0 ห้องเรียน</span>
+        <div class="flex items-center gap-2">
+          <button type="button" onclick="closeManualStudentCountModal()" class="px-4 py-1.5 border border-slate-200 text-slate-700 rounded-lg text-xs font-semibold hover:bg-slate-50 transition cursor-pointer">
+            ยกเลิก
+          </button>
+          <button type="button" onclick="saveManualStudentCounts()" class="px-4 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold shadow-xs transition cursor-pointer flex items-center gap-1.5">
+            <i data-lucide="save" class="w-4 h-4"></i>
+            <span>💾 บันทึกจำนวนนักเรียน</span>
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 
   <!-- Modal 3: Manage Signatories (จัดการรายชื่อผู้ลงนาม & ตำแหน่ง) -->
@@ -10999,11 +11325,6 @@ function selectRound(roundNum) {
         <button type="button" onclick="openCompensatoryModal(); closeMobileActionSheet();" class="p-3 bg-pink-50 hover:bg-pink-100 text-pink-900 border border-pink-200 rounded-xl font-bold flex flex-col items-center justify-center gap-1.5 text-center shadow-2xs cursor-pointer">
           <i data-lucide="calendar-plus" class="w-5 h-5 text-pink-600"></i>
           <span>📝 บันทึกสอนชดเชย</span>
-        </button>
-
-        <button type="button" onclick="openSignatoriesModal(); closeMobileActionSheet();" class="p-3 bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-200 rounded-xl font-bold flex flex-col items-center justify-center gap-1.5 text-center shadow-2xs cursor-pointer">
-          <i data-lucide="pen-tool" class="w-5 h-5 text-amber-600"></i>
-          <span>✍️ จัดการผู้ลงนาม</span>
         </button>
 
         <button type="button" onclick="openBackupModal(); closeMobileActionSheet();" class="p-3 bg-blue-50 hover:bg-blue-100 text-blue-900 border border-blue-200 rounded-xl font-bold flex flex-col items-center justify-center gap-1.5 text-center shadow-2xs cursor-pointer">
