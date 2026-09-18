@@ -485,6 +485,14 @@ def calculate_week(teachers_master, holiday_days=None, leaves=None, substitution
             absent_sub_map[a_idx] = []
         absent_sub_map[a_idx].append(sub)
 
+        # Ensure absent teacher day is recorded in absent_map
+        sub_day = normalize_day(sub.get('day') or '')
+        if a_idx is not None and sub_day:
+            if a_idx not in absent_map:
+                absent_map[a_idx] = []
+            if sub_day not in absent_map[a_idx]:
+                absent_map[a_idx].append(sub_day)
+
     # Pre-calculate substitute allocations for absent teachers
     # Rule: If absent teacher has enough own teaching hours in that week >= required_min:
     #       substitute hours are 'out' (นอก) first.
@@ -691,7 +699,11 @@ def calculate_week(teachers_master, holiday_days=None, leaves=None, substitution
                 if normalize_day(asub.get('day')) == clean_day:
                     asub_p = set(range(int(asub.get('start_p', 1)), int(asub.get('end_p', 4)) + 1))
                     c_periods = set(parse_periods_from_timestr(c.get('time_str', '')))
-                    if (c_periods and asub_p.intersection(c_periods)) or (asub.get('code') and asub.get('code') == c.get('code')):
+                    if c_periods:
+                        if asub_p.intersection(c_periods):
+                            sub_match = asub
+                            break
+                    elif asub.get('code') and asub.get('code') == c.get('code'):
                         sub_match = asub
                         break
 

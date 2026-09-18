@@ -660,13 +660,13 @@ async def api_calculate(payload: dict):
         holiday_map = ovr.get("week_holiday_map", {})
         holiday_days = holiday_map.get(str(week_num), holiday_map.get(week_num, []))
     leaves = payload.get("leaves", None)
-    if leaves is None:
+    if not leaves:
         leaves = load_leaves()
     substitutions = payload.get("substitutions", None)
-    if substitutions is None:
+    if not substitutions:
         substitutions = load_substitutions()
     compensations = payload.get("compensations", None)
-    if compensations is None:
+    if not compensations:
         compensations = load_compensations()
     
     student_counts = payload.get("student_counts", None)

@@ -4985,11 +4985,14 @@
       
       // Recalculate totals for this teacher
       let sumInVc = 0, sumOutVc = 0, sumInVs = 0, sumOutVs = 0;
-      teacher.classes.forEach(cls => {
-        sumInVc += cls.in_vc || 0;
-        sumOutVc += cls.out_vc || 0;
-        sumInVs += cls.in_vs || 0;
-        sumOutVs += cls.out_vs || 0;
+      const targetClasses = (teacher._rowClasses && teacher._rowClasses.length > 0) ? teacher._rowClasses : (teacher.classes || []);
+      targetClasses.forEach(cls => {
+        if (cls && !cls.is_absent && !cls.is_holiday && !cls.is_compensated_leave && !cls.is_comp_filler) {
+          sumInVc += Number(cls.in_vc) || 0;
+          sumOutVc += Number(cls.out_vc) || 0;
+          sumInVs += Number(cls.in_vs) || 0;
+          sumOutVs += Number(cls.out_vs) || 0;
+        }
       });
       
       teacher.sum_in_vc = sumInVc;
@@ -5816,6 +5819,7 @@
 
           let rowType = 'normal';
           let rowLabel = '';
+          let subLabelText = '';
 
           if (isCompLeave) {
             const dClasses = teacher._rowClasses.filter(x => x.day === cItem.day);
@@ -5881,77 +5885,52 @@
               else if (slotInDay === 1) rowLabel = mNote || '';
               else rowLabel = '';
             }
+          } else if (isSub) {
+            const absName = cItem.absent_teacher_name || cItem.absent_name || '';
+            const cleanAbs = absName.replace(/^(นาย|นางสาว|นาง)\s*/, '').trim();
+            const sLabel = cItem.sub_label || (cleanAbs ? `สอนแทน อ.${cleanAbs}` : 'สอนแทน');
+            if (r === 0) {
+              rowType = 'teacher_name_sub';
+              rowLabel = teacher.name;
+              subLabelText = sLabel;
+            } else {
+              rowType = 'substitute';
+              rowLabel = sLabel;
+            }
           } else {
-            const isMonday = (cItem.day === 'จันทร์');
-            const dClasses = teacher._rowClasses.filter(x => x.day === cItem.day);
-            const slotInDay = dClasses.indexOf(cItem);
-            const daySubClasses = dClasses.filter(x => x && x.is_substitute);
-            const uniqueAbsentLabels = [];
-            daySubClasses.forEach(sc => {
-              const absName = sc.absent_teacher_name || '';
-              const cleanAbs = absName.replace(/^(นาย|นางสาว|นาง)\s*/, '').trim();
-              const label = sc.sub_label || `สอนแทน อ.${cleanAbs}`;
-              if (!uniqueAbsentLabels.includes(label)) {
-                uniqueAbsentLabels.push(label);
-              }
-            });
-
-            if (isMonday && uniqueAbsentLabels.length > 0) {
-              if (slotInDay === 0) {
-                // Slot 0 on Monday: MUST KEEP TEACHER NAME! (สอนแทนทับชื่อครู แก้ให้เลื่อนลงมาอีก 1 บรรทัด)
-                rowType = 'teacher_name';
-                rowLabel = teacher.name;
-              } else if (slotInDay <= uniqueAbsentLabels.length) {
-                // Shift substitute badge down to slot 1 (only 1 line per unique absent teacher)
-                rowType = 'substitute';
-                rowLabel = uniqueAbsentLabels[slotInDay - 1];
-              } else {
-                rowType = 'normal';
-                rowLabel = '';
-              }
-            } else if (!isMonday && uniqueAbsentLabels.length > 0) {
-              if (slotInDay < uniqueAbsentLabels.length) {
-                rowType = 'substitute';
-                rowLabel = uniqueAbsentLabels[slotInDay];
-              } else {
-                rowType = 'normal';
-                rowLabel = '';
-              }
+            if (r === 0) {
+              rowType = 'teacher_name';
+              rowLabel = teacher.name;
             } else {
               rowType = 'normal';
-              rowLabel = teacher.name;
+              rowLabel = '';
             }
           }
 
-          if (rowType === 'teacher_name') {
-            if (curBlock) {
-              col2Blocks.push(curBlock);
-              curBlock = null;
-            }
-            col2Blocks.push({ startRow: r, span: 1, type: 'teacher_name', label: rowLabel });
-          } else if (rowType === 'comp_leave' || rowType === 'compensatory' || rowType === 'substitute') {
-            if (curBlock) {
-              col2Blocks.push(curBlock);
-              curBlock = null;
-            }
-            col2Blocks.push({ startRow: r, span: 1, type: rowType, label: rowLabel });
-          } else if (!curBlock) {
-            curBlock = { startRow: r, span: 1, type: rowType, label: (r === 0 && rowType === 'normal') ? teacher.name : '' };
-          } else if (curBlock.type === rowType) {
-            curBlock.span++;
+          if (!curBlock) {
+            curBlock = { startRow: r, span: 1, type: rowType, label: rowLabel, subLabel: (rowType === 'teacher_name_sub' ? subLabelText : '') };
           } else {
-            col2Blocks.push(curBlock);
-            curBlock = { startRow: r, span: 1, type: rowType, label: '' };
+            const canMergeTeacherName = (curBlock.type === 'teacher_name' && rowType === 'normal');
+            const canMergeSameType = (curBlock.type === rowType && (rowType === 'normal' || curBlock.label === rowLabel));
+            if (canMergeTeacherName || canMergeSameType) {
+              curBlock.span++;
+            } else {
+              col2Blocks.push(curBlock);
+              curBlock = { startRow: r, span: 1, type: rowType, label: rowLabel, subLabel: (rowType === 'teacher_name_sub' ? subLabelText : '') };
+            }
           }
         }
         if (curBlock) {
-          if (curBlock.type === 'normal') curBlock.span += 4; // Extend last non-sub block across 4 summary rows
+          if (curBlock.type === 'normal' || curBlock.type === 'teacher_name') {
+            curBlock.span += 4; // Extend last normal/name block across 4 summary rows
+          }
           col2Blocks.push(curBlock);
         }
 
         let rowsHtml = '';
         const thaiShortMonths = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
         let globalRowIndex = 0;
+        let sumRenderedInVc = 0, sumRenderedOutVc = 0, sumRenderedInVs = 0, sumRenderedOutVs = 0;
 
         for (let dayIdx = 0; dayIdx < activeDays.length; dayIdx++) {
           const dayStr = activeDays[dayIdx];
@@ -6041,10 +6020,17 @@
             let col2Html = '';
             const bBlock = col2Blocks.find(b => b.startRow === r);
             if (bBlock) {
-              if (bBlock.type === 'teacher_name') {
+              if (bBlock.type === 'teacher_name_sub') {
+                col2Html = `
+                  <td rowspan="${bBlock.span}" class="teacher-meta-cell text-left px-1 text-black" style="vertical-align: top; padding-top: 2px; padding-bottom: 0px; white-space: nowrap; background-color: #ffffff !important; border-bottom: hidden !important;">
+                    <div class="whitespace-nowrap font-bold" style="white-space: nowrap !important; overflow: visible;">${bBlock.label || teacher.name}</div>
+                    <div class="whitespace-nowrap font-bold" style="color: #dc2626 !important; font-size: 13.5px; font-weight: bold !important; margin-top: 1px;">${bBlock.subLabel}</div>
+                  </td>
+                `;
+              } else if (bBlock.type === 'teacher_name') {
                 col2Html = `
                   <td rowspan="${bBlock.span}" class="teacher-meta-cell text-left px-1 text-black" style="vertical-align: top; padding-top: 4px; padding-bottom: 0px; white-space: nowrap; background-color: #ffffff !important; border-bottom: hidden !important;">
-                    <div class="whitespace-nowrap font-bold" style="white-space: nowrap !important; overflow: visible;">${teacher.name}</div>
+                    <div class="whitespace-nowrap font-bold" style="white-space: nowrap !important; overflow: visible;">${bBlock.label || teacher.name}</div>
                   </td>
                 `;
               } else if (bBlock.type === 'comp_leave' || bBlock.type === 'compensatory') {
@@ -6055,7 +6041,7 @@
                 `;
               } else if (bBlock.type === 'substitute' || bBlock.isSub) {
                 col2Html = `
-                  <td rowspan="${bBlock.span}" class="teacher-meta-cell text-left px-1 font-bold whitespace-nowrap" style="vertical-align: top; padding-top: 1px; padding-bottom: 2px; background-color: #ffffff !important; color: #dc2626 !important; border-top: hidden !important; border-bottom: hidden !important;">
+                  <td rowspan="${bBlock.span}" class="teacher-meta-cell text-left px-1 font-bold whitespace-nowrap" style="vertical-align: middle; padding-top: 1px; padding-bottom: 2px; background-color: #ffffff !important; color: #dc2626 !important; border-top: hidden !important; border-bottom: hidden !important;">
                     <div class="whitespace-nowrap font-bold" style="color: #dc2626 !important; font-size: 13.5px; font-weight: bold !important;">${bBlock.label}</div>
                   </td>
                 `;
@@ -6294,15 +6280,23 @@
                   <td class="${slotEndClass} amt-cell text-center text-black" style="${compCellBg}" id="amt_vs_${teacher.index}_${r}">${amtVs}</td>
                 </tr>
               `;
+              const inVcVal = (!isCompFiller && c && c.in_vc > 0) ? Number(c.in_vc) : 0;
+              const outVcVal = (!isCompFiller && c && c.out_vc > 0) ? Number(c.out_vc) : 0;
+              const inVsVal = (!isCompFiller && c && c.in_vs > 0) ? Number(c.in_vs) : 0;
+              const outVsVal = (!isCompFiller && c && c.out_vs > 0) ? Number(c.out_vs) : 0;
+              sumRenderedInVc += inVcVal;
+              sumRenderedOutVc += outVcVal;
+              sumRenderedInVs += inVsVal;
+              sumRenderedOutVs += outVsVal;
             }
             globalRowIndex++;
           }
         }
 
-        const outVcTotal = teacher.sum_out_vc || 0;
-        const outVsTotal = teacher.sum_out_vs || 0;
-        const inVcTotal = teacher.sum_in_vc || 0;
-        const inVsTotal = teacher.sum_in_vs || 0;
+        const inVcTotal = (totalTeachingRows > 0) ? sumRenderedInVc : (teacher.sum_in_vc || 0);
+        const outVcTotal = (totalTeachingRows > 0) ? sumRenderedOutVc : (teacher.sum_out_vc || 0);
+        const inVsTotal = (totalTeachingRows > 0) ? sumRenderedInVs : (teacher.sum_in_vs || 0);
+        const outVsTotal = (totalTeachingRows > 0) ? sumRenderedOutVs : (teacher.sum_out_vs || 0);
         const totalVc = inVcTotal + outVcTotal;
         const totalVs = inVsTotal + outVsTotal;
         const reqVc = (teacher.level === 'ปวช.') ? teacher.required_min : 0;
