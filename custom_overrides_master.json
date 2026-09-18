@@ -16,7 +16,6 @@
     "#teacher-card-1 > table:nth-of-type(1) > tbody > tr:nth-of-type(28) > td:nth-of-type(1)": "",
     "#teacher-card-1 > table:nth-of-type(1) > tbody > tr:nth-of-type(29) > td:nth-of-type(1)": "<br>",
     "#teacher-card-1 > table:nth-of-type(1) > tbody > tr:nth-of-type(1) > td:nth-of-type(2) > div": "นายชํานาญ แก้วจงประสิทธิ์",
-    "#teacher-card-1 > table:nth-of-type(1) > tbody > tr:nth-of-type(2) > td:nth-of-type(1)": "20101-2010",
     "#teacher-card-1 > table:nth-of-type(1) > thead > tr:nth-of-type(1) > th:nth-of-type(6)": "ชั้น,แผนก,ห้อง",
     ".a4-page > table:nth-of-type(1) > thead > tr:nth-of-type(1) > th:nth-of-type(3)": "ตำแหน่ง<br>ผู้ทำการสอน",
     "#teacher-card-7 > table:nth-of-type(1) > tbody > tr:nth-of-type(17) > td:nth-of-type(4)": "5",

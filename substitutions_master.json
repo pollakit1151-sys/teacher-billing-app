@@ -53,5 +53,62 @@
     "time_str": "13.10 - 16.10",
     "level": "ปวช.",
     "reason": "ไปราชการ"
+  },
+  {
+    "id": 1789748221327,
+    "week_num": 1,
+    "absent_teacher_idx": 2,
+    "absent_name": "นายสุเมธ เฉลิมพันธ์",
+    "absent_teacher_name": "นายสุเมธ เฉลิมพันธ์",
+    "absent_label": "สอนแทน อ.สุเมธ เฉลิมพันธ์",
+    "sub_teacher_idx": 6,
+    "sub_name": "นายคงศักดิ์ มากซุง",
+    "sub_teacher_name": "นายคงศักดิ์ มากซุง",
+    "sub_label": "สอนแทน อ.สุเมธ เฉลิมพันธ์",
+    "day": "จันทร์",
+    "start_p": 1,
+    "end_p": 4,
+    "periods": [
+      1,
+      2,
+      3,
+      4
+    ],
+    "hours": 4,
+    "code": "30100-1016",
+    "subject_name": "นิวเมติกส์และไฮดรอลิกส์",
+    "class_info": "สย.ม.6 1/3 (26)",
+    "time_str": "08.10 - 12.10",
+    "level": "ปวส.",
+    "reason": "ไปราชการ"
+  },
+  {
+    "id": 1789748237356,
+    "week_num": 1,
+    "absent_teacher_idx": 2,
+    "absent_name": "นายสุเมธ เฉลิมพันธ์",
+    "absent_teacher_name": "นายสุเมธ เฉลิมพันธ์",
+    "absent_label": "สอนแทน อ.สุเมธ เฉลิมพันธ์",
+    "sub_teacher_idx": 8,
+    "sub_name": "นายกวีศักดิ์ แป้นขาว",
+    "sub_teacher_name": "นายกวีศักดิ์ แป้นขาว",
+    "sub_label": "สอนแทน อ.สุเมธ เฉลิมพันธ์",
+    "day": "จันทร์",
+    "start_p": 6,
+    "end_p": 10,
+    "periods": [
+      6,
+      7,
+      8,
+      9,
+      10
+    ],
+    "hours": 5,
+    "code": "30100-1016",
+    "subject_name": "นิวเมติกส์และไฮดรอลิกส์",
+    "class_info": "สย.ม.6 1/4 (26)",
+    "time_str": "14.10 - 19.10",
+    "level": "ปวส.",
+    "reason": "ไปราชการ"
   }
 ]

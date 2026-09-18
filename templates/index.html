@@ -2824,6 +2824,7 @@
                 key.includes('foot_claim_hrs') || key.includes('foot_tot_money') ||
                 key.includes('foot_over_') || key.includes('foot_sum_') || key.includes('foot_tot_') ||
                 key.includes('covTotalMoney') || key.includes('covBahtText') || key.includes('tfoot') ||
+                (key.includes('tr:nth-of-type(2) > td:nth-of-type(1)') && typeof htmlContent === 'string' && htmlContent.includes('20101-2010')) ||
                 (typeof htmlContent === 'string' && (htmlContent.includes('รวมจำนวนหน่วยชั่วโมงที่ขอเบิกค่าสอน') || htmlContent.includes('ยอดเงินรวม') || htmlContent.includes('รวมจำนวนเงินค่าสอนพิเศษทั้งสิ้น') || htmlContent.includes('หนึ่งแสนห้าหมื่นหกพันบาทถ้วน')))) {
               delete customTextEditsMap[key];
               continue;
@@ -6173,7 +6174,8 @@
                 // Slot 0: Leave reason with PEACH background fill (#FCE4D6) & BOLD
                 middleCols = `<td colspan="3" class="${slotEndClass} text-center font-bold px-1" style="background-color: #FCE4D6 !important; color: #000000;">${leaveReason}</td>`;
               } else if (slot === 1) {
-                const mainCode = cList.find(c => c && c.code)?.code || '';
+                const hasSubs = (subNotes && subNotes.length > 0);
+                const mainCode = hasSubs ? '' : (cList.find(c => c && c.code)?.code || '');
                 middleCols = `<td colspan="3" class="${slotEndClass} text-center font-normal px-1">${mainCode}</td>`;
               } else if (slot === 2) {
                 // Slot 2: Substitute teacher note with RED BOLD text (#dc2626)
