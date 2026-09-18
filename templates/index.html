@@ -5991,9 +5991,10 @@
             dayAbsSubs.forEach(sub => {
               const sIdx = sub.sub_teacher_idx;
               if (!groupedSubs[sIdx]) {
+                const subTeacherObj = (typeof calculatedData !== 'undefined' && calculatedData.find(t => t.index === sIdx)) || (typeof masterTeachers !== 'undefined' && masterTeachers.find(t => t.index === sIdx));
                 groupedSubs[sIdx] = {
                   subTeacherIdx: sIdx,
-                  name: sub.sub_name || sub.sub_teacher_name || 'ครูสอนแทน',
+                  name: (subTeacherObj && subTeacherObj.name) ? subTeacherObj.name : (sub.sub_name || sub.sub_teacher_name || 'ครูสอนแทน'),
                   totalHours: 0
                 };
               }
