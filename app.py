@@ -1505,30 +1505,55 @@ async def print_comp_form():
 @app.get("/api/distribution_summary")
 async def api_distribution_summary(round_num: int = 1, weeks_count: int = 4, dept: str = "ทั้งหมด", target_net: float = 0):
     try:
-        from calculator import calculate_internal_distribution, classify_teacher_8_categories, calculate_week
-        with open(TEACHERS_FILE, "r", encoding="utf-8") as f:
-            teachers = json.load(f)
+        from calculator import calculate_internal_distribution, classify_teacher_8_categories, calculate_round_breakdown_matrix
+        teachers = load_master()
             
         if dept and dept not in ["ทั้งหมด", "ทั้งสองแผนก", "ช่างยนต์และยานยนต์ไฟฟ้า", "auto_ev", "all"]:
             teachers = [t for t in teachers if t.get("dept") == dept]
             
         # Check custom revenue overrides
         dist_overrides = {}
-        if os.path.exists(CUSTOM_OVERRIDES_FILE):
-            try:
-                with open(CUSTOM_OVERRIDES_FILE, "r", encoding="utf-8") as cof:
-                    cov_data = json.load(cof)
-                    dist_overrides = cov_data.get("distribution_revenues", {})
-            except Exception:
-                dist_overrides = {}
+        ovr = load_custom_overrides()
+        if isinstance(ovr, dict):
+            dist_overrides = ovr.get("distribution_revenues", {})
 
-        calculated = calculate_week(teachers)
+        if round_num == 1:
+            all_round_weeks = [1, 2, 3, 4, 5]
+        elif round_num == 2:
+            all_round_weeks = [6, 7, 8, 9, 10]
+        elif round_num == 3:
+            all_round_weeks = [11, 12, 13, 14, 15]
+        elif round_num == 4:
+            all_round_weeks = [16, 17]
+        else:
+            all_round_weeks = list(range(1, weeks_count + 1))
+        
+        round_weeks = all_round_weeks[:weeks_count] if weeks_count > 0 else all_round_weeks
+
+        server_holidays = ovr.get("week_holiday_map", {})
+        st_counts = ovr.get("student_counts", {})
+        c_types = ovr.get("course_types", {})
+        leaves = load_leaves()
+        subs = load_substitutions()
+        comps = load_compensations()
+
+        matrix = calculate_round_breakdown_matrix(
+            teachers,
+            round_weeks,
+            dept=dept,
+            holidays_map=server_holidays,
+            leaves_map=leaves,
+            subs_map=subs,
+            comps_map=comps,
+            student_counts=st_counts,
+            course_types=c_types
+        )
         
         # Calculate individual revenues for each teacher
         teachers_with_cat = []
         total_revenue = 0
         
-        for t in calculated:
+        for t in matrix.get("teachers", []):
             name_clean = t.get("name", "").strip()
             # If overridden by user
             if name_clean in dist_overrides:
@@ -1536,8 +1561,7 @@ async def api_distribution_summary(round_num: int = 1, weeks_count: int = 4, dep
             elif str(t.get("index")) in dist_overrides:
                 rev = float(dist_overrides[str(t.get("index"))])
             else:
-                weekly_money = float(t.get("total_money", 0))
-                rev = weekly_money * weeks_count
+                rev = float(t.get("round_money", 0))
                 
             total_revenue += rev
             
