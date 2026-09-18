@@ -508,6 +508,18 @@ def calculate_week(teachers_master, holiday_days=None, leaves=None, substitution
             c_day = normalize_day(c.get('day') or '')
             if c_day in a_absent_days or c_day in norm_holiday_days:
                 continue
+            # ตรวจสอบว่าวิชา/คาบนี้ถูกจัดสอนแทนหรือไม่
+            c_periods = set(parse_periods_from_timestr(c.get('time_str', '')))
+            is_subbed = False
+            for asub in a_subs:
+                if normalize_day(asub.get('day')) == c_day:
+                    asub_p = set(range(int(asub.get('start_p', 1)), int(asub.get('end_p', 4)) + 1))
+                    if (c_periods and asub_p.intersection(c_periods)) or (asub.get('code') and asub.get('code') == c.get('code')):
+                        is_subbed = True
+                        break
+            if is_subbed:
+                continue
+
             code = c.get('code', '')
             c_name = c.get('subject_name') or c.get('name', '')
             class_info = c.get('class_info', '')
@@ -517,17 +529,29 @@ def calculate_week(teachers_master, holiday_days=None, leaves=None, substitution
             periods = parse_periods_from_timestr(c.get('time_str', ''))
             a_own_hours += len(periods) if periods else 1
 
+        # 1. เช็คชั่วโมงของคนไปราชการว่าในครบขั้นต่ำไหม
         shortage = max(0, a_min - a_own_hours)
+
+        # 2. ห้ามเบิกเกินสิทธิ์เดิมเหมือนเดิม: เพดานคาบนอกเดิมของคนไปราชการ (Baseline Normal Out)
+        a_baseline_out = compute_teacher_baseline_out(absent_teacher, student_counts=student_counts, course_types=course_types)
+        a_bg_req = (a_min + 2) if a_min > 0 else 0
+        a_own_surplus = max(0, a_own_hours - a_bg_req)
+        a_own_out = min(a_baseline_out, a_own_surplus)
+        a_max_sub_out = max(0, a_baseline_out - a_own_out)
+
         sorted_asubs = sorted(a_subs, key=lambda s: (DAY_ORDER.index(s.get('day', '')) if s.get('day', '') in DAY_ORDER else 99, int(s.get('start_p', 1))))
         for asub in sorted_asubs:
             h = asub.get('hours') or (int(asub.get('end_p', 4)) - int(asub.get('start_p', 1)) + 1)
-            if shortage > 0:
-                alloc_in = min(h, shortage)
-                alloc_out = h - alloc_in
-                shortage -= alloc_in
-            else:
-                alloc_in = 0
-                alloc_out = h
+            # เติม 'ใน' ให้คนไปราชการจนครบขั้นต่ำก่อน
+            alloc_in_shortage = min(h, shortage)
+            shortage -= alloc_in_shortage
+            rem_h = h - alloc_in_shortage
+
+            # ส่วนที่เหลือสามารถเป็น 'นอก' ได้ไม่เกินสิทธิ์เดิมของคนไปราชการ
+            alloc_out = min(rem_h, a_max_sub_out)
+            a_max_sub_out -= alloc_out
+            alloc_in = alloc_in_shortage + (rem_h - alloc_out)
+
             asub['_alloc_in'] = alloc_in
             asub['_alloc_out'] = alloc_out
 
@@ -906,15 +930,42 @@ def calculate_week(teachers_master, holiday_days=None, leaves=None, substitution
             if not c.get('_is_substitute_preallocated') and not c.get('_is_compensatory_preallocated'):
                 active_classes.append(c)
 
+        # ตรวจสอบว่าคนที่ทำการสอนแทนมี 'ใน' ครบขั้นต่ำหรือไม่
+        # หากมี 'ใน' ไม่ครบขั้นต่ำ จะไม่สามารถเบิกนอกให้คนไปราชการได้ (ต้องดึงคาบสอนแทนมาเติม 'ใน' ให้ครบขั้นต่ำก่อน)
+        regular_hours = sum(c['_parsed_hrs'] for c in active_classes)
+        sub_teacher_own_shortage = max(0, base_min - regular_hours)
+        if sub_teacher_own_shortage > 0:
+            for sc in weekly_classes:
+                if sc.get('is_substitute') and sub_teacher_own_shortage > 0:
+                    out_vs = sc.get('out_vs', 0)
+                    out_vc = sc.get('out_vc', 0)
+                    if out_vs > 0:
+                        shift = min(out_vs, sub_teacher_own_shortage)
+                        sc['out_vs'] -= shift
+                        sc['in_vs'] = sc.get('in_vs', 0) + shift
+                        sc['amt_vs'] = sc['out_vs'] * 270
+                        sub_teacher_own_shortage -= shift
+                    elif out_vc > 0:
+                        shift = min(out_vc, sub_teacher_own_shortage)
+                        sc['out_vc'] -= shift
+                        sc['in_vc'] = sc.get('in_vc', 0) + shift
+                        sc['amt_vc'] = sc['out_vc'] * 200
+                        sub_teacher_own_shortage -= shift
+
+            # Recalculate total_sub_in and total_sub_out after conversion
+            total_sub_in = sum(c.get('in_vc', 0) + c.get('in_vs', 0) for c in weekly_classes if c.get('is_substitute'))
+            total_sub_out = sum(c.get('out_vc', 0) + c.get('out_vs', 0) for c in weekly_classes if c.get('is_substitute'))
+
         # สิทธิ์เดิมในสัปดาห์ปกติ (Baseline normal out)
         baseline_normal_out = compute_teacher_baseline_out(teacher, student_counts=student_counts, course_types=course_types)
         baseline_cap = baseline_normal_out if baseline_normal_out > 0 else 12
 
-        # Calculate allocation for regular classes taking preallocated substitute hours into account
-        regular_hours = sum(c['_parsed_hrs'] for c in active_classes)
+        # Calculate allocation for regular classes
+        # สำหรับคนที่สอนแทน จะสามารถเบิกนอกเกิน 12 คาบได้ คือ ของตัวเอง (สูงสุดตาม baseline_cap หรือ 12) + ของคนที่ไปราชการ (total_sub_out)
+        # ดังนั้น max_claim_allowed สำหรับวิชาปกติของตัวเองจึงไม่ถูกหักลบด้วย total_sub_out
         needed_in_for_teacher = max(0, background_required - total_sub_in)
         reg_surplus = max(0, regular_hours - needed_in_for_teacher)
-        max_claim_allowed = max(0, min(12, baseline_cap) - total_sub_out)
+        max_claim_allowed = min(12, baseline_cap)
 
         # 4 Priority Groups for claiming 'นอก' (overflow/extra teaching hours):
         # 1) วิชาปกติ วันธรรมดา (จันทร์ - ศุกร์): ให้สิทธิ์เบิก 'นอก' เป็นลำดับแรก
