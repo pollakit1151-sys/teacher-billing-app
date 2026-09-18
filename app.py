@@ -235,19 +235,19 @@ async def api_get_custom_overrides():
 async def api_save_custom_overrides(payload: dict):
     current = load_custom_overrides()
     replace_all = payload.get("replace_all", True)
-    for k in ["text_edits", "template_overrides", "font_sizes", "font_weights", "student_counts"]:
+    for k in ["text_edits", "template_overrides", "font_sizes", "font_weights", "student_counts", "course_types"]:
         if k in payload:
             if replace_all:
                 current[k] = payload[k]
             else:
+                if k not in current or not isinstance(current[k], dict):
+                    current[k] = {}
                 if isinstance(payload[k], dict):
-                    if k not in current or not isinstance(current[k], dict):
-                        current[k] = {}
                     current[k].update(payload[k])
                 else:
                     current[k] = payload[k]
     save_custom_overrides(current)
-    return JSONResponse(content={"status": "success", "message": "บันทึกการปรับแต่งฟอร์มเรียบร้อยแล้ว", "data": current})
+    return JSONResponse(content={"status": "success", "message": "Saved custom overrides successfully"})
 
 @app.get("/api/student_counts")
 async def api_get_student_counts():
@@ -265,6 +265,23 @@ async def api_save_student_counts(payload: dict):
         current["student_counts"].update(counts)
         save_custom_overrides(current)
     return JSONResponse(content={"status": "success", "message": "บันทึกข้อมูลจำนวนนักเรียนเรียบร้อยแล้ว", "data": current.get("student_counts", {})})
+
+@app.get("/api/course_types")
+async def api_get_course_types():
+    current = load_custom_overrides()
+    types = current.get("course_types", {})
+    return JSONResponse(content={"status": "success", "data": types})
+
+@app.post("/api/save_course_types")
+async def api_save_course_types(payload: dict):
+    current = load_custom_overrides()
+    types = payload.get("types", payload.get("course_types", {}))
+    if isinstance(types, dict):
+        if "course_types" not in current or not isinstance(current["course_types"], dict):
+            current["course_types"] = {}
+        current["course_types"].update(types)
+        save_custom_overrides(current)
+    return JSONResponse(content={"status": "success", "message": "บันทึกข้อมูลประเภทรายวิชาเรียบร้อยแล้ว", "data": current.get("course_types", {})})
 
 @app.get("/api/compensations")
 async def api_get_compensations():
@@ -474,7 +491,10 @@ async def api_round_breakdown_matrix(round_num: int = 1, dept: str = "ทั้�
         else:
             round_weeks = [1, 2, 3, 4, 5]
 
-    result = calculate_round_breakdown_matrix(teachers, round_weeks, dept=dept)
+    ovr = load_custom_overrides()
+    st_counts = ovr.get("student_counts", {})
+    c_types = ovr.get("course_types", {})
+    result = calculate_round_breakdown_matrix(teachers, round_weeks, dept=dept, student_counts=st_counts, course_types=c_types)
     return JSONResponse(content={"status": "success", "round_num": round_num, "data": result})
 
 @app.post("/api/calculate")
@@ -486,6 +506,14 @@ async def api_calculate(payload: dict):
     compensations = payload.get("compensations", None)
     if compensations is None:
         compensations = load_compensations()
+    
+    ovr = load_custom_overrides()
+    student_counts = payload.get("student_counts", None)
+    if student_counts is None:
+        student_counts = ovr.get("student_counts", {})
+    course_types = payload.get("course_types", None)
+    if course_types is None:
+        course_types = ovr.get("course_types", {})
     overrides = payload.get("overrides", {})
     
     result = calculate_week(
@@ -494,6 +522,8 @@ async def api_calculate(payload: dict):
         leaves=leaves,
         substitutions=substitutions,
         compensations=compensations,
+        student_counts=student_counts,
+        course_types=course_types,
         overrides=overrides
     )
     return JSONResponse(content={"status": "success", "data": result})

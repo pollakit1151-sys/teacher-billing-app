@@ -174,22 +174,58 @@ def normalize_day(d):
         return 'พฤหัส'
     return d
 
+def normalize_class_name(s):
+    if not s: return ''
+    c_str = re.sub(r'\s*\(\s*\d+\s*\)$', '', str(s)).strip()
+    c_str = re.sub(r'\s+', '', c_str)
+    # Normalize dual vocational (ทวิภาคี) and OCR variants so e.g. "ชย.ทวิ 3/9", "ชย. 3/9", "ชย.3/9" match
+    c_str = re.sub(r'ทวิ|ทวี|ทรี|ทร', '', c_str)
+    c_str = c_str.replace('ขย.', 'ชย.').replace('ซย.', 'ชย.')
+    return c_str.lower()
+
 def get_class_student_count(class_info, student_counts=None):
     if not class_info:
         return 26
     c_str = str(class_info).strip()
-    if student_counts and c_str in student_counts:
-        try:
-            return int(student_counts[c_str])
-        except (ValueError, TypeError):
-            pass
+    
+    # 1. Match from student_counts with space and qualifier normalization
+    if student_counts:
+        norm_c = normalize_class_name(c_str)
+        for k, v in student_counts.items():
+            if normalize_class_name(k) == norm_c:
+                try:
+                    return int(v)
+                except (ValueError, TypeError):
+                    pass
+
+    # 2. Check if the cell itself has an explicit count in parentheses: e.g. "ชย.3/9 (20)"
     m = re.search(r'\((\d+)\)', c_str)
     if m:
         try:
             return int(m.group(1))
         except (ValueError, TypeError):
             pass
+            
     return 26
+
+def is_theory_course(code, name, course_types=None):
+    """
+    ตรวจสอบว่าวิชาเป็น 'ทฤษฎี' หรือ 'ปฏิบัติ'
+    - ทฤษฎี: ต้องมีนักเรียน >= 26 คน ถึงจะนำไปเบิกคาบนอกได้
+    - ปฏิบัติ: ต้องมีนักเรียน >= 10 คน ถึงจะนำไปเบิกคาบนอกได้
+    """
+    code_str = str(code or '').strip()
+    name_str = str(name or '').strip()
+    if course_types:
+        if code_str in course_types:
+            return course_types[code_str] == 'theory'
+        if name_str in course_types:
+            return course_types[name_str] == 'theory'
+    # Heuristic based on course name
+    if 'ปฏิบัติ' in name_str or 'ฝึกงาน' in name_str or 'โครงงาน' in name_str:
+        return False
+    # Default to theory (26 students threshold)
+    return True
 
 def classify_teacher_group(teacher):
     # 4 Groups:
@@ -227,7 +263,7 @@ def classify_teacher_group(teacher):
         else:
             return 'sp_vs', 'ครูพิเศษ (ปวส.)'
 
-def calculate_week(teachers_master, holiday_days=None, leaves=None, substitutions=None, compensations=None, student_counts=None, overrides=None):
+def calculate_week(teachers_master, holiday_days=None, leaves=None, substitutions=None, compensations=None, student_counts=None, course_types=None, overrides=None):
     if holiday_days is None:
         holiday_days = []
     if leaves is None:
@@ -238,6 +274,8 @@ def calculate_week(teachers_master, holiday_days=None, leaves=None, substitution
         compensations = []
     if student_counts is None:
         student_counts = {}
+    if course_types is None:
+        course_types = {}
     if overrides is None:
         overrides = {}
 
@@ -653,6 +691,10 @@ def calculate_week(teachers_master, holiday_days=None, leaves=None, substitution
 
             # Check if activity with < 26 students
             std_cnt = get_class_student_count(class_info, student_counts)
+            raw_c = re.sub(r'\s*\(\s*\d+\s*\)$', '', str(class_info)).strip()
+            if raw_c:
+                c['class_info'] = f"{raw_c} ({std_cnt})"
+
             if is_activity(code, c_name) and std_cnt < 26:
                 c['in_vc'] = 0
                 c['out_vc'] = 0
@@ -685,6 +727,16 @@ def calculate_week(teachers_master, holiday_days=None, leaves=None, substitution
                 can_be_extra = False
             elif is_internship(code, c_name, class_info):
                 can_be_extra = False
+            else:
+                # เกณฑ์จำนวนผู้เรียนขั้นต่ำในการนำไปเบิกคาบนอก:
+                # - วิชาทฤษฎี: ต้องมีนักเรียน >= 26 คน ถึงจะนำไปเบิกคาบนอกได้
+                # - วิชาปฏิบัติ: ต้องมีนักเรียน >= 10 คน ถึงจะนำไปเบิกคาบนอกได้
+                # หากไม่ถึงเกณฑ์ จะไม่สามารถเบิกคาบนอกได้ (ต้องเป็น 'ใน' เท่านั้น)
+                is_th = is_theory_course(code, c_name, course_types)
+                min_threshold = 26 if is_th else 10
+                if std_cnt < min_threshold:
+                    can_be_extra = False
+                    c['_unclaimable_reason'] = f"ผู้เรียน {std_cnt} คน ไม่ถึงเกณฑ์{'ทฤษฎี' if is_th else 'ปฏิบัติ'} ({min_threshold} คน)"
 
             c['_can_be_extra'] = can_be_extra
             total_hours += hrs
@@ -837,7 +889,7 @@ def calculate_week(teachers_master, holiday_days=None, leaves=None, substitution
 
     return processed_teachers
 
-def calculate_round_breakdown_matrix(teachers_master, round_weeks, dept='ช่างยนต์', holidays_map=None, leaves_map=None, subs_map=None, comps_map=None):
+def calculate_round_breakdown_matrix(teachers_master, round_weeks, dept='ช่างยนต์', holidays_map=None, leaves_map=None, subs_map=None, comps_map=None, student_counts=None, course_types=None):
     """
     คำนวณยอดสรุปตารางแจกแจงรายบุคคลระดับรอบเบิก (Multi-week Matrix)
     เช่น รอบที่ 1: สัปดาห์ที่ 1, 2, 3, 4, 5
@@ -847,6 +899,8 @@ def calculate_round_breakdown_matrix(teachers_master, round_weeks, dept='ช่�
     if leaves_map is None: leaves_map = {}
     if subs_map is None: subs_map = {}
     if comps_map is None: comps_map = {}
+    if student_counts is None: student_counts = {}
+    if course_types is None: course_types = {}
 
     # กรองครูตามแผนก (ถ้า dept เป็น 'ทั้งหมด' หรือ 'ทั้งสองแผนก' ให้รวมทั้งสองแผนก ช่างยนต์ + ยานยนต์ไฟฟ้า)
     if not dept or dept in ['ทั้งหมด', 'ทั้งสองแผนก', 'ช่างยนต์และยานยนต์ไฟฟ้า', 'auto_ev', 'all']:
@@ -860,7 +914,7 @@ def calculate_round_breakdown_matrix(teachers_master, round_weeks, dept='ช่�
         w_leaves = leaves_map.get(w, [])
         w_subs = subs_map.get(w, [])
         w_comps = comps_map.get(w, [])
-        weekly_results[w] = calculate_week(dept_teachers, holiday_days=w_holidays, leaves=w_leaves, substitutions=w_subs, compensations=w_comps)
+        weekly_results[w] = calculate_week(dept_teachers, holiday_days=w_holidays, leaves=w_leaves, substitutions=w_subs, compensations=w_comps, student_counts=student_counts, course_types=course_types)
 
     teachers_matrix = []
     group_reg = []

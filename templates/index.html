@@ -3640,17 +3640,24 @@
       }
     }
 
-    // --- MANUAL STUDENT COUNT MANAGEMENT ---
+    // --- MANUAL STUDENT COUNT & COURSE TYPES MANAGEMENT ---
     let manualStudentCounts = {};
+    let courseTypes = {}; // { '20101-2020': 'theory'|'practice', ... }
     let defaultStudentCount = 26;
+    let activeStudentModalTab = 'rooms'; // 'rooms' | 'courses'
 
     async function loadInitialStudentCounts() {
       try {
         // 1. LocalStorage
-        const local = localStorage.getItem('app_manual_student_counts');
-        if (local) {
-          try { Object.assign(manualStudentCounts, JSON.parse(local)); } catch (e) {}
+        const localCounts = localStorage.getItem('app_manual_student_counts');
+        if (localCounts) {
+          try { Object.assign(manualStudentCounts, JSON.parse(localCounts)); } catch (e) {}
         }
+        const localTypes = localStorage.getItem('app_course_types');
+        if (localTypes) {
+          try { Object.assign(courseTypes, JSON.parse(localTypes)); } catch (e) {}
+        }
+
         // 2. Server API
         const res = await fetch('/api/student_counts');
         if (res.ok) {
@@ -3659,8 +3666,15 @@
             Object.assign(manualStudentCounts, json.data);
           }
         }
+        const resT = await fetch('/api/course_types');
+        if (resT.ok) {
+          const jsonT = await resT.json();
+          if (jsonT.data && typeof jsonT.data === 'object') {
+            Object.assign(courseTypes, jsonT.data);
+          }
+        }
       } catch (e) {
-        console.warn('Could not load student counts:', e);
+        console.warn('Could not load student counts or course types:', e);
       }
     }
 
@@ -3673,20 +3687,21 @@
       teachersPool.forEach(t => {
         (t.schedule || t.classes || []).forEach(c => {
           let cls = c.class_info || c.class_group || '';
-          if (!cls) return;
-          const m = cls.match(/\(\s*(\d+)\s*\)/);
-          const raw = cls.replace(/\s*\(\s*\d+\s*\)$/, '').trim();
-          if (raw) {
-            if (m && (!manualStudentCounts[raw] || manualStudentCounts[raw] === 26)) {
-              manualStudentCounts[raw] = parseInt(m[1], 10);
-            } else if (!manualStudentCounts[raw]) {
-              manualStudentCounts[raw] = defaultStudentCount;
+          if (cls) {
+            const m = cls.match(/\(\s*(\d+)\s*\)/);
+            const raw = cls.replace(/\s*\(\s*\d+\s*\)$/, '').trim();
+            if (raw) {
+              if (m && (!manualStudentCounts[raw] || manualStudentCounts[raw] === 26)) {
+                manualStudentCounts[raw] = parseInt(m[1], 10);
+              } else if (!manualStudentCounts[raw]) {
+                manualStudentCounts[raw] = defaultStudentCount;
+              }
             }
           }
         });
       });
 
-      renderManualStudentCountList();
+      switchStudentModalTab(activeStudentModalTab || 'rooms');
       modal.classList.remove('hidden');
       if (typeof lucide !== 'undefined') lucide.createIcons();
     }
@@ -3694,6 +3709,121 @@
     function closeManualStudentCountModal() {
       const modal = document.getElementById('modalManualStudentCount');
       if (modal) modal.classList.add('hidden');
+    }
+
+    function switchStudentModalTab(tab) {
+      activeStudentModalTab = tab;
+      const tabRooms = document.getElementById('tabContentRooms');
+      const tabCourses = document.getElementById('tabContentCourses');
+      const btnRooms = document.getElementById('tabBtnStudentRooms');
+      const btnCourses = document.getElementById('tabBtnCourseTypes');
+      
+      if (tab === 'rooms') {
+        if (tabRooms) tabRooms.classList.remove('hidden');
+        if (tabCourses) tabCourses.classList.add('hidden');
+        if (btnRooms) {
+          btnRooms.className = "px-3.5 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer flex items-center gap-1.5 bg-blue-600 text-white shadow-2xs";
+        }
+        if (btnCourses) {
+          btnCourses.className = "px-3.5 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer flex items-center gap-1.5 bg-slate-100 text-slate-700 hover:bg-slate-200";
+        }
+        renderManualStudentCountList(document.getElementById('searchStudentClassInput')?.value || '');
+      } else {
+        if (tabRooms) tabRooms.classList.add('hidden');
+        if (tabCourses) tabCourses.classList.remove('hidden');
+        if (btnRooms) {
+          btnRooms.className = "px-3.5 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer flex items-center gap-1.5 bg-slate-100 text-slate-700 hover:bg-slate-200";
+        }
+        if (btnCourses) {
+          btnCourses.className = "px-3.5 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer flex items-center gap-1.5 bg-blue-600 text-white shadow-2xs";
+        }
+        renderCourseTypeList(document.getElementById('searchCourseTypeInput')?.value || '');
+      }
+      if (typeof lucide !== 'undefined') lucide.createIcons();
+    }
+
+    function getAllDistinctCourses() {
+      const teachersPool = (calculatedData && calculatedData.length > 0) ? calculatedData : masterTeachers;
+      const courseMap = {};
+      teachersPool.forEach(t => {
+        (t.schedule || t.classes || []).forEach(c => {
+          const code = (c.code || '').trim();
+          const name = (c.subject_name || c.name || '').trim();
+          if (code && !code.includes('สอนแทน') && !code.includes('สอนชดเชย') && code !== 'หยุด') {
+            if (!courseMap[code]) {
+              courseMap[code] = name;
+            }
+          }
+        });
+      });
+      return courseMap;
+    }
+
+    function renderCourseTypeList(filterText = '') {
+      const tbody = document.getElementById('courseTypeTableBody');
+      const badge = document.getElementById('studentCountSummaryBadge');
+      if (!tbody) return;
+      tbody.innerHTML = '';
+      
+      const courseMap = getAllDistinctCourses();
+      const codes = Object.keys(courseMap).sort();
+      const q = (filterText || '').trim().toLowerCase();
+      const filtered = q ? codes.filter(code => code.toLowerCase().includes(q) || (courseMap[code] || '').toLowerCase().includes(q)) : codes;
+      
+      if (badge) badge.innerText = `พบทั้งหมด ${codes.length} รายวิชา (แสดง ${filtered.length} วิชา)`;
+
+      if (filtered.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-slate-400">ไม่พบรายวิชาที่ค้นหา</td></tr>`;
+        return;
+      }
+
+      filtered.forEach((code, idx) => {
+        const name = courseMap[code] || '-';
+        // Determine current type
+        let currentType = courseTypes[code];
+        if (!currentType) {
+          if (name.includes('ปฏิบัติ') || name.includes('ฝึกงาน') || name.includes('โครงงาน')) {
+            currentType = 'practice';
+          } else {
+            currentType = 'theory';
+          }
+        }
+        const isTheory = (currentType === 'theory');
+
+        const tr = document.createElement('tr');
+        tr.className = "hover:bg-blue-50/40 transition border-b border-slate-100";
+        tr.innerHTML = `
+          <td class="p-2.5 pl-3 text-slate-400 font-mono">${idx + 1}</td>
+          <td class="p-2.5 font-bold text-slate-900 font-mono">${code}</td>
+          <td class="p-2.5 text-slate-700">${name}</td>
+          <td class="p-2.5 text-center">
+            <div class="inline-flex rounded-lg border border-slate-200 p-0.5 bg-slate-100 shadow-2xs">
+              <button type="button" onclick="setCourseType('${code}', 'theory')" 
+                      class="px-2.5 py-1 rounded-md text-[11px] font-bold transition cursor-pointer flex items-center gap-1 ${isTheory ? 'bg-blue-600 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'}">
+                <span>📘 ทฤษฎี</span>
+                <span class="text-[9px] opacity-80">(&ge;26)</span>
+              </button>
+              <button type="button" onclick="setCourseType('${code}', 'practice')" 
+                      class="px-2.5 py-1 rounded-md text-[11px] font-bold transition cursor-pointer flex items-center gap-1 ${!isTheory ? 'bg-emerald-600 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'}">
+                <span>🛠️ ปฏิบัติ</span>
+                <span class="text-[9px] opacity-80">(&ge;10)</span>
+              </button>
+            </div>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+      if (typeof lucide !== 'undefined') lucide.createIcons();
+    }
+
+    function filterCourseTypeList(val) {
+      renderCourseTypeList(val);
+    }
+
+    function setCourseType(code, type) {
+      courseTypes[code] = type;
+      try { localStorage.setItem('app_course_types', JSON.stringify(courseTypes)); } catch (e) {}
+      renderCourseTypeList(document.getElementById('searchCourseTypeInput')?.value || '');
     }
 
     function renderManualStudentCountList(filterText = '') {
@@ -3785,15 +3915,25 @@
 
     async function saveManualStudentCounts() {
       // 1. Save to localStorage
-      localStorage.setItem('app_manual_student_counts', JSON.stringify(manualStudentCounts));
+      try {
+        localStorage.setItem('app_manual_student_counts', JSON.stringify(manualStudentCounts));
+        localStorage.setItem('app_course_types', JSON.stringify(courseTypes));
+      } catch (e) {}
 
       // 2. Save to server
       try {
-        await fetch('/api/save_student_counts', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ counts: manualStudentCounts })
-        });
+        await Promise.all([
+          fetch('/api/save_student_counts', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ counts: manualStudentCounts })
+          }),
+          fetch('/api/save_course_types', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ types: courseTypes })
+          })
+        ]);
       } catch (e) {
         console.warn('Server save failed, saved locally:', e);
       }
@@ -3821,7 +3961,7 @@
         await recalculateAll();
       }
       closeManualStudentCountModal();
-      showToast("บันทึกเรียบร้อย", `บันทึกข้อมูลจำนวนนักเรียน ${Object.keys(manualStudentCounts).length} ห้องเรียบร้อยแล้ว`, true);
+      showToast("บันทึกเรียบร้อย", `บันทึกข้อมูลจำนวนนักเรียนและประเภทวิชาเรียบร้อยแล้ว`, true);
     }
 
     async function loadInitialMasterData() {
@@ -4642,14 +4782,25 @@
       } else {
         c[field] = val;
         if (field === 'class_info') {
-          const m = val.match(/\(\s*(\d+)\s*\)$/);
+          const m = val.match(/\(\s*(\d+)\s*\)/);
           if (m) {
             const count = parseInt(m[1], 10);
-            const rawClass = val.replace(/\s*\(\s*\d+\s*\)$/, '').trim();
+            const rawClass = val.replace(/\s*\(\s*\d+\s*\)/g, '').trim();
             if (rawClass && !isNaN(count)) {
               if (typeof manualStudentCounts === 'undefined') manualStudentCounts = {};
               manualStudentCounts[rawClass] = count;
+              const baseRoom = rawClass.replace(/\s+/g, '').replace(/ทวิ|ทวี|ทรี|ทร/g, '');
+              if (baseRoom) manualStudentCounts[baseRoom] = count;
               try { localStorage.setItem('app_manual_student_counts', JSON.stringify(manualStudentCounts)); } catch (e) {}
+              fetch('/api/save_student_counts', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ counts: manualStudentCounts })
+              }).catch(console.warn);
+              if (typeof recalculateAll === 'function') {
+                recalculateAll();
+                return;
+              }
             }
           }
         }
@@ -6730,7 +6881,9 @@
             holiday_days: holidays,
             leaves: leavesList,
             substitutions: substitutionsList,
-            compensations: compensationsList
+            compensations: compensationsList,
+            student_counts: (typeof manualStudentCounts !== 'undefined' ? manualStudentCounts : {}),
+            course_types: (typeof courseTypes !== 'undefined' ? courseTypes : {})
           })
         });
         const result = await res.json();
@@ -10122,6 +10275,10 @@ function selectRound(roundNum) {
         openTeacherProfileModal();
       } else if (qModal === 'signatories' || qModal === 'signs') {
         openSignatoriesModal();
+      } else if (qModal === 'students' || qModal === 'manual_students') {
+        openManualStudentCountModal();
+        const qTab = urlParams.get('tab');
+        if (qTab) switchStudentModalTab(qTab);
       } else if (qModal === 'teacher_nav' || qModal === 'mobile_teachers') {
         setTimeout(openMobileTeacherNav, 200);
       }
@@ -10593,9 +10750,11 @@ function selectRound(roundNum) {
         </button>
       </div>
     </div>
-  <!-- Modal: Manual Student Count (กำหนดข้อมูลจำนวนนักเรียนแบบกำหนดเอง) -->
+  </div>
+
+  <!-- Modal: Manual Student Count (กำหนดข้อมูลจำนวนนักเรียน & ประเภทวิชา ทฤษฎี/ปฏิบัติ) -->
   <div id="modalManualStudentCount" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-50 hidden p-3 sm:p-5">
-    <div class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full p-5 sm:p-6 border border-slate-200 space-y-4 max-h-[90vh] flex flex-col">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-3xl w-full p-5 sm:p-6 border border-slate-200 space-y-4 max-h-[92vh] flex flex-col">
       <!-- Header -->
       <div class="flex items-center justify-between border-b border-slate-100 pb-3 shrink-0">
         <div class="flex items-center gap-2.5">
@@ -10604,9 +10763,9 @@ function selectRound(roundNum) {
           </div>
           <div>
             <h3 class="font-bold text-slate-900 text-sm flex items-center gap-2">
-              <span>👥 กำหนดข้อมูลจำนวนนักเรียน (กำหนดเอง)</span>
+              <span>👥 กำหนดจำนวนนักเรียน & เกณฑ์ประเภทวิชา (ทฤษฎี / ปฏิบัติ)</span>
             </h3>
-            <p class="text-[11px] text-slate-500">กำหนดจำนวนนักเรียนแยกตามห้อง/กลุ่มเรียน หรือแก้ใน ( ) ในตารางใบเบิก A4 ได้โดยตรง</p>
+            <p class="text-[11px] text-slate-500">ทฤษฎีต้องมีนักเรียน &ge; 26 คน, ปฏิบัติต้องมี &ge; 10 คน ถึงจะนำไปเบิกคาบนอกได้</p>
           </div>
         </div>
         <button type="button" onclick="closeManualStudentCountModal()" class="text-slate-400 hover:text-slate-600 p-1.5 rounded-lg hover:bg-slate-100 cursor-pointer">
@@ -10614,45 +10773,104 @@ function selectRound(roundNum) {
         </button>
       </div>
 
-      <!-- Quick Batch Setting Card -->
-      <div class="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-3 flex flex-wrap items-center justify-between gap-2 shrink-0 text-xs">
-        <div class="flex items-center gap-2">
-          <span class="font-bold text-blue-950">⚡ กำหนดจำนวนเท่ากันทุกห้อง:</span>
-          <input type="number" id="inputBatchStudentCount" min="1" max="100" value="26" class="w-16 px-2 py-1 text-center font-bold bg-white border border-blue-300 rounded-lg shadow-2xs focus:ring-2 focus:ring-blue-400 focus:outline-hidden">
-          <span class="text-blue-800">คน</span>
-        </div>
-        <button type="button" onclick="applyBatchStudentCount()" class="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold shadow-2xs transition cursor-pointer flex items-center gap-1">
-          <span>นำไปใช้กับทุกห้อง</span>
+      <!-- Tab Switcher -->
+      <div class="flex items-center gap-2 border-b border-slate-200 pb-2 shrink-0">
+        <button type="button" id="tabBtnStudentRooms" onclick="switchStudentModalTab('rooms')" class="px-3.5 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer flex items-center gap-1.5 bg-blue-600 text-white shadow-2xs">
+          <i data-lucide="users" class="w-4 h-4"></i>
+          <span>1. จำนวนนักเรียนรายห้อง</span>
+        </button>
+        <button type="button" id="tabBtnCourseTypes" onclick="switchStudentModalTab('courses')" class="px-3.5 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer flex items-center gap-1.5 bg-slate-100 text-slate-700 hover:bg-slate-200">
+          <i data-lucide="book-open" class="w-4 h-4"></i>
+          <span>2. ประเภทวิชา (ทฤษฎี &ge; 26 / ปฏิบัติ &ge; 10)</span>
         </button>
       </div>
 
-      <!-- Class list search & add new -->
-      <div class="flex items-center justify-between gap-2 shrink-0 text-xs">
-        <div class="relative flex-1">
-          <input type="text" id="searchStudentClassInput" oninput="filterStudentCountList(this.value)" placeholder="ค้นหาห้อง/ชั้นเรียน..." class="w-full pl-8 pr-3 py-1.5 border border-slate-200 rounded-lg text-xs focus:ring-2 focus:ring-blue-400 focus:outline-hidden">
+      <!-- TAB 1 CONTENT: Rooms & Student Counts -->
+      <div id="tabContentRooms" class="space-y-3 flex-1 flex flex-col min-h-0">
+        <!-- Quick Batch Setting Card -->
+        <div class="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-3 flex flex-wrap items-center justify-between gap-2 shrink-0 text-xs">
+          <div class="flex items-center gap-2">
+            <span class="font-bold text-blue-950">⚡ กำหนดจำนวนเท่ากันทุกห้อง:</span>
+            <input type="number" id="inputBatchStudentCount" min="1" max="100" value="26" class="w-16 px-2 py-1 text-center font-bold bg-white border border-blue-300 rounded-lg shadow-2xs focus:ring-2 focus:ring-blue-400 focus:outline-hidden">
+            <span class="text-blue-800">คน</span>
+          </div>
+          <button type="button" onclick="applyBatchStudentCount()" class="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold shadow-2xs transition cursor-pointer flex items-center gap-1">
+            <span>นำไปใช้กับทุกห้อง</span>
+          </button>
+        </div>
+
+        <!-- Class list search & add new -->
+        <div class="flex items-center justify-between gap-2 shrink-0 text-xs">
+          <div class="relative flex-1">
+            <input type="text" id="searchStudentClassInput" oninput="filterStudentCountList(this.value)" placeholder="ค้นหาห้อง/ชั้นเรียน..." class="w-full pl-8 pr-3 py-1.5 border border-slate-200 rounded-lg text-xs focus:ring-2 focus:ring-blue-400 focus:outline-hidden">
+            <i data-lucide="search" class="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-2.5"></i>
+          </div>
+          <button type="button" onclick="addNewClassToStudentCountList()" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-lg border border-slate-300 transition cursor-pointer flex items-center gap-1 shrink-0">
+            <i data-lucide="plus" class="w-3.5 h-3.5 text-slate-600"></i>
+            <span>+ เพิ่มห้องเรียน</span>
+          </button>
+        </div>
+
+        <!-- Scrollable List of Rooms/Classes -->
+        <div class="flex-1 overflow-y-auto pr-1 border border-slate-200 rounded-xl divide-y divide-slate-100 bg-slate-50/50 max-h-72">
+          <table class="w-full text-xs text-left">
+            <thead class="bg-slate-100 text-slate-600 font-bold sticky top-0 z-10">
+              <tr>
+                <th class="p-2.5 pl-3 w-12">ลำดับ</th>
+                <th class="p-2.5">ห้อง / กลุ่มเรียน</th>
+                <th class="p-2.5 text-center w-36">จำนวนนักเรียน (คน)</th>
+                <th class="p-2.5 text-center w-16">ลบ</th>
+              </tr>
+            </thead>
+            <tbody id="studentCountTableBody" class="bg-white divide-y divide-slate-100">
+              <!-- Populated via JS -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- TAB 2 CONTENT: Course Types (Theory vs Practice) -->
+      <div id="tabContentCourses" class="space-y-3 flex-1 flex flex-col min-h-0 hidden">
+        <!-- Rule Explanation Card -->
+        <div class="bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-xl p-3 text-xs space-y-1.5 shrink-0">
+          <div class="font-bold text-amber-950 flex items-center gap-2">
+            <i data-lucide="info" class="w-4 h-4 text-amber-600"></i>
+            <span>ระเบียบเกณฑ์จำนวนผู้เรียนขั้นต่ำในการนำไปเบิกคาบนอก (ค่าสอนเกินภาระงาน):</span>
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px] text-amber-900 pt-1">
+            <div class="p-2 bg-white/80 rounded-lg border border-amber-200 flex items-center gap-2">
+              <span class="px-2 py-0.5 bg-blue-100 text-blue-800 rounded font-bold text-[10px]">📘 ทฤษฎี</span>
+              <span>ผู้เรียนต้อง <strong>&ge; 26 คน</strong> (หากน้อยกว่า 26 คน จะเป็นคาบ 'ใน' เท่านั้น)</span>
+            </div>
+            <div class="p-2 bg-white/80 rounded-lg border border-amber-200 flex items-center gap-2">
+              <span class="px-2 py-0.5 bg-emerald-100 text-emerald-800 rounded font-bold text-[10px]">🛠️ ปฏิบัติ</span>
+              <span>ผู้เรียนต้อง <strong>&ge; 10 คน</strong> (หากน้อยกว่า 10 คน จะเป็นคาบ 'ใน' เท่านั้น)</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Course list search -->
+        <div class="relative shrink-0 text-xs">
+          <input type="text" id="searchCourseTypeInput" oninput="filterCourseTypeList(this.value)" placeholder="ค้นหารหัสวิชา หรือชื่อวิชา..." class="w-full pl-8 pr-3 py-1.5 border border-slate-200 rounded-lg text-xs focus:ring-2 focus:ring-blue-400 focus:outline-hidden">
           <i data-lucide="search" class="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-2.5"></i>
         </div>
-        <button type="button" onclick="addNewClassToStudentCountList()" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-lg border border-slate-300 transition cursor-pointer flex items-center gap-1 shrink-0">
-          <i data-lucide="plus" class="w-3.5 h-3.5 text-slate-600"></i>
-          <span>+ เพิ่มห้องเรียน</span>
-        </button>
-      </div>
 
-      <!-- Scrollable List of Rooms/Classes -->
-      <div class="flex-1 overflow-y-auto pr-1 border border-slate-200 rounded-xl divide-y divide-slate-100 bg-slate-50/50 max-h-80">
-        <table class="w-full text-xs text-left">
-          <thead class="bg-slate-100 text-slate-600 font-bold sticky top-0 z-10">
-            <tr>
-              <th class="p-2.5 pl-3 w-12">ลำดับ</th>
-              <th class="p-2.5">ห้อง / กลุ่มเรียน</th>
-              <th class="p-2.5 text-center w-36">จำนวนนักเรียน (คน)</th>
-              <th class="p-2.5 text-center w-16">ลบ</th>
-            </tr>
-          </thead>
-          <tbody id="studentCountTableBody" class="bg-white divide-y divide-slate-100">
-            <!-- Populated via JS -->
-          </tbody>
-        </table>
+        <!-- Scrollable List of Courses -->
+        <div class="flex-1 overflow-y-auto pr-1 border border-slate-200 rounded-xl divide-y divide-slate-100 bg-slate-50/50 max-h-72">
+          <table class="w-full text-xs text-left">
+            <thead class="bg-slate-100 text-slate-600 font-bold sticky top-0 z-10">
+              <tr>
+                <th class="p-2.5 pl-3 w-12">ลำดับ</th>
+                <th class="p-2.5 w-28">รหัสวิชา</th>
+                <th class="p-2.5">ชื่อรายวิชา</th>
+                <th class="p-2.5 text-center w-56">ประเภทวิชา & เกณฑ์เบิก</th>
+              </tr>
+            </thead>
+            <tbody id="courseTypeTableBody" class="bg-white divide-y divide-slate-100">
+              <!-- Populated via JS -->
+            </tbody>
+          </table>
+        </div>
       </div>
 
       <!-- Footer Buttons -->
@@ -10664,7 +10882,7 @@ function selectRound(roundNum) {
           </button>
           <button type="button" onclick="saveManualStudentCounts()" class="px-4 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold shadow-xs transition cursor-pointer flex items-center gap-1.5">
             <i data-lucide="save" class="w-4 h-4"></i>
-            <span>💾 บันทึกจำนวนนักเรียน</span>
+            <span>💾 บันทึกและคำนวณชั่วโมงใหม่</span>
           </button>
         </div>
       </div>
