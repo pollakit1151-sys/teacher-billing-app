@@ -183,10 +183,15 @@ def is_weekend_day(day_str):
 def normalize_day(d):
     if not d:
         return ''
-    d = str(d).strip()
-    if d == 'พฤหัสบดี':
-        return 'พฤหัส'
-    return d
+    s = str(d).strip()
+    if 'จันทร์' in s or s in ['จ.', 'จ']: return 'จันทร์'
+    if 'อังคาร' in s or s in ['อ.', 'อ']: return 'อังคาร'
+    if 'พุธ' in s or s in ['พ.', 'พ']: return 'พุธ'
+    if 'พฤหัส' in s or s in ['พฤ.', 'พฤ', 'พฤหัสบดี']: return 'พฤหัส'
+    if 'ศุกร์' in s or s in ['ศ.', 'ศ']: return 'ศุกร์'
+    if 'เสาร์' in s or s in ['ส.', 'ส']: return 'เสาร์'
+    if 'อาทิตย์' in s or s in ['อา.', 'อา']: return 'อาทิตย์'
+    return s
 
 def normalize_class_name(s):
     if not s: return ''
@@ -1101,12 +1106,27 @@ def calculate_round_breakdown_matrix(teachers_master, round_weeks, dept='ช่�
     else:
         dept_teachers = [t for t in teachers_master if (t.get('dept', 'ช่างยนต์') == dept)]
 
+    def _extract_week_items(m, w):
+        if isinstance(m, dict):
+            return m.get(w) or m.get(str(w)) or []
+        elif isinstance(m, list):
+            res = []
+            for item in m:
+                if isinstance(item, dict):
+                    it_w = item.get('week') or item.get('week_num')
+                    if it_w is None or str(it_w) == str(w) or int(it_w or 0) == w:
+                        res.append(item)
+                elif isinstance(item, str):
+                    res.append(item)
+            return res
+        return []
+
     weekly_results = {}
     for w in round_weeks:
-        w_holidays = holidays_map.get(w) or holidays_map.get(str(w)) or []
-        w_leaves = leaves_map.get(w) or leaves_map.get(str(w)) or []
-        w_subs = subs_map.get(w) or subs_map.get(str(w)) or []
-        w_comps = comps_map.get(w) or comps_map.get(str(w)) or []
+        w_holidays = _extract_week_items(holidays_map, w)
+        w_leaves = _extract_week_items(leaves_map, w)
+        w_subs = _extract_week_items(subs_map, w)
+        w_comps = _extract_week_items(comps_map, w)
         weekly_results[w] = calculate_week(
             dept_teachers,
             holiday_days=w_holidays,

@@ -249,7 +249,7 @@ async def api_get_custom_overrides():
 async def api_save_custom_overrides(payload: dict):
     current = load_custom_overrides()
     replace_all = payload.get("replace_all", True)
-    for k in ["text_edits", "template_overrides", "font_sizes", "font_weights", "student_counts", "course_types", "course_details"]:
+    for k in ["text_edits", "template_overrides", "font_sizes", "font_weights", "student_counts", "course_types", "course_details", "week_holiday_map"]:
         if k in payload:
             if replace_all:
                 current[k] = payload[k]
@@ -569,6 +569,8 @@ async def api_round_breakdown_matrix(request: Request, round_num: int = 1, dept:
     c_types = ovr.get("course_types", {})
 
     holidays_map = payload.get("holidays_map") or payload.get("week_holiday_map") or None
+    if holidays_map is None:
+        holidays_map = ovr.get("week_holiday_map", {})
     leaves_map = payload.get("leaves_map") or None
     subs_map = payload.get("subs_map") or None
     comps_map = payload.get("comps_map") or payload.get("compensations_map") or None

@@ -354,14 +354,22 @@
       width: 187mm !important;
       max-width: 187mm !important;
     }
-    body.mode-print-direct:not(.print-landscape) #viewCoversTable,
-    body.mode-print-direct:not(.print-landscape) #viewSummaryTable,
-    body.mode-print-direct:not(.print-landscape) #viewDistributionTable {
+    body.mode-print-direct:not(.print-landscape):not(.print-summary) #viewCoversTable,
+    body.mode-print-direct:not(.print-landscape):not(.print-summary) #viewSummaryTable,
+    body.mode-print-direct:not(.print-landscape):not(.print-summary) #viewDistributionTable {
       display: none !important;
     }
-    body.mode-print-direct.print-landscape #viewSingleTeacher,
-    body.mode-print-direct.print-landscape #viewSummaryTable,
-    body.mode-print-direct.print-landscape #viewDistributionTable {
+    body.mode-print-direct.print-landscape:not(.print-summary) #viewSingleTeacher,
+    body.mode-print-direct.print-landscape:not(.print-summary) #viewSummaryTable,
+    body.mode-print-direct.print-landscape:not(.print-summary) #viewDistributionTable {
+      display: none !important;
+    }
+    body.mode-print-direct.print-summary #viewSummaryTable {
+      display: flex !important;
+    }
+    body.mode-print-direct.print-summary #viewSingleTeacher,
+    body.mode-print-direct.print-summary #viewCoversTable,
+    body.mode-print-direct.print-summary #viewDistributionTable {
       display: none !important;
     }
 
@@ -417,14 +425,22 @@
       margin: 0 auto 24px auto !important;
       background: #ffffff !important;
     }
-    body.mode-print-preview:not(.print-landscape) #viewCoversTable,
-    body.mode-print-preview:not(.print-landscape) #viewSummaryTable,
-    body.mode-print-preview:not(.print-landscape) #viewDistributionTable {
+    body.mode-print-preview:not(.print-landscape):not(.print-summary) #viewCoversTable,
+    body.mode-print-preview:not(.print-landscape):not(.print-summary) #viewSummaryTable,
+    body.mode-print-preview:not(.print-landscape):not(.print-summary) #viewDistributionTable {
       display: none !important;
     }
-    body.mode-print-preview.print-landscape #viewSingleTeacher,
-    body.mode-print-preview.print-landscape #viewSummaryTable,
-    body.mode-print-preview.print-landscape #viewDistributionTable {
+    body.mode-print-preview.print-landscape:not(.print-summary) #viewSingleTeacher,
+    body.mode-print-preview.print-landscape:not(.print-summary) #viewSummaryTable,
+    body.mode-print-preview.print-landscape:not(.print-summary) #viewDistributionTable {
+      display: none !important;
+    }
+    body.mode-print-preview.print-summary #viewSummaryTable {
+      display: flex !important;
+    }
+    body.mode-print-preview.print-summary #viewSingleTeacher,
+    body.mode-print-preview.print-summary #viewCoversTable,
+    body.mode-print-preview.print-summary #viewDistributionTable {
       display: none !important;
     }
 
@@ -4040,7 +4056,7 @@
     window.weekHolidayMap = {}; // { 1: ['จันทร์'], ... }
     let currentContextDay = '';
 
-    function loadHolidayMapFromStorage() {
+    async function loadHolidayMapFromStorage() {
       try {
         const raw = localStorage.getItem('teacher_billing_weekHolidayMap');
         if (raw) {
@@ -4052,11 +4068,31 @@
       if (!window.weekHolidayMap || typeof window.weekHolidayMap !== 'object') {
         window.weekHolidayMap = {};
       }
+      if (Object.keys(window.weekHolidayMap).length === 0) {
+        try {
+          const res = await fetch('/api/custom_overrides');
+          const json = await res.json();
+          if (json.status === 'success' && json.data && json.data.week_holiday_map) {
+            window.weekHolidayMap = json.data.week_holiday_map;
+            localStorage.setItem('teacher_billing_weekHolidayMap', JSON.stringify(window.weekHolidayMap));
+            if (typeof updateHolidayUI === 'function') updateHolidayUI();
+          }
+        } catch (e) {}
+      }
     }
 
     function saveHolidayMapToStorage() {
       try {
         localStorage.setItem('teacher_billing_weekHolidayMap', JSON.stringify(window.weekHolidayMap || {}));
+        cachedRoundMatrix = null;
+        fetch('/api/save_custom_overrides', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            replace_all: false,
+            week_holiday_map: window.weekHolidayMap || {}
+          })
+        }).catch(console.warn);
       } catch (e) {}
     }
 
@@ -4916,6 +4952,7 @@
       if (fMoney) fMoney.innerText = teacher.total_money.toLocaleString();
 
       dirtyTeacherIds.add(tIdx);
+      cachedRoundMatrix = null;
       const saveBtn = document.getElementById('btnSaveA4Edits');
       if (saveBtn) {
         saveBtn.innerHTML = `<i data-lucide="save" class="w-3.5 h-3.5 animate-pulse"></i> <span>💾 บันทึกการแก้ไข (${dirtyTeacherIds.size} ท่าน)*</span>`;
@@ -8565,8 +8602,8 @@
 
     let cachedRoundMatrix = null;
 
-    async function getRoundMatrixData(force = false) {
-      const curRoundNum = parseInt(document.getElementById('inputRoundNum')?.value) || 1;
+    async function getRoundMatrixData(targetRoundNum = null, force = false) {
+      const curRoundNum = targetRoundNum || currentSummaryRound || parseInt(document.getElementById('inputRoundNum')?.value) || 1;
       if (!force && cachedRoundMatrix && cachedRoundMatrix.round_num === curRoundNum) {
         return cachedRoundMatrix;
       }
@@ -8578,6 +8615,8 @@
             round_num: curRoundNum,
             dept: 'ทั้งหมด',
             holidays_map: window.weekHolidayMap || {},
+            leaves_map: (typeof leavesList !== 'undefined' ? leavesList : []),
+            subs_map: (typeof substitutionsList !== 'undefined' ? substitutionsList : []),
             compensations_map: (typeof compensationsList !== 'undefined' ? compensationsList : [])
           })
         });
@@ -8588,14 +8627,15 @@
           return cachedRoundMatrix;
         }
       } catch (err) {
-        console.error('Error fetching round matrix for cover sheet:', err);
+        console.error('Error fetching round matrix:', err);
       }
       return null;
     }
 
     async function renderCoverSheetView() {
       const file = COVER_8_FILES[currentCoverFileIndex] || COVER_8_FILES[0];
-      const matrix = await getRoundMatrixData();
+      const curRoundNum = parseInt(document.getElementById('inputRoundNum')?.value) || currentSummaryRound || 1;
+      const matrix = await getRoundMatrixData(curRoundNum, false);
 
       const sourceTeachers = (matrix && matrix.teachers && matrix.teachers.length > 0) ? matrix.teachers : calculatedData;
       const filtered = sourceTeachers.filter(t => {
@@ -8623,7 +8663,6 @@
       });
 
       // Get current round info
-      const curRoundNum = parseInt(document.getElementById('inputRoundNum')?.value) || 1;
       const rInfo = currentRoundSchedule.find(r => r.round === curRoundNum) || { weeksCount: 5, startWeek: 1, endWeek: 5 };
       const roundWeeks = rInfo.weeksCount || 5;
 
@@ -8927,14 +8966,12 @@
       `;
 
       try {
-        const res = await fetch(`/api/round_breakdown_matrix?round_num=${currentSummaryRound}&dept=ทั้งหมด`);
-        const json = await res.json();
-        if (json.status !== 'success' || !json.data) {
+        const data = await getRoundMatrixData(currentSummaryRound, true);
+        if (!data) {
           container.innerHTML = `<div class="p-8 text-center text-rose-500 font-bold">ไม่สามารถดึงข้อมูลตารางแจงเงินรายบุคคลได้</div>`;
           return;
         }
 
-        const data = json.data;
         const weeks = data.round_weeks || [1, 2, 3, 4, 5];
         const groupReg = data.group_regular || [];
         const groupSp = data.group_special || [];
@@ -10010,7 +10047,10 @@ function selectRound(roundNum) {
       if (typeof lucide !== 'undefined') lucide.createIcons();
     }
 
-    function switchSubViewMode(mode) {
+    async function switchSubViewMode(mode) {
+      if (typeof dirtyTeacherIds !== 'undefined' && dirtyTeacherIds && dirtyTeacherIds.size > 0) {
+        try { await saveAllTeacherCustomEdits(true); } catch(e) {}
+      }
       // Map any legacy or sheet modes to valid native views
       if (mode === 'sys_pvc' || mode === 'gsheet_pvc') {
         setLevelFilter('ปวช.');
@@ -10046,9 +10086,15 @@ function selectRound(roundNum) {
       if (mode === 'covers') {
         if (printStyleEl) printStyleEl.innerHTML = '@page { size: A4 landscape; margin: 6mm 8mm; }';
         document.body.classList.add('print-landscape');
+        document.body.classList.remove('print-summary');
+      } else if (mode === 'summary') {
+        if (printStyleEl) printStyleEl.innerHTML = '@page { size: A4 landscape; margin: 6mm 8mm; }';
+        document.body.classList.add('print-landscape');
+        document.body.classList.add('print-summary');
       } else {
         if (printStyleEl) printStyleEl.innerHTML = '@page { size: A4 portrait; margin: 8mm 11.5mm 8mm 11.5mm; }';
         document.body.classList.remove('print-landscape');
+        document.body.classList.remove('print-summary');
       }
 
       if (mode === 'a4_form') {
@@ -10331,7 +10377,7 @@ function selectRound(roundNum) {
 
     window.addEventListener('load', async () => {
       closeFontResizerBar();
-      loadHolidayMapFromStorage();
+      await loadHolidayMapFromStorage();
       initSemesterStartDate();
 
       // Check URL parameters first for initial week, teacher, department, and view mode
