@@ -615,18 +615,31 @@ async def api_round_breakdown_matrix(request: Request, round_num: int = 1, dept:
     st_counts = ovr.get("student_counts", {})
     c_types = ovr.get("course_types", {})
 
-    holidays_map = payload.get("holidays_map") or payload.get("week_holiday_map") or None
-    if holidays_map is None:
-        holidays_map = ovr.get("week_holiday_map", {})
-    leaves_map = payload.get("leaves_map") or None
-    subs_map = payload.get("subs_map") or None
-    comps_map = payload.get("comps_map") or payload.get("compensations_map") or None
+    server_holidays = ovr.get("week_holiday_map", {})
+    raw_holidays = payload.get("holidays_map") or payload.get("week_holiday_map") or {}
+    final_holidays = dict(server_holidays) if isinstance(server_holidays, dict) else {}
+    if isinstance(raw_holidays, dict):
+        for w_key, h_list in raw_holidays.items():
+            if h_list:
+                final_holidays[str(w_key)] = h_list
+            elif str(w_key) not in final_holidays:
+                final_holidays[str(w_key)] = []
+
+    leaves_map = payload.get("leaves_map")
+    if not leaves_map:
+        leaves_map = load_leaves()
+    subs_map = payload.get("subs_map")
+    if not subs_map:
+        subs_map = load_substitutions()
+    comps_map = payload.get("comps_map") or payload.get("compensations_map")
+    if not comps_map:
+        comps_map = load_compensations()
 
     result = calculate_round_breakdown_matrix(
         teachers,
         round_weeks,
         dept=dept,
-        holidays_map=holidays_map,
+        holidays_map=final_holidays,
         leaves_map=leaves_map,
         subs_map=subs_map,
         comps_map=comps_map,
@@ -1024,8 +1037,20 @@ async def api_reset_signatories():
 async def api_export_excel(payload: dict):
     teachers = load_master()
     week_num = payload.get("week_num", 1)
+    ovr = load_custom_overrides()
+    server_holidays = ovr.get("week_holiday_map", {})
+    raw_holiday_map = payload.get("week_holiday_map", {})
+    week_holiday_map = dict(server_holidays) if isinstance(server_holidays, dict) else {}
+    if isinstance(raw_holiday_map, dict):
+        for w_key, h_list in raw_holiday_map.items():
+            if h_list:
+                week_holiday_map[str(w_key)] = h_list
+            elif str(w_key) not in week_holiday_map:
+                week_holiday_map[str(w_key)] = []
+    
     holiday_days = payload.get("holiday_days", [])
-    week_holiday_map = payload.get("week_holiday_map", {})
+    if not holiday_days:
+        holiday_days = week_holiday_map.get(str(week_num), week_holiday_map.get(week_num, []))
     leaves = payload.get("leaves", None)
     if not leaves:
         leaves = load_leaves()

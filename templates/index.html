@@ -4130,23 +4130,39 @@
       if (!window.weekHolidayMap || typeof window.weekHolidayMap !== 'object') {
         window.weekHolidayMap = {};
       }
-      if (Object.keys(window.weekHolidayMap).length === 0) {
-        if (typeof serverCustomOverrides !== 'undefined' && serverCustomOverrides && serverCustomOverrides.week_holiday_map) {
-          window.weekHolidayMap = serverCustomOverrides.week_holiday_map;
-          try { localStorage.setItem('teacher_billing_weekHolidayMap', JSON.stringify(window.weekHolidayMap)); } catch (e) {}
-          if (typeof updateHolidayUI === 'function') updateHolidayUI();
-        } else {
-          try {
-            const res = await fetch('/api/custom_overrides');
-            const json = await res.json();
-            if (json.status === 'success' && json.data && json.data.week_holiday_map) {
-              window.weekHolidayMap = json.data.week_holiday_map;
-              localStorage.setItem('teacher_billing_weekHolidayMap', JSON.stringify(window.weekHolidayMap));
-              if (typeof updateHolidayUI === 'function') updateHolidayUI();
+
+      // Always merge server-defined holidays if missing or empty for each week
+      let serverHolidays = null;
+      if (typeof serverCustomOverrides !== 'undefined' && serverCustomOverrides && serverCustomOverrides.week_holiday_map) {
+        serverHolidays = serverCustomOverrides.week_holiday_map;
+      } else {
+        try {
+          const res = await fetch('/api/custom_overrides');
+          const json = await res.json();
+          if (json.status === 'success' && json.data && json.data.week_holiday_map) {
+            serverHolidays = json.data.week_holiday_map;
+          }
+        } catch (e) {}
+      }
+
+      if (serverHolidays && typeof serverHolidays === 'object') {
+        let changed = false;
+        for (const [wKey, hList] of Object.entries(serverHolidays)) {
+          if (Array.isArray(hList) && hList.length > 0) {
+            const curVal = window.weekHolidayMap[wKey];
+            if (!curVal || !Array.isArray(curVal) || curVal.length === 0) {
+              window.weekHolidayMap[wKey] = [...hList];
+              changed = true;
             }
+          }
+        }
+        if (changed) {
+          try {
+            localStorage.setItem('teacher_billing_weekHolidayMap', JSON.stringify(window.weekHolidayMap));
           } catch (e) {}
         }
       }
+      if (typeof updateHolidayUI === 'function') updateHolidayUI();
     }
 
     function saveHolidayMapToStorage() {
@@ -8757,6 +8773,9 @@
         return cachedRoundMatrix;
       }
       try {
+        if (!window.weekHolidayMap || Object.keys(window.weekHolidayMap).length === 0) {
+          if (typeof loadHolidayMapFromStorage === 'function') await loadHolidayMapFromStorage();
+        }
         const res = await fetch('/api/round_breakdown_matrix', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
