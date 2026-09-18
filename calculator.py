@@ -443,9 +443,12 @@ def calculate_week(teachers_master, holiday_days=None, leaves=None, substitution
 
     norm_holiday_days = [normalize_day(h) for h in holiday_days]
 
-    # Filter out substitutions for activity or internship
+    # Filter out substitutions for activity or internship, and filter by week_num if specified
     valid_substitutions = []
     for sub in substitutions:
+        sub_wk = sub.get('week_num')
+        if sub_wk is not None and str(sub_wk) != str(week_num):
+            continue
         code = sub.get('code') or sub.get('subject_code') or ''
         c_name = sub.get('subject_name') or sub.get('name', '')
         class_info = sub.get('class_info', '')
@@ -459,6 +462,9 @@ def calculate_week(teachers_master, holiday_days=None, leaves=None, substitution
     # Pre-build maps
     absent_map = {}
     for lv in leaves:
+        lv_wk = lv.get('week_num')
+        if lv_wk is not None and str(lv_wk) != str(week_num):
+            continue
         t_idx = lv.get('teacher_idx') if lv.get('teacher_idx') is not None else lv.get('teacher_index')
         day = normalize_day(lv.get('day'))
         if t_idx is not None:

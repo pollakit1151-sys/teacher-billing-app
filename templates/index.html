@@ -2157,11 +2157,11 @@
 
     function isCalculatedFormulaElement(el) {
       if (!el) return false;
-      if (el.closest && el.closest('.cover-total-box, .cover-total-baht-box, [data-calculated-field], tfoot')) return true;
-      if (el.classList && (el.classList.contains('cov-total-money-val') || el.classList.contains('cov-total-baht-val') || el.classList.contains('cover-total-box') || el.classList.contains('cover-total-baht-box') || el.classList.contains('cover-header-date'))) return true;
-      if (el.id && (el.id.startsWith('foot_claim_hrs_') || el.id.startsWith('foot_tot_money_') || el.id === 'covTotalMoneyText' || el.id === 'covBahtText' || el.id === 'covTotalMoney' || el.id === 'covBahtText2' || el.id === 'covMonthRange')) return true;
+      if (el.closest && el.closest('.cover-total-box, .cover-total-baht-box, .summary-hours-table, [data-calculated-field], tfoot')) return true;
+      if (el.classList && (el.classList.contains('cov-total-money-val') || el.classList.contains('cov-total-baht-val') || el.classList.contains('cover-total-box') || el.classList.contains('cover-total-baht-box') || el.classList.contains('cover-header-date') || el.classList.contains('summary-hours-table'))) return true;
+      if (el.id && (el.id.startsWith('foot_claim_hrs_') || el.id.startsWith('foot_tot_money_') || el.id.startsWith('foot_over_') || el.id.startsWith('foot_sum_') || el.id.startsWith('foot_tot_') || el.id === 'covTotalMoneyText' || el.id === 'covBahtText' || el.id === 'covTotalMoney' || el.id === 'covBahtText2' || el.id === 'covMonthRange')) return true;
       const txt = (el.innerText || el.textContent || '').trim();
-      if (txt.includes('รวมจำนวนเงินค่าสอนพิเศษทั้งสิ้น') || txt.includes('รวมจำนวนเงิน')) return true;
+      if (txt.includes('รวมจำนวนเงินค่าสอนพิเศษทั้งสิ้น') || txt.includes('รวมจำนวนเงิน') || txt.includes('รวมจำนวนหน่วยชั่วโมงที่ขอเบิกค่าสอน') || txt.includes('ยอดเงินรวม')) return true;
       if (txt.includes('ประจำเดือน') && (txt.includes('2569') || txt.includes('-'))) return true;
       return false;
     }
@@ -2287,9 +2287,11 @@
       for (const k of Object.keys(customTextEditsMap)) {
         const val = customTextEditsMap[k] || '';
         if (k.includes('div:nth-of-type(1) > div:nth-of-type(3)') || k.includes('doc-head-line3') ||
-            k.includes('table:nth-of-type(2) > tbody > tr:nth-of-type(1) > td:nth-of-type(1)') ||
+            k.includes('summary-hours-table') || k.includes('table:nth-of-type(2)') ||
+            k.includes('foot_claim_hrs') || k.includes('foot_tot_money') ||
+            k.includes('foot_over_') || k.includes('foot_sum_') || k.includes('foot_tot_') ||
             k.includes('covTotalMoney') || k.includes('covBahtText') || k.includes('tfoot') ||
-            (typeof val === 'string' && (val.includes('รวมจำนวนเงินค่าสอนพิเศษทั้งสิ้น') || val.includes('หนึ่งแสนห้าหมื่นหกพันบาทถ้วน')))) {
+            (typeof val === 'string' && (val.includes('รวมจำนวนหน่วยชั่วโมงที่ขอเบิกค่าสอน') || val.includes('ยอดเงินรวม') || val.includes('รวมจำนวนเงินค่าสอนพิเศษทั้งสิ้น') || val.includes('หนึ่งแสนห้าหมื่นหกพันบาทถ้วน')))) {
           delete customTextEditsMap[k];
           changed = true;
         }
@@ -2315,13 +2317,15 @@
     if (formTemplateOverridesMap) {
       let changedTmpl = false;
       for (const [k, conf] of Object.entries(formTemplateOverridesMap)) {
-        if (k.includes('table:nth-of-type(2) > tbody > tr:nth-of-type(1) > td:nth-of-type(1)') ||
+        if (k.includes('summary-hours-table') || k.includes('table:nth-of-type(2)') ||
+            k.includes('foot_claim_hrs') || k.includes('foot_tot_money') ||
+            k.includes('foot_over_') || k.includes('foot_sum_') || k.includes('foot_tot_') ||
             k.includes('covTotalMoney') || k.includes('covBahtText') || k.includes('tfoot')) {
           if (conf && conf.html) {
             delete conf.html;
             changedTmpl = true;
           }
-        } else if (conf && conf.html && (conf.html.includes('รวมจำนวนเงินค่าสอนพิเศษทั้งสิ้น') || conf.html.includes('หนึ่งแสนห้าหมื่นหกพันบาทถ้วน'))) {
+        } else if (conf && conf.html && (conf.html.includes('รวมจำนวนหน่วยชั่วโมงที่ขอเบิกค่าสอน') || conf.html.includes('ยอดเงินรวม') || conf.html.includes('รวมจำนวนเงินค่าสอนพิเศษทั้งสิ้น') || conf.html.includes('หนึ่งแสนห้าหมื่นหกพันบาทถ้วน'))) {
           delete conf.html;
           changedTmpl = true;
         }
@@ -2816,9 +2820,11 @@
         for (const [key, htmlContent] of Object.entries(customTextEditsMap)) {
           try {
             if (key.includes('div:nth-of-type(1) > div:nth-of-type(3)') || key.includes('doc-head-line3') ||
-                key.includes('table:nth-of-type(2) > tbody > tr:nth-of-type(1) > td:nth-of-type(1)') ||
+                key.includes('summary-hours-table') || key.includes('table:nth-of-type(2)') ||
+                key.includes('foot_claim_hrs') || key.includes('foot_tot_money') ||
+                key.includes('foot_over_') || key.includes('foot_sum_') || key.includes('foot_tot_') ||
                 key.includes('covTotalMoney') || key.includes('covBahtText') || key.includes('tfoot') ||
-                (typeof htmlContent === 'string' && (htmlContent.includes('รวมจำนวนเงินค่าสอนพิเศษทั้งสิ้น') || htmlContent.includes('หนึ่งแสนห้าหมื่นหกพันบาทถ้วน')))) {
+                (typeof htmlContent === 'string' && (htmlContent.includes('รวมจำนวนหน่วยชั่วโมงที่ขอเบิกค่าสอน') || htmlContent.includes('ยอดเงินรวม') || htmlContent.includes('รวมจำนวนเงินค่าสอนพิเศษทั้งสิ้น') || htmlContent.includes('หนึ่งแสนห้าหมื่นหกพันบาทถ้วน')))) {
               delete customTextEditsMap[key];
               continue;
             }
@@ -3238,7 +3244,7 @@
       closeFontResizerBar();
       initCalendarDates();
       setupDropzones();
-      
+      await loadHolidayMapFromStorage();
       await loadInitialMasterData();
       await initSignatories();
       renderActiveCompensations();
@@ -4125,15 +4131,21 @@
         window.weekHolidayMap = {};
       }
       if (Object.keys(window.weekHolidayMap).length === 0) {
-        try {
-          const res = await fetch('/api/custom_overrides');
-          const json = await res.json();
-          if (json.status === 'success' && json.data && json.data.week_holiday_map) {
-            window.weekHolidayMap = json.data.week_holiday_map;
-            localStorage.setItem('teacher_billing_weekHolidayMap', JSON.stringify(window.weekHolidayMap));
-            if (typeof updateHolidayUI === 'function') updateHolidayUI();
-          }
-        } catch (e) {}
+        if (typeof serverCustomOverrides !== 'undefined' && serverCustomOverrides && serverCustomOverrides.week_holiday_map) {
+          window.weekHolidayMap = serverCustomOverrides.week_holiday_map;
+          try { localStorage.setItem('teacher_billing_weekHolidayMap', JSON.stringify(window.weekHolidayMap)); } catch (e) {}
+          if (typeof updateHolidayUI === 'function') updateHolidayUI();
+        } else {
+          try {
+            const res = await fetch('/api/custom_overrides');
+            const json = await res.json();
+            if (json.status === 'success' && json.data && json.data.week_holiday_map) {
+              window.weekHolidayMap = json.data.week_holiday_map;
+              localStorage.setItem('teacher_billing_weekHolidayMap', JSON.stringify(window.weekHolidayMap));
+              if (typeof updateHolidayUI === 'function') updateHolidayUI();
+            }
+          } catch (e) {}
+        }
       }
     }
 
@@ -6282,6 +6294,10 @@
         const totalVs = inVsTotal + outVsTotal;
         const reqVc = (teacher.level === 'ปวช.') ? teacher.required_min : 0;
         const reqVs = (teacher.level === 'ปวส.') ? teacher.required_min : 0;
+        const claimHoursFinal = outVcTotal + outVsTotal;
+        const claimMoneyFinal = (outVcTotal * 200) + (outVsTotal * 270);
+        teacher.claim_hours = claimHoursFinal;
+        teacher.total_money = claimMoneyFinal;
 
         // Calculate official signing date (advancing across weekends and holidays day-by-day)
         const signDate = calculateSigningDate(s, curWk);
@@ -6414,11 +6430,11 @@
                 <td class="border border-black text-center" style="border: 1px solid #000000 !important; background-color: #ffffff !important;">0</td>
                 <td id="foot_over_out_vc_${teacher.index}" class="border border-black text-center" style="border: 1px solid #000000 !important; background-color: #ffffff !important;">${outVcTotal || 0}</td>
                 <td class="border border-black text-center" style="border: 1px solid #000000 !important; background-color: #ffffff !important;"></td>
-                <td id="foot_over_amt_vc_${teacher.index}" class="border border-black text-center" style="border: 1px solid #000000 !important; background-color: #ffffff !important;">${outVcTotal ? (outVcTotal * 200).toLocaleString() : ((teacher.level === 'ปวช.' && teacher.total_money) ? teacher.total_money.toLocaleString() : '0')}</td>
+                <td id="foot_over_amt_vc_${teacher.index}" class="border border-black text-center" style="border: 1px solid #000000 !important; background-color: #ffffff !important;">${(outVcTotal * 200).toLocaleString()}</td>
                 <td class="border border-black text-center" style="border: 1px solid #000000 !important; background-color: #ffffff !important;">0</td>
                 <td id="foot_over_out_vs_${teacher.index}" class="border border-black text-center" style="border: 1px solid #000000 !important; background-color: #ffffff !important;">${outVsTotal || 0}</td>
                 <td class="border border-black text-center" style="border: 1px solid #000000 !important; background-color: #ffffff !important;"></td>
-                <td id="foot_over_amt_vs_${teacher.index}" class="border border-black text-center" style="border: 1px solid #000000 !important; background-color: #ffffff !important;">${outVsTotal ? (outVsTotal * 270).toLocaleString() : ((teacher.level === 'ปวส.' && teacher.total_money) ? teacher.total_money.toLocaleString() : '0')}</td>
+                <td id="foot_over_amt_vs_${teacher.index}" class="border border-black text-center" style="border: 1px solid #000000 !important; background-color: #ffffff !important;">${(outVsTotal * 270).toLocaleString()}</td>
               </tr>
             </tbody>
           </table>
@@ -6432,12 +6448,12 @@
             <tr style="height: 24px; line-height: 24px; white-space: nowrap !important;">
               <td class="text-left py-0.5 whitespace-nowrap overflow-visible" style="border: none; white-space: nowrap !important; font-size: 15px !important; padding-left: 11%;">
                 <span class="whitespace-nowrap inline-block" style="white-space: nowrap !important; font-size: 15px !important;">รวมจำนวนหน่วยชั่วโมงที่ขอเบิกค่าสอน ….</span>
-                <span id="foot_claim_hrs_${teacher.index}" class="inline-block text-center font-normal ml-5 mr-8" style="min-width: 24px; font-size: 15px !important; white-space: nowrap !important;">${teacher.claim_hours || 0}</span>
+                <span id="foot_claim_hrs_${teacher.index}" class="inline-block text-center font-normal ml-5 mr-8" style="min-width: 24px; font-size: 15px !important; white-space: nowrap !important;">${claimHoursFinal}</span>
                 <span class="whitespace-nowrap inline-block" style="white-space: nowrap !important; font-size: 15px !important;">….ชั่วโมง</span>
               </td>
               <td class="text-right py-0.5 whitespace-nowrap overflow-visible" style="border: none; white-space: nowrap !important; font-size: 15px !important; padding-right: 9%;">
                 <span class="whitespace-nowrap inline-block mr-14" style="white-space: nowrap !important; font-size: 15px !important;">ยอดเงินรวม</span>
-                <span id="foot_tot_money_${teacher.index}" class="font-normal inline-block text-right" style="min-width: 45px; font-size: 15px !important; white-space: nowrap !important;">${(teacher.total_money || 0).toLocaleString()}</span>
+                <span id="foot_tot_money_${teacher.index}" class="font-normal inline-block text-right" style="min-width: 45px; font-size: 15px !important; white-space: nowrap !important;">${claimMoneyFinal.toLocaleString()}</span>
               </td>
             </tr>
           </table>

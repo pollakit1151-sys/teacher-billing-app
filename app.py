@@ -142,6 +142,7 @@ def sanitize_custom_overrides(data):
     text_edits = data.get("text_edits", {})
     template_overrides = data.get("template_overrides", {})
     bad_key_patterns = [
+        "summary-hours-table",
         "table:nth-of-type(2)",
         "covTotalMoney",
         "covBahtText",
@@ -637,7 +638,12 @@ async def api_round_breakdown_matrix(request: Request, round_num: int = 1, dept:
 @app.post("/api/calculate")
 async def api_calculate(payload: dict):
     teachers = load_master()
-    holiday_days = payload.get("holiday_days", [])
+    week_num = int(payload.get("week_num", 1))
+    ovr = load_custom_overrides()
+    holiday_days = payload.get("holiday_days", None)
+    if not holiday_days:
+        holiday_map = ovr.get("week_holiday_map", {})
+        holiday_days = holiday_map.get(str(week_num), holiday_map.get(week_num, []))
     leaves = payload.get("leaves", None)
     if leaves is None:
         leaves = load_leaves()
@@ -648,7 +654,6 @@ async def api_calculate(payload: dict):
     if compensations is None:
         compensations = load_compensations()
     
-    ovr = load_custom_overrides()
     student_counts = payload.get("student_counts", None)
     if student_counts is None:
         student_counts = ovr.get("student_counts", {})
@@ -656,7 +661,6 @@ async def api_calculate(payload: dict):
     if course_types is None:
         course_types = ovr.get("course_types", {})
     overrides = payload.get("overrides", {})
-    week_num = int(payload.get("week_num", 1))
     
     result = calculate_week(
         teachers_master=teachers,

@@ -380,7 +380,7 @@ def populate_weekly_sheet_teachers(ws, teachers, week_num, date_info=None, dept=
                         safe_set_cell(ws, sub_r, 2, sub_label)
                         cell_b = ws.cell(sub_r, 2)
                         cell_b.font = RED_BOLD_FONT
-                        cell_b.fill = PEACH_FILL
+                        # Keep Column 2 clean white background without box fill
 
                         for col_idx in range(3, 20):
                             ws.cell(r, col_idx).fill = PEACH_FILL
