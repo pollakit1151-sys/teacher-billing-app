@@ -6169,22 +6169,16 @@
                 </tr>
               `;
             } else if (isAbsentDay) {
-              // --- ABSENT TEACHER ROW FORMATTING (Matches เวิร์กบุ๊ก1.xlsx rows 605-624) ---
+              // --- ABSENT TEACHER ROW FORMATTING (No blank line between leave reason and substitute note) ---
               let middleCols = '';
               if (slot === 0) {
                 // Slot 0: Leave reason with PEACH background fill (#FCE4D6) & BOLD
                 middleCols = `<td colspan="3" class="${slotEndClass} text-center font-bold px-1" style="background-color: #FCE4D6 !important; color: #000000;">${leaveReason}</td>`;
-              } else if (slot === 1) {
-                const hasSubs = (subNotes && subNotes.length > 0);
-                const mainCode = hasSubs ? '' : (cList.find(c => c && c.code)?.code || '');
-                middleCols = `<td colspan="3" class="${slotEndClass} text-center font-normal px-1">${mainCode}</td>`;
-              } else if (slot === 2) {
-                // Slot 2: Substitute teacher note with RED BOLD text (#dc2626)
-                const note1 = subNotes[0] || '';
-                middleCols = `<td colspan="3" class="${slotEndClass} text-center font-bold px-1 whitespace-nowrap" style="color: #dc2626 !important;">${note1}</td>`;
               } else {
-                const extraNote = (subNotes.length > slot - 2) ? subNotes[slot - 2] : '';
-                middleCols = `<td colspan="3" class="${slotEndClass} text-center font-bold px-1 whitespace-nowrap" style="${extraNote ? 'color: #dc2626 !important;' : ''}">${extraNote}</td>`;
+                // Slot 1, 2, ...: Substitute teacher note immediately under leave reason (no blank line)
+                const subIdx = slot - 1;
+                const note = (subNotes && subNotes.length > subIdx) ? subNotes[subIdx] : '';
+                middleCols = `<td colspan="3" class="${slotEndClass} text-center font-bold px-1 whitespace-nowrap" style="${note ? 'color: #dc2626 !important;' : ''}">${note}</td>`;
               }
 
               rowsHtml += `

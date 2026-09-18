@@ -293,9 +293,6 @@ def populate_weekly_sheet_teachers(ws, teachers, week_num, date_info=None, dept=
                             ws.cell(r, 7).font = BOLD_FONT
                         else:
                             safe_set_cell(ws, r, 7, "")
-                        safe_set_cell(ws, r, 8, "")
-                    elif slot == 2:
-                        safe_set_cell(ws, r, 7, "")
                         safe_set_cell(ws, r, 8, hrs_text)
                         cell_h = ws.cell(r, 8)
                         cell_h.font = RED_BOLD_FONT
