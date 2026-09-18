@@ -268,12 +268,51 @@ def populate_weekly_sheet_teachers(ws, teachers, week_num, date_info=None, dept=
                     for col_idx in range(8, 11):
                         ws.cell(r, col_idx).fill = PASTEL_RED_FILL
             elif is_absent_day:
+                # Group substitutions by substitute teacher on this day (matching index.html & official forms)
+                # If same teacher substitutes on this day, combine their hours into 1 line (e.g. นอก 7 ชม.)
+                day_sub_map = {}
+                for ac in absent_classes:
+                    if not ac.get('is_substituted') and not ac.get('sub_match'):
+                        continue
+                    sm = ac.get('sub_match') or {}
+                    s_idx = sm.get('sub_teacher_idx') or ac.get('sub_teacher_idx')
+                    s_name = sm.get('sub_name') or sm.get('sub_teacher_name') or ac.get('sub_by')
+                    if not s_name or s_name == 'ครูสอนแทน':
+                        continue
+                    s_key = s_idx if s_idx is not None else s_name
+
+                    if s_key not in day_sub_map:
+                        day_sub_map[s_key] = {
+                            'name': s_name,
+                            'hours': 0,
+                            'in': 0,
+                            'out': 0
+                        }
+                    h = ac.get('hours') or (int(ac.get('end_col', 4)) - int(ac.get('start_col', 1)) + 1 if 'start_col' in ac else 4)
+                    day_sub_map[s_key]['hours'] += h
+                    day_sub_map[s_key]['in'] += sm.get('_alloc_in', 0)
+                    day_sub_map[s_key]['out'] += sm.get('_alloc_out', 0)
+
+                sub_notes = []
+                for s_key, s_info in day_sub_map.items():
+                    s_name = s_info['name']
+                    alloc_in = s_info['in']
+                    alloc_out = s_info['out']
+                    if alloc_in == 0 and alloc_out == 0:
+                        alloc_out = s_info['hours']
+
+                    parts = []
+                    if alloc_in > 0:
+                        parts.append(f"ใน {alloc_in}")
+                    if alloc_out > 0:
+                        parts.append(f"นอก {alloc_out}")
+                    if not parts:
+                        parts.append(f"{s_info['hours']}")
+                    hrs_str = " ".join(parts) + " ชม."
+                    sub_notes.append(f"{s_name} สอนแทน ({hrs_str})")
+
                 first_abs = absent_classes[0]
                 leave_reason = first_abs.get('leave_reason') or first_abs.get('reason') or 'ไปราชการ'
-                sub_by = first_abs.get('sub_by') or 'ครูสอนแทน'
-                hrs_text = first_abs.get('sub_alloc_text') or f"{sub_by} สอนแทน (นอก 4 ชม.)"
-                if not hrs_text.startswith(sub_by):
-                    hrs_text = f"{sub_by} สอนแทน ({hrs_text})"
 
                 for slot in range(5):
                     ro = day_idx * 5 + slot
@@ -293,6 +332,14 @@ def populate_weekly_sheet_teachers(ws, teachers, week_num, date_info=None, dept=
                             ws.cell(r, 7).font = BOLD_FONT
                         else:
                             safe_set_cell(ws, r, 7, "")
+                        hrs_text = sub_notes[0] if len(sub_notes) > 0 else ""
+                        safe_set_cell(ws, r, 8, hrs_text)
+                        cell_h = ws.cell(r, 8)
+                        cell_h.font = RED_BOLD_FONT
+                        cell_h.alignment = CENTER_ALIGN
+                    elif slot < 1 + len(sub_notes):
+                        safe_set_cell(ws, r, 7, "")
+                        hrs_text = sub_notes[slot - 1]
                         safe_set_cell(ws, r, 8, hrs_text)
                         cell_h = ws.cell(r, 8)
                         cell_h.font = RED_BOLD_FONT
@@ -546,24 +593,117 @@ def update_cover_sheet(ws, teachers, date_range="", dept="ช่างยนต�
             for c in [1, 2, 6, 7, 8, 9, 10]:
                 safe_set_cell(ws, r, c, None)
 
-def update_leave_summary_sheet(ws, leaves, substitutions):
-    for r in range(2, min(ws.max_row or 1, 50)):
+def update_leave_summary_sheet(ws, leaves, substitutions, teachers=None, base_monday_str="2026-09-14", year="2569"):
+    for r in range(2, min(ws.max_row or 1, 80)):
         for c in range(1, 15):
             safe_set_cell(ws, r, c, None)
-            
-    r_curr = 2
-    for item in (leaves or []):
-        safe_set_cell(ws, r_curr, 1, item.get('teacher_name', ''))
-        safe_set_cell(ws, r_curr, 2, item.get('type', 'ลา'))
-        safe_set_cell(ws, r_curr, 3, f"สัปดาห์ที่ {item.get('week', '')}")
-        safe_set_cell(ws, r_curr, 4, item.get('date', ''))
-        r_curr += 1
-        
+
+    teacher_map = {}
+    if teachers:
+        for t in teachers:
+            idx = t.get('index')
+            if idx is not None:
+                teacher_map[idx] = t
+
+    absent_groups = {}
     for sub in (substitutions or []):
-        safe_set_cell(ws, r_curr, 1, sub.get('original_teacher_name', ''))
-        safe_set_cell(ws, r_curr, 2, "สอนแทน")
-        safe_set_cell(ws, r_curr, 4, sub.get('substitute_teacher_name', ''))
-        safe_set_cell(ws, r_curr, 6, sub.get('time_str', ''))
+        a_idx = sub.get('absent_teacher_idx')
+        w_num = sub.get('week_num', 1)
+        key = (a_idx, w_num)
+        if key not in absent_groups:
+            a_name = sub.get('absent_name') or sub.get('absent_teacher_name')
+            if not a_name and a_idx in teacher_map:
+                a_name = teacher_map[a_idx].get('name', '')
+            reason = sub.get('reason') or 'ไปราชการ'
+            absent_groups[key] = {
+                'teacher_idx': a_idx,
+                'teacher_name': a_name,
+                'week_num': w_num,
+                'reason': reason,
+                'subs': []
+            }
+        absent_groups[key]['subs'].append(sub)
+
+    for lv in (leaves or []):
+        t_idx = lv.get('teacher_idx') if lv.get('teacher_idx') is not None else lv.get('teacher_index')
+        w_num = lv.get('week_num', 1)
+        key = (t_idx, w_num)
+        if key not in absent_groups:
+            t_obj = teacher_map.get(t_idx, {})
+            absent_groups[key] = {
+                'teacher_idx': t_idx,
+                'teacher_name': t_obj.get('name', f"ครู {t_idx}"),
+                'week_num': w_num,
+                'reason': lv.get('reason') or 'ไปราชการ',
+                'subs': []
+            }
+
+    r_curr = 2
+    BOLD_FONT = Font(name='TH SarabunPSK', size=14, bold=True)
+    NORMAL_FONT = Font(name='TH SarabunPSK', size=14)
+
+    for (t_idx, w_num), grp in absent_groups.items():
+        t_obj = teacher_map.get(t_idx, {})
+        t_name = grp['teacher_name']
+        t_in = t_obj.get('sum_in_vc', 0) + t_obj.get('sum_in_vs', 0)
+        t_out = t_obj.get('sum_out_vc', 0) + t_obj.get('sum_out_vs', 0)
+        req_min = t_obj.get('required_min', 12 if t_obj.get('level') == 'ปวช.' else 10)
+
+        d_info = get_week_dates(w_num, base_monday_str=base_monday_str, year=year)
+        d_range_str = f"วันที่ {d_info.get('start_day')}-{d_info.get('end_day')} {d_info.get('start_month', '')[:3]}. {str(d_info.get('year', year))[-2:]}" if d_info else f"สัปดาห์ที่ {w_num}"
+        day_date_strs = d_info.get('day_date_strs', []) if d_info else []
+        day_indices = {'จันทร์': 0, 'อังคาร': 1, 'พุธ': 2, 'พฤหัส': 3, 'ศุกร์': 4}
+
+        # Header row for absent teacher
+        safe_set_cell(ws, r_curr, 1, t_name)
+        safe_set_cell(ws, r_curr, 2, grp['reason'])
+        safe_set_cell(ws, r_curr, 3, f"สัปดาห์ที่ {w_num}")
+        safe_set_cell(ws, r_curr, 4, d_range_str)
+        safe_set_cell(ws, r_curr, 5, "มี  ")
+        safe_set_cell(ws, r_curr, 6, f"ใน {t_in}")
+        safe_set_cell(ws, r_curr, 7, f"นอก {t_out}")
+        safe_set_cell(ws, r_curr, 8, f"(สิทธิเบิกนอกได้ {req_min})")
+        safe_set_cell(ws, r_curr, 9, "สรุป")
+
+        for c in range(1, 10):
+            ws.cell(r_curr, c).font = BOLD_FONT
+        r_curr += 1
+
+        # Sort substitution details chronologically (Mon -> Tue -> ... and periods)
+        sorted_subs = sorted(grp['subs'], key=lambda s: (day_indices.get(s.get('day', ''), 99), int(s.get('start_p', 1))))
+
+        for sub in sorted_subs:
+            d_raw = sub.get('day', '')
+            full_day_th = f"วัน{d_raw}" if not d_raw.startswith('วัน') else d_raw
+            d_idx = day_indices.get(d_raw, -1)
+            sub_date_str = day_date_strs[d_idx] if 0 <= d_idx < len(day_date_strs) else ""
+
+            sub_name = sub.get('sub_name') or sub.get('sub_teacher_name') or 'ครูสอนแทน'
+            t_str = sub.get('time_str', '')
+            hrs = sub.get('hours') or (int(sub.get('end_p', 4)) - int(sub.get('start_p', 1)) + 1)
+            alloc_in = sub.get('_alloc_in', 0)
+            alloc_out = sub.get('_alloc_out', hrs)
+            
+            parts = []
+            if alloc_in > 0:
+                parts.append(f"ใน {alloc_in}")
+            if alloc_out > 0:
+                parts.append(f"นอก {alloc_out}")
+            if not parts:
+                parts.append(f"นอก {hrs}")
+            hrs_text = " ".join(parts)
+
+            safe_set_cell(ws, r_curr, 2, full_day_th)
+            safe_set_cell(ws, r_curr, 3, sub_date_str)
+            safe_set_cell(ws, r_curr, 4, sub_name)
+            safe_set_cell(ws, r_curr, 5, "สอนแทน")
+            safe_set_cell(ws, r_curr, 6, t_str)
+            safe_set_cell(ws, r_curr, 8, hrs_text)
+
+            for c in range(1, 10):
+                ws.cell(r_curr, c).font = NORMAL_FONT
+            r_curr += 1
+
         r_curr += 1
 
 def update_single_template_file(fdef, calculated_data, round_weeks, week_date_map=None, base_monday_str="2026-09-14", year="2569", date_range="", leaves=None, substitutions=None, week_holiday_map=None):
@@ -615,7 +755,7 @@ def update_single_template_file(fdef, calculated_data, round_weeks, week_date_ma
     # 6. Update leave summary sheet
     for sname in wb.sheetnames:
         if 'สรุปลา' in sname:
-            update_leave_summary_sheet(wb[sname], leaves or [], substitutions or [])
+            update_leave_summary_sheet(wb[sname], leaves or [], substitutions or [], teachers=calculated_data, base_monday_str=base_monday_str, year=year)
             
     # 7. Global scan: erase any remaining stale 'เปรม' or 'เพ็งยอด'
     for s_name in wb.sheetnames:

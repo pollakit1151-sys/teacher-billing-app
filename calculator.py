@@ -287,6 +287,22 @@ def classify_teacher_group(teacher):
             return 'sp_vs', 'ครูพิเศษ (ปวส.)'
 
 def _merge_class_override(wc, oc):
+    if wc.get('is_absent') or wc.get('is_holiday') or wc.get('is_substituted'):
+        wc['in_vc'] = 0.0
+        wc['out_vc'] = 0.0
+        wc['in_vs'] = 0.0
+        wc['out_vs'] = 0.0
+        wc['rate_vc'] = 0
+        wc['rate_vs'] = 0
+        wc['amt_vc'] = 0.0
+        wc['amt_vs'] = 0.0
+        wc['_override_applied'] = True
+        return
+
+    if wc.get('is_substitute'):
+        if not oc.get('is_substitute'):
+            return
+
     for f in ['in_vc', 'out_vc', 'in_vs', 'out_vs']:
         if f in oc and oc[f] is not None:
             try:

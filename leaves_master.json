@@ -10,5 +10,11 @@
     "day": "จันทร์",
     "reason": "ไปราชการ",
     "week_num": 1
+  },
+  {
+    "teacher_idx": 1,
+    "day": "อังคาร",
+    "reason": "ไปราชการ",
+    "week_num": 1
   }
 ]
