@@ -216,6 +216,7 @@ def populate_weekly_sheet_teachers(ws, teachers, week_num, date_info=None, dept=
 
         PEACH_FILL = PatternFill(fill_type='solid', start_color='FCE4D6', end_color='FCE4D6')
         PASTEL_RED_FILL = PatternFill(fill_type='solid', start_color='F2DBDB', end_color='F2DBDB')
+        PASTEL_YELLOW_FILL = PatternFill(fill_type='solid', start_color='FEF9C3', end_color='FEF9C3')
         RED_BOLD_FONT = Font(name='TH SarabunPSK', size=14, bold=True, color='FFFF0000')
         BOLD_FONT = Font(name='TH SarabunPSK', size=14, bold=True, color='FF000000')
         CENTER_ALIGN = Alignment(horizontal='center', vertical='center')
@@ -356,6 +357,12 @@ def populate_weekly_sheet_teachers(ws, teachers, week_num, date_info=None, dept=
 
                     safe_set_cell(ws, r, 20, c.get("note", "") or "")
                     safe_set_cell(ws, r, 21, c.get("note2", "") or "")
+
+                    # Format workplace class hour cells in pastel light yellow
+                    is_wp = c.get("is_workplace") or ('สถานประกอบการ' in str(c.get('room', '')) or 'สถานประกอบการ' in str(c.get('class_info', '')) or 'สถานประกอบการ' in str(c.get('subject_name', '')) or 'สถานประกอบการ' in str(c.get('name', '')))
+                    if is_wp:
+                        for col_idx in (12, 13, 16, 17):
+                            ws.cell(r, col_idx).fill = PASTEL_YELLOW_FILL
 
                     # Format substitute class
                     if c.get("is_substitute"):
