@@ -802,6 +802,71 @@ def merge_teachers(existing_teachers, new_teachers, dept=None):
         t['index'] = i + 1
     return combined
 
+def extract_all_course_types_from_pdf(pdf_path):
+    """
+    ดึงข้อมูลรายวิชาและประเภท ทฤษฎี/ปฏิบัติ จากตารางหัวกระดาษของทุกหน้าในไฟล์ PDF
+    ตามเกณฑ์ ท-ป-น ของสำนักงานคณะกรรมการการอาชีวศึกษา (สอศ.):
+    - มีเลขที่ ท อย่างเดียว (ท > 0, ป == 0) -> theory (เกณฑ์เบิกนอก >= 26 คน)
+    - มีเลขที่ ป อย่างเดียว (ป > 0, ท == 0) -> practice (เกณฑ์เบิกนอก >= 10 คน)
+    - ถ้ามีทั้ง ท และ ป (ท > 0, ป > 0) -> practice (เกณฑ์เบิกนอก >= 10 คน)
+    """
+    course_types = {}
+    course_details = {}
+    try:
+        reader = pypdf.PdfReader(pdf_path)
+        for page in reader.pages:
+            text_items = []
+            def visitor(text, cm, tm, font_dict, font_size):
+                cleaned = clean_thai(text.strip())
+                if cleaned:
+                    if cm[0] == 0:
+                        x = tm[4]
+                        y = tm[5]
+                    else:
+                        x = tm[4] * cm[0] + tm[5] * cm[2] + cm[4]
+                        y = tm[4] * cm[1] + tm[5] * cm[3] + cm[5]
+                    text_items.append({"x": round(x, 1), "y": round(y, 1), "text": cleaned})
+            page.extract_text(visitor_text=visitor)
+
+            code_items = [it for it in text_items if it['y'] >= 420 and re.match(r'^[23]\d{4}-\d{4,5}$', it['text'])]
+            for c_it in code_items:
+                code = c_it['text']
+                cy = c_it['y']
+                cx = c_it['x']
+                same_line = [it for it in text_items if abs(it['y'] - cy) < 3.5 and it['x'] >= cx]
+                same_line.sort(key=lambda it: it['x'])
+
+                name_items = []
+                for it in same_line:
+                    if it['x'] > cx + 10 and it['x'] < cx + 250 and not re.match(r'^\d+$', it['text']) and it['text'] != code:
+                        name_items.append(it['text'])
+                s_name = " ".join(name_items).strip()
+
+                nums = [it['text'] for it in same_line if it['text'].isdigit() and it['x'] > cx + 50]
+                if len(nums) >= 3:
+                    try:
+                        t = int(nums[0])
+                        p = int(nums[1])
+                        n = int(nums[2])
+                        ch = int(nums[3]) if len(nums) > 3 else (t + p)
+                        stype = 'practice' if p > 0 else 'theory'
+                        course_types[code] = stype
+                        course_details[code] = {
+                            'code': code,
+                            'name': s_name,
+                            't': t,
+                            'p': p,
+                            'n': n,
+                            'ch': ch,
+                            'tpn': f"{t}-{p}-{n}",
+                            'type': stype
+                        }
+                    except Exception:
+                        pass
+    except Exception as e:
+        print(f"Error extracting course types from {pdf_path}: {e}")
+    return course_types, course_details
+
 if __name__ == "__main__":
     pdf_file = r"C:\Users\Legion\.gemini\antigravity\scratch\teacher_billing_app\uploads\ตารางสอนภาคเรียน 2-2569.pdf"
     ts = parse_pdf_timetable(pdf_file)

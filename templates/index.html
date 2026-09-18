@@ -3583,6 +3583,15 @@
             if (toggleBtn) toggleBtn.innerText = currentDeptFilter;
           }
 
+          if (data.course_types) {
+            Object.assign(courseTypes, data.course_types);
+            try { localStorage.setItem('app_course_types', JSON.stringify(courseTypes)); } catch (e) {}
+          }
+          if (data.course_details) {
+            Object.assign(courseDetails, data.course_details);
+            try { localStorage.setItem('app_course_details', JSON.stringify(courseDetails)); } catch (e) {}
+          }
+
           if (data.teachers) {
             masterTeachers = data.teachers;
           }
@@ -3643,6 +3652,7 @@
     // --- MANUAL STUDENT COUNT & COURSE TYPES MANAGEMENT ---
     let manualStudentCounts = {};
     let courseTypes = {}; // { '20101-2020': 'theory'|'practice', ... }
+    let courseDetails = {}; // { '20101-2020': { t, p, n, ch, tpn, type }, ... }
     let defaultStudentCount = 26;
     let activeStudentModalTab = 'rooms'; // 'rooms' | 'courses'
 
@@ -3656,6 +3666,10 @@
         const localTypes = localStorage.getItem('app_course_types');
         if (localTypes) {
           try { Object.assign(courseTypes, JSON.parse(localTypes)); } catch (e) {}
+        }
+        const localDetails = localStorage.getItem('app_course_details');
+        if (localDetails) {
+          try { Object.assign(courseDetails, JSON.parse(localDetails)); } catch (e) {}
         }
 
         // 2. Server API
@@ -3671,6 +3685,9 @@
           const jsonT = await resT.json();
           if (jsonT.data && typeof jsonT.data === 'object') {
             Object.assign(courseTypes, jsonT.data);
+          }
+          if (jsonT.details && typeof jsonT.details === 'object') {
+            Object.assign(courseDetails, jsonT.details);
           }
         }
       } catch (e) {
@@ -3773,16 +3790,29 @@
       if (badge) badge.innerText = `พบทั้งหมด ${codes.length} รายวิชา (แสดง ${filtered.length} วิชา)`;
 
       if (filtered.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-slate-400">ไม่พบรายวิชาที่ค้นหา</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-slate-400">ไม่พบรายวิชาที่ค้นหา</td></tr>`;
         return;
       }
 
       filtered.forEach((code, idx) => {
         const name = courseMap[code] || '-';
+        const detail = courseDetails[code] || {};
+        const tpn = detail.tpn || '-';
+        const hasP = (detail.p && detail.p > 0);
+        const onlyT = (detail.t && detail.t > 0 && (!detail.p || detail.p === 0));
+        let tpnBadgeNote = '';
+        if (hasP) {
+          tpnBadgeNote = '<span class="text-[9px] text-emerald-700 font-semibold">(มี ป>0)</span>';
+        } else if (onlyT) {
+          tpnBadgeNote = '<span class="text-[9px] text-blue-700 font-semibold">(ท>0, ป=0)</span>';
+        }
+
         // Determine current type
         let currentType = courseTypes[code];
         if (!currentType) {
-          if (name.includes('ปฏิบัติ') || name.includes('ฝึกงาน') || name.includes('โครงงาน')) {
+          if (detail.type) {
+            currentType = detail.type;
+          } else if (name.includes('ปฏิบัติ') || name.includes('ฝึกงาน') || name.includes('โครงงาน')) {
             currentType = 'practice';
           } else {
             currentType = 'theory';
@@ -3795,7 +3825,13 @@
         tr.innerHTML = `
           <td class="p-2.5 pl-3 text-slate-400 font-mono">${idx + 1}</td>
           <td class="p-2.5 font-bold text-slate-900 font-mono">${code}</td>
-          <td class="p-2.5 text-slate-700">${name}</td>
+          <td class="p-2.5 text-slate-700 font-medium">${name}</td>
+          <td class="p-2.5 text-center">
+            <div class="inline-flex flex-col items-center gap-0.5">
+              <span class="px-2 py-0.5 rounded-md bg-slate-100 border border-slate-200 text-slate-800 font-mono font-bold text-xs shadow-2xs">${tpn}</span>
+              ${tpnBadgeNote}
+            </div>
+          </td>
           <td class="p-2.5 text-center">
             <div class="inline-flex rounded-lg border border-slate-200 p-0.5 bg-slate-100 shadow-2xs">
               <button type="button" onclick="setCourseType('${code}', 'theory')" 
@@ -3898,26 +3934,12 @@
       renderManualStudentCountList(document.getElementById('searchStudentClassInput')?.value || '');
     }
 
-    function applyBatchStudentCount() {
-      const batchInput = document.getElementById('inputBatchStudentCount');
-      const num = parseInt(batchInput?.value, 10);
-      if (isNaN(num) || num <= 0) {
-        showToast("ข้อผิดพลาด", "กรุณาระบุจำนวนนักเรียนที่ถูกต้อง", false);
-        return;
-      }
-      defaultStudentCount = num;
-      Object.keys(manualStudentCounts).forEach(k => {
-        manualStudentCounts[k] = num;
-      });
-      renderManualStudentCountList(document.getElementById('searchStudentClassInput')?.value || '');
-      showToast("ปรับปรุงสำเร็จ", `กำหนดจำนวนนักเรียนทุกห้องเป็น ${num} คนเรียบร้อย (กดบันทึกเพื่อนำไปใช้)`, true);
-    }
-
     async function saveManualStudentCounts() {
       // 1. Save to localStorage
       try {
         localStorage.setItem('app_manual_student_counts', JSON.stringify(manualStudentCounts));
         localStorage.setItem('app_course_types', JSON.stringify(courseTypes));
+        localStorage.setItem('app_course_details', JSON.stringify(courseDetails));
       } catch (e) {}
 
       // 2. Save to server
@@ -3931,7 +3953,7 @@
           fetch('/api/save_course_types', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ types: courseTypes })
+            body: JSON.stringify({ types: courseTypes, details: courseDetails })
           })
         ]);
       } catch (e) {
@@ -10787,18 +10809,6 @@ function selectRound(roundNum) {
 
       <!-- TAB 1 CONTENT: Rooms & Student Counts -->
       <div id="tabContentRooms" class="space-y-3 flex-1 flex flex-col min-h-0">
-        <!-- Quick Batch Setting Card -->
-        <div class="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-3 flex flex-wrap items-center justify-between gap-2 shrink-0 text-xs">
-          <div class="flex items-center gap-2">
-            <span class="font-bold text-blue-950">⚡ กำหนดจำนวนเท่ากันทุกห้อง:</span>
-            <input type="number" id="inputBatchStudentCount" min="1" max="100" value="26" class="w-16 px-2 py-1 text-center font-bold bg-white border border-blue-300 rounded-lg shadow-2xs focus:ring-2 focus:ring-blue-400 focus:outline-hidden">
-            <span class="text-blue-800">คน</span>
-          </div>
-          <button type="button" onclick="applyBatchStudentCount()" class="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold shadow-2xs transition cursor-pointer flex items-center gap-1">
-            <span>นำไปใช้กับทุกห้อง</span>
-          </button>
-        </div>
-
         <!-- Class list search & add new -->
         <div class="flex items-center justify-between gap-2 shrink-0 text-xs">
           <div class="relative flex-1">
@@ -10833,9 +10843,12 @@ function selectRound(roundNum) {
       <div id="tabContentCourses" class="space-y-3 flex-1 flex flex-col min-h-0 hidden">
         <!-- Rule Explanation Card -->
         <div class="bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-xl p-3 text-xs space-y-1.5 shrink-0">
-          <div class="font-bold text-amber-950 flex items-center gap-2">
-            <i data-lucide="info" class="w-4 h-4 text-amber-600"></i>
-            <span>ระเบียบเกณฑ์จำนวนผู้เรียนขั้นต่ำในการนำไปเบิกคาบนอก (ค่าสอนเกินภาระงาน):</span>
+          <div class="font-bold text-amber-950 flex items-center justify-between">
+            <span class="flex items-center gap-1.5">
+              <i data-lucide="info" class="w-4 h-4 text-amber-600"></i>
+              <span>ระเบียบเกณฑ์จำนวนผู้เรียนขั้นต่ำในการนำไปเบิกคาบนอก (ค่าสอนเกินภาระงาน):</span>
+            </span>
+            <span class="text-[10px] text-amber-700 bg-amber-100/70 px-2 py-0.5 rounded font-semibold">อิงจากช่อง ท-ป-น ในไฟล์ตารางสอน</span>
           </div>
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px] text-amber-900 pt-1">
             <div class="p-2 bg-white/80 rounded-lg border border-amber-200 flex items-center gap-2">
@@ -10863,6 +10876,7 @@ function selectRound(roundNum) {
                 <th class="p-2.5 pl-3 w-12">ลำดับ</th>
                 <th class="p-2.5 w-28">รหัสวิชา</th>
                 <th class="p-2.5">ชื่อรายวิชา</th>
+                <th class="p-2.5 text-center w-24">ท-ป-น</th>
                 <th class="p-2.5 text-center w-56">ประเภทวิชา & เกณฑ์เบิก</th>
               </tr>
             </thead>

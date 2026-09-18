@@ -13,7 +13,7 @@ import datetime
 import uvicorn
 from calculator import calculate_week, find_substitute_candidates, PERIOD_TO_TIME, calculate_round_breakdown_matrix, find_overlapping_periods, parse_periods_from_timestr
 from excel_exporter import export_to_excel
-from pdf_parser import parse_pdf_timetable, merge_teachers, validate_all_schedules
+from pdf_parser import parse_pdf_timetable, merge_teachers, validate_all_schedules, extract_all_course_types_from_pdf
 
 app = FastAPI(title="Nakhon Sawan Technical College - Teacher Billing & Substitution System")
 
@@ -235,7 +235,7 @@ async def api_get_custom_overrides():
 async def api_save_custom_overrides(payload: dict):
     current = load_custom_overrides()
     replace_all = payload.get("replace_all", True)
-    for k in ["text_edits", "template_overrides", "font_sizes", "font_weights", "student_counts", "course_types"]:
+    for k in ["text_edits", "template_overrides", "font_sizes", "font_weights", "student_counts", "course_types", "course_details"]:
         if k in payload:
             if replace_all:
                 current[k] = payload[k]
@@ -248,6 +248,41 @@ async def api_save_custom_overrides(payload: dict):
                     current[k] = payload[k]
     save_custom_overrides(current)
     return JSONResponse(content={"status": "success", "message": "Saved custom overrides successfully"})
+
+def auto_populate_course_types_from_uploads():
+    """
+    ตรวจหาไฟล์ PDF ตารางสอนใน uploads/ และดึงข้อมูลประเภทวิชา (ท-ป-น) มาบันทึกอัตโนมัติ
+    เกณฑ์:
+    - ท อย่างเดียว (ท > 0, ป == 0) -> theory
+    - มี ป (ป > 0) -> practice
+    """
+    ovr = load_custom_overrides()
+    if "course_types" not in ovr or not isinstance(ovr["course_types"], dict):
+        ovr["course_types"] = {}
+    if "course_details" not in ovr or not isinstance(ovr["course_details"], dict):
+        ovr["course_details"] = {}
+
+    uploads_dir = os.path.join(BASE_DIR, "uploads")
+    changed = False
+    if os.path.exists(uploads_dir):
+        for fname in os.listdir(uploads_dir):
+            if fname.lower().endswith(".pdf") and not fname.startswith("test_"):
+                pdf_path = os.path.join(uploads_dir, fname)
+                try:
+                    c_types, c_details = extract_all_course_types_from_pdf(pdf_path)
+                    for code, stype in c_types.items():
+                        if code not in ovr["course_types"]:
+                            ovr["course_types"][code] = stype
+                            changed = True
+                    for code, detail in c_details.items():
+                        if code not in ovr["course_details"]:
+                            ovr["course_details"][code] = detail
+                            changed = True
+                except Exception:
+                    pass
+    if changed:
+        save_custom_overrides(ovr)
+    return ovr
 
 @app.get("/api/student_counts")
 async def api_get_student_counts():
@@ -270,18 +305,28 @@ async def api_save_student_counts(payload: dict):
 async def api_get_course_types():
     current = load_custom_overrides()
     types = current.get("course_types", {})
-    return JSONResponse(content={"status": "success", "data": types})
+    details = current.get("course_details", {})
+    if not types or not details:
+        current = auto_populate_course_types_from_uploads()
+        types = current.get("course_types", {})
+        details = current.get("course_details", {})
+    return JSONResponse(content={"status": "success", "data": types, "details": details})
 
 @app.post("/api/save_course_types")
 async def api_save_course_types(payload: dict):
     current = load_custom_overrides()
     types = payload.get("types", payload.get("course_types", {}))
+    details = payload.get("details", payload.get("course_details", {}))
     if isinstance(types, dict):
         if "course_types" not in current or not isinstance(current["course_types"], dict):
             current["course_types"] = {}
         current["course_types"].update(types)
-        save_custom_overrides(current)
-    return JSONResponse(content={"status": "success", "message": "บันทึกข้อมูลประเภทรายวิชาเรียบร้อยแล้ว", "data": current.get("course_types", {})})
+    if isinstance(details, dict) and details:
+        if "course_details" not in current or not isinstance(current["course_details"], dict):
+            current["course_details"] = {}
+        current["course_details"].update(details)
+    save_custom_overrides(current)
+    return JSONResponse(content={"status": "success", "message": "บันทึกข้อมูลประเภทรายวิชาเรียบร้อยแล้ว", "data": current.get("course_types", {}), "details": current.get("course_details", {})})
 
 @app.get("/api/compensations")
 async def api_get_compensations():
@@ -1070,13 +1115,35 @@ async def api_analyze_schedule(file: UploadFile = File(...)):
         f.write(contents)
         
     new_teachers = []
+    extracted_course_types = {}
+    extracted_course_details = {}
     if file.filename.lower().endswith(".pdf"):
         new_teachers = parse_pdf_timetable(temp_path)
+        try:
+            extracted_course_types, extracted_course_details = extract_all_course_types_from_pdf(temp_path)
+        except Exception as ex:
+            print(f"Course types extraction warning: {ex}")
     elif file.filename.lower().endswith((".xlsx", ".xls")):
         new_teachers = parse_excel_timetable_data(temp_path)
 
     if not new_teachers:
         return JSONResponse(content={"status": "error", "message": "ไม่สามารถอ่านข้อมูลตารางสอนจากไฟล์นี้ได้"}, status_code=400)
+
+    # Automatically save any detected course types from PDF into custom overrides
+    ovr = load_custom_overrides()
+    types_updated = False
+    if extracted_course_types:
+        if "course_types" not in ovr or not isinstance(ovr["course_types"], dict):
+            ovr["course_types"] = {}
+        ovr["course_types"].update(extracted_course_types)
+        types_updated = True
+    if extracted_course_details:
+        if "course_details" not in ovr or not isinstance(ovr["course_details"], dict):
+            ovr["course_details"] = {}
+        ovr["course_details"].update(extracted_course_details)
+        types_updated = True
+    if types_updated:
+        save_custom_overrides(ovr)
 
     # Detect all departments present in the file
     depts = list(dict.fromkeys(t.get('dept', 'ช่างยนต์') for t in new_teachers if t.get('dept')))
@@ -1097,7 +1164,11 @@ async def api_analyze_schedule(file: UploadFile = File(...)):
     # Run automated validation check
     val_report = validate_all_schedules(new_teachers)
 
-    calculated = calculate_week(merged)
+    calculated = calculate_week(
+        merged,
+        student_counts=ovr.get("student_counts", {}),
+        course_types=ovr.get("course_types", {})
+    )
 
     return JSONResponse(content={
         "status": "success",
@@ -1109,7 +1180,9 @@ async def api_analyze_schedule(file: UploadFile = File(...)):
         "validation": val_report,
         "teachers": merged,
         "data": calculated,
-        "filename": file.filename
+        "filename": file.filename,
+        "course_types": ovr.get("course_types", {}),
+        "course_details": ovr.get("course_details", {})
     })
 
 @app.post("/api/save_schedule")

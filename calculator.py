@@ -219,6 +219,10 @@ def is_theory_course(code, name, course_types=None):
     if course_types:
         if code_str in course_types:
             return course_types[code_str] == 'theory'
+        clean_code = code_str.replace(' ', '')
+        for k, v in course_types.items():
+            if k.replace(' ', '') == clean_code:
+                return v == 'theory'
         if name_str in course_types:
             return course_types[name_str] == 'theory'
     # Heuristic based on course name
