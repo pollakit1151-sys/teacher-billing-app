@@ -1709,8 +1709,63 @@
     let dirtyTeacherIds = new Set();
     let currentSubViewMode = 'a4_form'; // 'a4_form', 'covers', 'summary', 'gsheet'
     let currentMainTab = 'reg_vc'; // 'reg_vc', 'reg_vs', 'sp_vc', 'sp_vs', 'covers', 'summary'
-    let leavesList = [];
-    let substitutionsList = [];
+    let substitutionsList = (function() {
+      let serverData = null;
+      try {
+        const el = document.getElementById('serverSubstitutionsData');
+        if (el && el.textContent) {
+          serverData = JSON.parse(el.textContent);
+        }
+      } catch (e) {
+        console.warn('Cannot read serverSubstitutionsData', e);
+      }
+      let localData = null;
+      try {
+        const raw = localStorage.getItem('teacher_billing_substitutions_v1');
+        if (raw) {
+          localData = JSON.parse(raw);
+        }
+      } catch (e) {
+        console.warn('Cannot read localStorage substitutions', e);
+      }
+      return (Array.isArray(serverData) && serverData.length > 0) ? serverData : (localData || []);
+    })();
+
+    let leavesList = (function() {
+      let serverData = null;
+      try {
+        const el = document.getElementById('serverLeavesData');
+        if (el && el.textContent) {
+          serverData = JSON.parse(el.textContent);
+        }
+      } catch (e) {
+        console.warn('Cannot read serverLeavesData', e);
+      }
+      let localData = null;
+      try {
+        const raw = localStorage.getItem('teacher_billing_leaves_v1');
+        if (raw) {
+          localData = JSON.parse(raw);
+        }
+      } catch (e) {
+        console.warn('Cannot read localStorage leaves', e);
+      }
+      return (Array.isArray(serverData) && serverData.length > 0) ? serverData : (localData || []);
+    })();
+
+    async function syncSubstitutionsToServer() {
+      try {
+        localStorage.setItem('teacher_billing_substitutions_v1', JSON.stringify(substitutionsList));
+        localStorage.setItem('teacher_billing_leaves_v1', JSON.stringify(leavesList));
+        await fetch('/api/save_substitutions', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ substitutions: substitutionsList, leaves: leavesList })
+        });
+      } catch (e) {
+        console.warn('Failed to sync substitutions to server:', e);
+      }
+    }
     let compensationsList = (function() {
       let serverData = null;
       try {
@@ -3187,6 +3242,7 @@
       await loadInitialMasterData();
       await initSignatories();
       renderActiveCompensations();
+      renderActiveSubstitutions();
 
       // URL parameters handling for PDF export and direct navigation
       const urlParams = new URLSearchParams(window.location.search);
@@ -5008,6 +5064,7 @@
       // 1. Always collect and save any signatories edited on the page first
       await collectAndSaveSignatoriesFromDOM();
       await flushCustomOverridesToServer();
+      await syncSubstitutionsToServer();
 
       if (dirtyTeacherIds.size === 0) {
         if (!silent) showToast('บันทึกสำเร็จ', 'บันทึกข้อมูลและผู้ลงนามเรียบร้อยแล้ว', true);
@@ -5799,29 +5856,38 @@
             const isMonday = (cItem.day === 'จันทร์');
             const dClasses = teacher._rowClasses.filter(x => x.day === cItem.day);
             const slotInDay = dClasses.indexOf(cItem);
-            const monSubClasses = isMonday ? dClasses.filter(x => x && x.is_substitute) : [];
+            const daySubClasses = dClasses.filter(x => x && x.is_substitute);
+            const uniqueAbsentLabels = [];
+            daySubClasses.forEach(sc => {
+              const absName = sc.absent_teacher_name || '';
+              const cleanAbs = absName.replace(/^(นาย|นางสาว|นาง)\s*/, '').trim();
+              const label = sc.sub_label || `สอนแทน อ.${cleanAbs}`;
+              if (!uniqueAbsentLabels.includes(label)) {
+                uniqueAbsentLabels.push(label);
+              }
+            });
 
-            if (isMonday && monSubClasses.length > 0) {
+            if (isMonday && uniqueAbsentLabels.length > 0) {
               if (slotInDay === 0) {
                 // Slot 0 on Monday: MUST KEEP TEACHER NAME! (สอนแทนทับชื่อครู แก้ให้เลื่อนลงมาอีก 1 บรรทัด)
                 rowType = 'teacher_name';
                 rowLabel = teacher.name;
-              } else if (slotInDay <= monSubClasses.length) {
-                // Shift substitute badge down to slot 1 (and subsequent slots if multiple)
-                const subItem = monSubClasses[slotInDay - 1];
+              } else if (slotInDay <= uniqueAbsentLabels.length) {
+                // Shift substitute badge down to slot 1 (only 1 line per unique absent teacher)
                 rowType = 'substitute';
-                const absName = subItem.absent_teacher_name || '';
-                const cleanAbs = absName.replace(/^(นาย|นางสาว|นาง)\s*/, '').trim();
-                rowLabel = subItem.sub_label || `สอนแทน อ.${cleanAbs}`;
+                rowLabel = uniqueAbsentLabels[slotInDay - 1];
               } else {
                 rowType = 'normal';
                 rowLabel = '';
               }
-            } else if (isSub) {
-              rowType = 'substitute';
-              const absName = cItem.absent_teacher_name || '';
-              const cleanAbs = absName.replace(/^(นาย|นางสาว|นาง)\s*/, '').trim();
-              rowLabel = cItem.sub_label || `สอนแทน อ.${cleanAbs}`;
+            } else if (!isMonday && uniqueAbsentLabels.length > 0) {
+              if (slotInDay < uniqueAbsentLabels.length) {
+                rowType = 'substitute';
+                rowLabel = uniqueAbsentLabels[slotInDay];
+              } else {
+                rowType = 'normal';
+                rowLabel = '';
+              }
             } else {
               rowType = 'normal';
               rowLabel = teacher.name;
@@ -5891,8 +5957,22 @@
 
           const subNotes = [];
           if (dayAbsSubs.length > 0) {
+            // Group substitutions by substitute teacher on this day (กรณีคนสอนแทนคือคนเดียวกันในวันนั้นให้แสดงผลแค่บรรทัดเดียว)
+            const groupedSubs = {};
             dayAbsSubs.forEach(sub => {
-              const subTeacher = calculatedData.find(t => t.index === sub.sub_teacher_idx);
+              const sIdx = sub.sub_teacher_idx;
+              if (!groupedSubs[sIdx]) {
+                groupedSubs[sIdx] = {
+                  subTeacherIdx: sIdx,
+                  name: sub.sub_name || sub.sub_teacher_name || 'ครูสอนแทน',
+                  totalHours: 0
+                };
+              }
+              groupedSubs[sIdx].totalHours += (sub.hours || 0);
+            });
+
+            Object.values(groupedSubs).forEach(grp => {
+              const subTeacher = calculatedData.find(t => t.index === grp.subTeacherIdx);
               let inH = 0, outH = 0;
               if (subTeacher && subTeacher.classes) {
                 const scList = subTeacher.classes.filter(sc => sc.is_substitute && sc.day === dayStr);
@@ -5904,9 +5984,8 @@
               const parts = [];
               if (inH > 0) parts.push(`ใน ${inH}`);
               if (outH > 0) parts.push(`นอก ${outH}`);
-              if (parts.length === 0) parts.push(`${sub.hours || 4}`);
-              const sName = sub.sub_name || sub.sub_teacher_name || 'ครูสอนแทน';
-              subNotes.push(`${sName} สอนแทน (${parts.join(' ')} ชม.)`);
+              if (parts.length === 0) parts.push(`${grp.totalHours || 4}`);
+              subNotes.push(`${grp.name} สอนแทน (${parts.join(' ')} ชม.)`);
             });
           } else {
             const sc = cList.find(c => c.sub_alloc_text || (c.note && c.note.includes('สอนแทน')));
@@ -5934,7 +6013,7 @@
             if (bBlock) {
               if (bBlock.type === 'teacher_name') {
                 col2Html = `
-                  <td rowspan="${bBlock.span}" class="teacher-meta-cell text-left px-1 text-black" style="vertical-align: top; padding-top: 4px; white-space: nowrap; background-color: #ffffff !important;">
+                  <td rowspan="${bBlock.span}" class="teacher-meta-cell text-left px-1 text-black" style="vertical-align: top; padding-top: 4px; padding-bottom: 0px; white-space: nowrap; background-color: #ffffff !important; border-bottom: hidden !important;">
                     <div class="whitespace-nowrap font-bold" style="white-space: nowrap !important; overflow: visible;">${teacher.name}</div>
                   </td>
                 `;
@@ -5946,8 +6025,8 @@
                 `;
               } else if (bBlock.type === 'substitute' || bBlock.isSub) {
                 col2Html = `
-                  <td rowspan="${bBlock.span}" class="teacher-meta-cell text-left px-1 font-bold whitespace-nowrap" style="vertical-align: middle; background-color: #FCE4D6 !important; color: #dc2626 !important;">
-                    <div class="whitespace-nowrap font-bold" style="color: #dc2626 !important;">${bBlock.label}</div>
+                  <td rowspan="${bBlock.span}" class="teacher-meta-cell text-left px-1 font-bold whitespace-nowrap" style="vertical-align: top; padding-top: 1px; padding-bottom: 2px; background-color: #ffffff !important; color: #dc2626 !important; border-top: hidden !important; border-bottom: hidden !important;">
+                    <div class="whitespace-nowrap font-bold" style="color: #dc2626 !important; font-size: 13.5px; font-weight: bold !important;">${bBlock.label}</div>
                   </td>
                 `;
               } else if (r === 0 || bBlock.startRow === 0) {
@@ -5958,7 +6037,7 @@
                 `;
               } else {
                 col2Html = `
-                  <td rowspan="${bBlock.span}" class="teacher-meta-cell text-left px-1" style="background-color: #ffffff !important;"></td>
+                  <td rowspan="${bBlock.span}" class="teacher-meta-cell text-left px-1" style="background-color: #ffffff !important; border-top: hidden !important;"></td>
                 `;
               }
             }
@@ -6066,7 +6145,8 @@
                 // Slot 0: Leave reason with PEACH background fill (#FCE4D6) & BOLD
                 middleCols = `<td colspan="3" class="${slotEndClass} text-center font-bold px-1" style="background-color: #FCE4D6 !important; color: #000000;">${leaveReason}</td>`;
               } else if (slot === 1) {
-                middleCols = `<td colspan="3" class="${slotEndClass} text-center"></td>`;
+                const mainCode = cList.find(c => c && c.code)?.code || '';
+                middleCols = `<td colspan="3" class="${slotEndClass} text-center font-normal px-1">${mainCode}</td>`;
               } else if (slot === 2) {
                 // Slot 2: Substitute teacher note with RED BOLD text (#dc2626)
                 const note1 = subNotes[0] || '';
@@ -7196,7 +7276,7 @@
       `).join('');
     }
 
-    function selectSubstitute(subIdx, subName, startP, endP) {
+    async function selectSubstitute(subIdx, subName, startP, endP) {
       const absentIdx = parseInt(document.getElementById('absentTeacherSelect').value);
       const absentTeacher = masterTeachers.find(t => t.index === absentIdx);
       const day = document.getElementById('absentDaySelect').value;
@@ -7227,26 +7307,31 @@
           5: ['13.10', '14.10'], 6: ['14.10', '15.10'], 7: ['15.10', '16.10'], 8: ['16.10', '17.10'],
           9: ['17.10', '18.10'], 10: ['18.10', '19.10'], 11: ['19.10', '20.10'], 12: ['20.10', '21.10']
         };
-        const sTime = periodTimeMap[startP] ? periodTimeMap[startP][0] : '08.10';
-        const eTime = periodTimeMap[endP] ? periodTimeMap[endP][1] : '12.10';
-        timeStr = `${sTime} - ${eTime}`;
+        const sT = periodTimeMap[startP] ? periodTimeMap[startP][0] : '08.10';
+        const eT = periodTimeMap[endP] ? periodTimeMap[endP][1] : '12.10';
+        timeStr = `${sT} - ${eT}`;
       }
 
-      const rawAbsent = absentTeacher ? absentTeacher.name : '';
-      const cleanAbs = rawAbsent.replace(/^(นาย|นางสาว|นาง)\s*/, '').trim();
-      const subLabel = `สอนแทน อ.${cleanAbs}`;
+      const subTeacher = masterTeachers.find(t => t.index === subIdx);
+      const rawAbsent = absentTeacher ? absentTeacher.name : `ครูลำดับที่ ${absentIdx}`;
+      const cleanAbsent = rawAbsent.replace(/^(นาย|นางสาว|นาง)\s*/, '').trim();
+      const absentLabel = `สอนแทน อ.${cleanAbsent}`;
+      const subLabel = `สอนแทน อ.${cleanAbsent}`;
 
-      let isVs = (code && code.startsWith('3')) || (classInfo && classInfo.includes('ปวส'));
+      let isVs = (matchedClass && matchedClass.code && matchedClass.code.startsWith('3'));
       if (!isVs && absentTeacher && absentTeacher.level === 'ปวส.') {
         isVs = true;
       }
       const targetLevel = isVs ? 'ปวส.' : 'ปวช.';
+      const curWk = getCurrentWeekNum();
 
       const subEntry = {
         id: Date.now(),
+        week_num: curWk,
         absent_teacher_idx: absentIdx,
         absent_name: rawAbsent,
         absent_teacher_name: rawAbsent,
+        absent_label: absentLabel,
         sub_teacher_idx: subIdx,
         sub_name: subName,
         sub_teacher_name: subName,
@@ -7266,10 +7351,11 @@
 
       substitutionsList.push(subEntry);
 
-      if (!leavesList.some(l => l.teacher_idx === absentIdx && l.day === day)) {
-        leavesList.push({ teacher_idx: absentIdx, day: day, reason: reason });
+      if (!leavesList.some(l => l.teacher_idx === absentIdx && l.day === day && (!l.week_num || l.week_num === curWk))) {
+        leavesList.push({ teacher_idx: absentIdx, day: day, reason: reason, week_num: curWk });
       }
 
+      await syncSubstitutionsToServer();
       renderActiveSubstitutions();
       recalculateAll();
       showToast("เพิ่มการสอนแทนแล้ว", `${subName} สอนแทน ${rawAbsent} วิชา ${code} วัน${day}`, true);
@@ -7384,13 +7470,14 @@
       window.open(webAppUrl, '_blank');
     }
 
-    function removeSubstitution(id) {
+    async function removeSubstitution(id) {
       const idx = substitutionsList.findIndex(s => s.id === id);
       if (idx !== -1) {
         const sub = substitutionsList[idx];
         substitutionsList.splice(idx, 1);
         const lIdx = leavesList.findIndex(l => l.teacher_idx === sub.absent_teacher_idx && l.day === sub.day);
         if (lIdx !== -1) leavesList.splice(lIdx, 1);
+        await syncSubstitutionsToServer();
         renderActiveSubstitutions();
         recalculateAll();
       }

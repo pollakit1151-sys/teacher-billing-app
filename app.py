@@ -107,6 +107,34 @@ def save_signatories(data):
 
 CUSTOM_OVERRIDES_FILE = os.path.join(BASE_DIR, "custom_overrides_master.json")
 COMPENSATIONS_FILE = os.path.join(BASE_DIR, "compensations_master.json")
+SUBSTITUTIONS_FILE = os.path.join(BASE_DIR, "substitutions_master.json")
+LEAVES_FILE = os.path.join(BASE_DIR, "leaves_master.json")
+
+def load_substitutions():
+    if os.path.exists(SUBSTITUTIONS_FILE):
+        try:
+            with open(SUBSTITUTIONS_FILE, "r", encoding="utf-8") as f:
+                return json.load(f)
+        except Exception as e:
+            print(f"Error reading {SUBSTITUTIONS_FILE}: {e}")
+    return []
+
+def save_substitutions(data):
+    with open(SUBSTITUTIONS_FILE, "w", encoding="utf-8") as f:
+        json.dump(data, f, ensure_ascii=False, indent=2)
+
+def load_leaves():
+    if os.path.exists(LEAVES_FILE):
+        try:
+            with open(LEAVES_FILE, "r", encoding="utf-8") as f:
+                return json.load(f)
+        except Exception as e:
+            print(f"Error reading {LEAVES_FILE}: {e}")
+    return []
+
+def save_leaves(data):
+    with open(LEAVES_FILE, "w", encoding="utf-8") as f:
+        json.dump(data, f, ensure_ascii=False, indent=2)
 
 def sanitize_custom_overrides(data):
     if not isinstance(data, dict):
@@ -205,9 +233,15 @@ async def read_root():
     overrides_json = json.dumps(overrides, ensure_ascii=False)
     comps = load_compensations()
     comps_json = json.dumps(comps, ensure_ascii=False)
+    subs = load_substitutions()
+    subs_json = json.dumps(subs, ensure_ascii=False)
+    leaves = load_leaves()
+    leaves_json = json.dumps(leaves, ensure_ascii=False)
     injected_script = f'''<script id="serverSignatoriesData" type="application/json">{sigs_json}</script>
   <script id="serverCustomOverridesData" type="application/json">{overrides_json}</script>
-  <script id="serverCompensationsData" type="application/json">{comps_json}</script>'''
+  <script id="serverCompensationsData" type="application/json">{comps_json}</script>
+  <script id="serverSubstitutionsData" type="application/json">{subs_json}</script>
+  <script id="serverLeavesData" type="application/json">{leaves_json}</script>'''
     if '<head>' in html:
         html = html.replace('<head>', f'<head>\n  {injected_script}', 1)
     return HTMLResponse(content=html)
@@ -351,6 +385,18 @@ async def api_save_compensations(payload: dict):
     comps = payload.get("compensations", [])
     save_compensations(comps)
     return JSONResponse(content={"status": "success", "message": "บันทึกรายการสอนชดเชยเรียบร้อยแล้ว", "data": comps})
+
+@app.get("/api/substitutions")
+async def api_get_substitutions():
+    return JSONResponse(content={"status": "success", "substitutions": load_substitutions(), "leaves": load_leaves()})
+
+@app.post("/api/save_substitutions")
+async def api_save_substitutions(payload: dict):
+    subs = payload.get("substitutions", [])
+    leaves = payload.get("leaves", [])
+    save_substitutions(subs)
+    save_leaves(leaves)
+    return JSONResponse(content={"status": "success", "message": "บันทึกข้อมูลการสอนแทนและวันลาเรียบร้อยแล้ว", "substitutions": subs, "leaves": leaves})
 
 @app.get("/api/teachers")
 async def get_teachers():
@@ -592,8 +638,12 @@ async def api_round_breakdown_matrix(request: Request, round_num: int = 1, dept:
 async def api_calculate(payload: dict):
     teachers = load_master()
     holiday_days = payload.get("holiday_days", [])
-    leaves = payload.get("leaves", [])
-    substitutions = payload.get("substitutions", [])
+    leaves = payload.get("leaves", None)
+    if leaves is None:
+        leaves = load_leaves()
+    substitutions = payload.get("substitutions", None)
+    if substitutions is None:
+        substitutions = load_substitutions()
     compensations = payload.get("compensations", None)
     if compensations is None:
         compensations = load_compensations()
@@ -972,9 +1022,15 @@ async def api_export_excel(payload: dict):
     week_num = payload.get("week_num", 1)
     holiday_days = payload.get("holiday_days", [])
     week_holiday_map = payload.get("week_holiday_map", {})
-    leaves = payload.get("leaves", [])
-    substitutions = payload.get("substitutions", [])
-    compensations = payload.get("compensations", [])
+    leaves = payload.get("leaves", None)
+    if not leaves:
+        leaves = load_leaves()
+    substitutions = payload.get("substitutions", None)
+    if not substitutions:
+        substitutions = load_substitutions()
+    compensations = payload.get("compensations", None)
+    if not compensations:
+        compensations = load_compensations()
     date_range = payload.get("date_range", "")
     term = payload.get("term", "2")
     year = payload.get("year", "2569")
