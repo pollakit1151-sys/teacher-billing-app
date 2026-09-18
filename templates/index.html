@@ -2597,10 +2597,12 @@
 
       // Do NOT save blanket date range line or calculated totals as static HTML overrides
       if (el.classList.contains('doc-head-line3') || el.closest('.doc-head-line3') || 
-          (paths && paths.pageSpecificKey && paths.pageSpecificKey.includes('div:nth-of-type(1) > div:nth-of-type(3)')) ||
+          el.closest('.summary-hours-table') || el.closest('tfoot') ||
+          (el.id && (el.id.startsWith('foot_') || el.id.startsWith('rate_') || el.id.startsWith('amt_'))) ||
           (paths && paths.pageSpecificKey && (
-            paths.pageSpecificKey.includes('table:nth-of-type(2) > tbody > tr:nth-of-type(1) > td:nth-of-type(1)') ||
+            paths.pageSpecificKey.includes('table:nth-of-type(2)') ||
             paths.pageSpecificKey.includes('covTotalMoney') || paths.pageSpecificKey.includes('covBahtText') ||
+            paths.pageSpecificKey.includes('foot_claim_hrs') || paths.pageSpecificKey.includes('foot_tot_money') ||
             paths.pageSpecificKey.includes('tfoot')
           )) || isCalculatedFormulaElement(el)) {
         return;
@@ -4920,6 +4922,17 @@
         saveBtn.className = "px-2.5 py-1 bg-amber-600 hover:bg-amber-700 text-white rounded-md font-bold flex items-center gap-1 shadow-xs cursor-pointer transition";
         if (typeof lucide !== 'undefined') lucide.createIcons();
       }
+      scheduleAutoSaveTeacherEdits();
+    }
+
+    let _teacherAutoSaveTimer = null;
+    function scheduleAutoSaveTeacherEdits() {
+      clearTimeout(_teacherAutoSaveTimer);
+      _teacherAutoSaveTimer = setTimeout(async () => {
+        if (dirtyTeacherIds.size > 0) {
+          await saveAllTeacherCustomEdits(true);
+        }
+      }, 1500);
     }
 
     function onTeacherDutyEdit(tIdx, val) {
@@ -4933,6 +4946,7 @@
         saveBtn.className = "px-2.5 py-1 bg-amber-600 hover:bg-amber-700 text-white rounded-md font-bold flex items-center gap-1 shadow-xs cursor-pointer transition";
         if (typeof lucide !== 'undefined') lucide.createIcons();
       }
+      scheduleAutoSaveTeacherEdits();
     }
 
     function onTeacherPositionEdit(tIdx, val) {
@@ -4946,9 +4960,10 @@
         saveBtn.className = "px-2.5 py-1 bg-amber-600 hover:bg-amber-700 text-white rounded-md font-bold flex items-center gap-1 shadow-xs cursor-pointer transition";
         if (typeof lucide !== 'undefined') lucide.createIcons();
       }
+      scheduleAutoSaveTeacherEdits();
     }
 
-    async function saveAllTeacherCustomEdits() {
+    async function saveAllTeacherCustomEdits(silent = false) {
       const btn = document.getElementById('btnSaveA4Edits');
       if (document.activeElement && document.activeElement.isContentEditable) {
         saveElementTextEdit(document.activeElement);
@@ -4957,30 +4972,31 @@
       await collectAndSaveSignatoriesFromDOM();
       await flushCustomOverridesToServer();
 
-      if (dirtyTeacherIds.size === 0 && currentA4TeacherIndex) {
-        dirtyTeacherIds.add(currentA4TeacherIndex);
-      }
       if (dirtyTeacherIds.size === 0) {
-        showToast('บันทึกสำเร็จ', 'บันทึกข้อมูลและผู้ลงนามเรียบร้อยแล้ว', true);
+        if (!silent) showToast('บันทึกสำเร็จ', 'บันทึกข้อมูลและผู้ลงนามเรียบร้อยแล้ว', true);
         return;
       }
 
-      if (btn) {
+      if (btn && !silent) {
         btn.disabled = true;
         btn.innerHTML = `<span class="animate-spin mr-1">⏳</span> กำลังบันทึก (${dirtyTeacherIds.size})...`;
       }
 
+      const curWk = getCurrentWeekNum();
       let successCount = 0;
-      for (const tIdx of dirtyTeacherIds) {
+      const idsToSave = Array.from(dirtyTeacherIds);
+      for (const tIdx of idsToSave) {
         const t = calculatedData.find(x => x.index === tIdx);
         if (!t) continue;
+        const classesToSave = (t._rowClasses && t._rowClasses.length > 0) ? t._rowClasses : (t.classes || []);
         try {
           const resp = await fetch('/api/save_teacher_custom_edit', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               teacher_index: tIdx,
-              classes: t.classes || [],
+              week_num: curWk,
+              classes: classesToSave,
               position: t.position || 'ครู',
               duty: t.duty || '',
               required_min: t.required_min || 18
@@ -4988,27 +5004,43 @@
           });
           if (resp.ok) {
             successCount++;
+            dirtyTeacherIds.delete(tIdx);
           }
         } catch (e) {
           console.error('Save teacher custom edit failed:', e);
         }
       }
 
-      dirtyTeacherIds.clear();
       if (btn) {
         btn.disabled = false;
         btn.innerHTML = `<i data-lucide="save" class="w-3.5 h-3.5"></i> <span>💾 บันทึกการแก้ไข</span>`;
         btn.className = "px-2.5 py-1 bg-purple-600 hover:bg-purple-700 text-white rounded-md font-bold flex items-center gap-1 shadow-xs cursor-pointer transition";
         if (typeof lucide !== 'undefined') lucide.createIcons();
       }
-      showToast('บันทึกสำเร็จ', `บันทึกการแก้ไขลงฐานข้อมูล Master เรียบร้อยแล้ว (${successCount} ท่าน)`, true);
+      if (!silent) {
+        showToast('บันทึกสำเร็จ', `บันทึกการแก้ไขของสัปดาห์ที่ ${curWk} เรียบร้อยแล้ว (${successCount} ท่าน)`, true);
+      }
     }
 
     async function revertCurrentTeacherEdits() {
-      if (!confirm('ต้องการคืนค่าเดิมจากตารางสอนใช่หรือไม่? การแก้ไขที่ยังไม่ได้บันทึกจะถูกรีเซ็ต')) return;
+      if (!confirm('ต้องการคืนค่าเดิมจากตารางสอนใช่หรือไม่? การแก้ไขด้วยมือของสัปดาห์นี้จะถูกรีเซ็ต')) return;
       showToast('กำลังโหลด', 'กำลังดึงข้อมูลต้นฉบับจากตารางสอน...', true);
       const curWk = getCurrentWeekNum();
-      await calculateTimetable(curWk);
+      const tIdx = currentA4TeacherIndex;
+      if (tIdx) {
+        try {
+          await fetch('/api/revert_teacher_custom_edit', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              teacher_index: tIdx,
+              week_num: curWk
+            })
+          });
+        } catch (e) {
+          console.error('Revert teacher custom edit failed:', e);
+        }
+      }
       dirtyTeacherIds.clear();
       const saveBtn = document.getElementById('btnSaveA4Edits');
       if (saveBtn) {
@@ -5016,8 +5048,8 @@
         saveBtn.className = "px-2.5 py-1 bg-purple-600 hover:bg-purple-700 text-white rounded-md font-bold flex items-center gap-1 shadow-xs cursor-pointer transition";
         if (typeof lucide !== 'undefined') lucide.createIcons();
       }
-      renderAllTeachersInGroup();
-      showToast('คืนค่าเดิมสำเร็จ', 'คืนค่าเดิมจากตารางสอนเรียบร้อยแล้ว', true);
+      await recalculateAll();
+      showToast('คืนค่าเดิมสำเร็จ', `คืนค่าเดิมตารางสอนสัปดาห์ที่ ${curWk} เรียบร้อยแล้ว`, true);
     }
 
     function setLevelFilter(lvl) {
@@ -5077,6 +5109,7 @@
       if (document.activeElement && document.activeElement.isContentEditable) {
         saveElementTextEdit(document.activeElement);
       }
+      await saveAllTeacherCustomEdits(true);
       await collectAndSaveSignatoriesFromDOM();
       await flushCustomOverridesToServer();
       openPdfPreviewModal();
@@ -5142,6 +5175,7 @@
       if (document.activeElement && document.activeElement.isContentEditable) {
         saveElementTextEdit(document.activeElement);
       }
+      await saveAllTeacherCustomEdits(true);
       await collectAndSaveSignatoriesFromDOM();
       await flushCustomOverridesToServer();
       const btn = document.getElementById('btnConfirmDownloadPdf');
@@ -6908,6 +6942,7 @@
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
+            week_num: getCurrentWeekNum(),
             holiday_days: holidays,
             leaves: leavesList,
             substitutions: substitutionsList,
@@ -10239,12 +10274,8 @@ function selectRound(roundNum) {
       closeFontResizerBar();
       loadHolidayMapFromStorage();
       initSemesterStartDate();
-      await loadInitialMasterData();
-      await initSignatories();
-      setCurriculumPreset('pvc'); // Default to ปวช. (5, 5, 5, 2)
-      updateHolidayUI();
 
-      // Check URL parameters for automated PDF generation or direct links
+      // Check URL parameters first for initial week, teacher, department, and view mode
       const urlParams = new URLSearchParams(window.location.search);
       if (urlParams.get('mode') === 'print') {
         document.body.classList.add('mode-print-direct');
@@ -10263,18 +10294,28 @@ function selectRound(roundNum) {
       }
       if (paramWeek) {
         const wkVal = parseInt(paramWeek);
-        const sel = document.getElementById('weekSelect') || document.getElementById('quickWeekSelect');
+        window.currentSelectedWeek = wkVal;
+        const sel = document.getElementById('weekSelect') || document.getElementById('quickWeekSelect') || document.getElementById('weekSelectDropdown');
         if (sel) sel.value = wkVal;
       }
-      if (paramA4Mode) {
-        setA4ViewMode(paramA4Mode);
+      if (paramTeacherIdx) {
+        currentA4TeacherIndex = parseInt(paramTeacherIdx);
       }
+      if (paramA4Mode) {
+        a4ViewMode = paramA4Mode;
+      }
+
+      await loadInitialMasterData();
+      await initSignatories();
+      setCurriculumPreset('pvc'); // Default to ปวช. (5, 5, 5, 2)
+      updateHolidayUI();
       if (paramTeacherIdx) {
         currentA4TeacherIndex = parseInt(paramTeacherIdx);
         const targetTeacher = masterTeachers.find(x => x.index === currentA4TeacherIndex);
         if (targetTeacher) {
           if (targetTeacher.level) currentLevelFilter = targetTeacher.level;
           if (targetTeacher.dept) currentDeptFilter = targetTeacher.dept;
+          if (targetTeacher.teacher_type) currentTeacherTypeFilter = targetTeacher.teacher_type;
         }
       }
       const paramLevel = urlParams.get('level');

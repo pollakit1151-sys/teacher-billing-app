@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import datetime
 import json
+import os
 import re
 
 def format_class_with_students(class_str, default_count=26):
@@ -280,7 +281,70 @@ def classify_teacher_group(teacher):
         else:
             return 'sp_vs', 'ครูพิเศษ (ปวส.)'
 
-def calculate_week(teachers_master, holiday_days=None, leaves=None, substitutions=None, compensations=None, student_counts=None, course_types=None, overrides=None):
+def _merge_class_override(wc, oc):
+    for f in ['in_vc', 'out_vc', 'in_vs', 'out_vs']:
+        if f in oc and oc[f] is not None:
+            try:
+                wc[f] = float(oc[f]) if str(oc[f]).strip() != '' else 0.0
+            except (ValueError, TypeError):
+                wc[f] = 0.0
+    for f in ['code', 'class_info', 'time_str']:
+        if f in oc and oc[f] is not None and str(oc[f]).strip() != '':
+            wc[f] = str(oc[f]).strip()
+    
+    out_vc = wc.get('out_vc', 0)
+    out_vs = wc.get('out_vs', 0)
+    wc['rate_vc'] = 200 if out_vc > 0 else 0
+    wc['amt_vc'] = out_vc * 200
+    wc['rate_vs'] = 270 if out_vs > 0 else 0
+    wc['amt_vs'] = out_vs * 270
+    wc['_override_applied'] = True
+
+def apply_weekly_teacher_overrides(weekly_classes, ovr_classes):
+    if not ovr_classes or not isinstance(ovr_classes, list):
+        return weekly_classes
+    
+    same_length = (len(weekly_classes) == len(ovr_classes))
+    days_match = same_length and all(
+        (wc.get('day') == oc.get('day'))
+        for wc, oc in zip(weekly_classes, ovr_classes)
+        if wc.get('day') and oc.get('day')
+    )
+    
+    if days_match:
+        for i in range(len(weekly_classes)):
+            _merge_class_override(weekly_classes[i], ovr_classes[i])
+    else:
+        ovr_by_day = {}
+        for oc in ovr_classes:
+            d = oc.get('day')
+            if d:
+                ovr_by_day.setdefault(d, []).append(oc)
+        
+        for d, d_ovrs in ovr_by_day.items():
+            w_day_classes = [c for c in weekly_classes if c.get('day') == d]
+            used_ovrs = set()
+            
+            # Step 1: Match by exact time_str
+            for wc in w_day_classes:
+                wc_time = wc.get('time_str', '').replace(' ', '').replace(':', '.')
+                for idx, oc in enumerate(d_ovrs):
+                    if idx in used_ovrs: continue
+                    oc_time = oc.get('time_str', '').replace(' ', '').replace(':', '.')
+                    if wc_time and oc_time and wc_time == oc_time:
+                        _merge_class_override(wc, oc)
+                        used_ovrs.add(idx)
+                        break
+            
+            # Step 2: Match remaining in day by order
+            unmatched_wc = [c for c in w_day_classes if not c.get('_override_applied')]
+            remaining_ovrs = [oc for idx, oc in enumerate(d_ovrs) if idx not in used_ovrs]
+            for wc, oc in zip(unmatched_wc, remaining_ovrs):
+                _merge_class_override(wc, oc)
+                
+    return weekly_classes
+
+def calculate_week(teachers_master, holiday_days=None, leaves=None, substitutions=None, compensations=None, student_counts=None, course_types=None, overrides=None, week_num=1, weekly_teacher_overrides=None):
     if holiday_days is None:
         holiday_days = []
     if leaves is None:
@@ -295,6 +359,18 @@ def calculate_week(teachers_master, holiday_days=None, leaves=None, substitution
         course_types = {}
     if overrides is None:
         overrides = {}
+    if weekly_teacher_overrides is None:
+        try:
+            base_dir = os.path.dirname(os.path.abspath(__file__))
+            ovr_file = os.path.join(base_dir, "custom_overrides_master.json")
+            if os.path.exists(ovr_file):
+                with open(ovr_file, "r", encoding="utf-8") as f:
+                    ovr_json = json.load(f)
+                    weekly_teacher_overrides = ovr_json.get("weekly_teacher_overrides", {})
+        except Exception:
+            weekly_teacher_overrides = {}
+    if weekly_teacher_overrides is None:
+        weekly_teacher_overrides = {}
 
     has_holiday = len(holiday_days) > 0
     processed_teachers = []
@@ -859,6 +935,13 @@ def calculate_week(teachers_master, holiday_days=None, leaves=None, substitution
         allocate_subgroup(g3, c3)
         allocate_subgroup(g4, c4)
 
+        # Apply weekly manual overrides if present for this teacher and week
+        ovr_key = f"{week_num}_{t_idx}"
+        if weekly_teacher_overrides and ovr_key in weekly_teacher_overrides:
+            t_ovr = weekly_teacher_overrides[ovr_key]
+            ovr_classes = t_ovr.get("classes", []) if isinstance(t_ovr, dict) else t_ovr
+            apply_weekly_teacher_overrides(weekly_classes, ovr_classes)
+
         sum_in_vc = sum(c.get('in_vc', 0) for c in weekly_classes)
         sum_in_vs = sum(c.get('in_vs', 0) for c in weekly_classes)
 
@@ -967,7 +1050,16 @@ def calculate_round_breakdown_matrix(teachers_master, round_weeks, dept='ช่�
         w_leaves = leaves_map.get(w, [])
         w_subs = subs_map.get(w, [])
         w_comps = comps_map.get(w, [])
-        weekly_results[w] = calculate_week(dept_teachers, holiday_days=w_holidays, leaves=w_leaves, substitutions=w_subs, compensations=w_comps, student_counts=student_counts, course_types=course_types)
+        weekly_results[w] = calculate_week(
+            dept_teachers,
+            holiday_days=w_holidays,
+            leaves=w_leaves,
+            substitutions=w_subs,
+            compensations=w_comps,
+            student_counts=student_counts,
+            course_types=course_types,
+            week_num=w
+        )
 
     teachers_matrix = []
     group_reg = []

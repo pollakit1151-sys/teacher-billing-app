@@ -113,18 +113,27 @@ def sanitize_custom_overrides(data):
         return data
     text_edits = data.get("text_edits", {})
     template_overrides = data.get("template_overrides", {})
-    bad_patterns = [
-        "table:nth-of-type(2) > tbody > tr:nth-of-type(1) > td:nth-of-type(1)",
+    bad_key_patterns = [
+        "table:nth-of-type(2)",
         "covTotalMoney",
         "covBahtText",
+        "foot_claim_hrs",
+        "foot_tot_money",
+        "foot_sum_",
+        "foot_tot_",
+        "foot_over_"
+    ]
+    bad_val_patterns = [
         "รวมจำนวนเงินค่าสอนพิเศษทั้งสิ้น",
-        "หนึ่งแสนห้าหมื่นหกพันบาทถ้วน"
+        "หนึ่งแสนห้าหมื่นหกพันบาทถ้วน",
+        "รวมจำนวนหน่วยชั่วโมงที่ขอเบิกค่าสอน",
+        "ยอดเงินรวม"
     ]
     cleaned_texts = {}
     for k, v in text_edits.items():
-        if any(p in k for p in bad_patterns[:3]):
+        if any(p in k for p in bad_key_patterns):
             continue
-        if isinstance(v, str) and any(p in v for p in bad_patterns[3:]):
+        if isinstance(v, str) and any(p in v for p in bad_val_patterns):
             continue
         cleaned_texts[k] = v
     data["text_edits"] = cleaned_texts
@@ -132,11 +141,11 @@ def sanitize_custom_overrides(data):
     cleaned_templates = {}
     for k, v in template_overrides.items():
         if isinstance(v, dict):
-            if any(p in k for p in bad_patterns[:3]):
+            if any(p in k for p in bad_key_patterns):
                 v_copy = dict(v)
                 v_copy.pop("html", None)
                 cleaned_templates[k] = v_copy
-            elif isinstance(v.get("html"), str) and any(p in v["html"] for p in bad_patterns[3:]):
+            elif isinstance(v.get("html"), str) and any(p in v["html"] for p in bad_val_patterns):
                 v_copy = dict(v)
                 v_copy.pop("html", None)
                 cleaned_templates[k] = v_copy
@@ -151,14 +160,19 @@ def load_custom_overrides():
     if os.path.exists(CUSTOM_OVERRIDES_FILE):
         try:
             with open(CUSTOM_OVERRIDES_FILE, "r", encoding="utf-8") as f:
-                return sanitize_custom_overrides(json.load(f))
+                data = sanitize_custom_overrides(json.load(f))
+                if isinstance(data, dict):
+                    if "weekly_teacher_overrides" not in data or not isinstance(data["weekly_teacher_overrides"], dict):
+                        data["weekly_teacher_overrides"] = {}
+                    return data
         except Exception as e:
             print(f"Error reading {CUSTOM_OVERRIDES_FILE}: {e}")
     return {
         "text_edits": {},
         "template_overrides": {},
         "font_sizes": {},
-        "font_weights": {}
+        "font_weights": {},
+        "weekly_teacher_overrides": {}
     }
 
 def save_custom_overrides(data):
@@ -560,6 +574,7 @@ async def api_calculate(payload: dict):
     if course_types is None:
         course_types = ovr.get("course_types", {})
     overrides = payload.get("overrides", {})
+    week_num = int(payload.get("week_num", 1))
     
     result = calculate_week(
         teachers_master=teachers,
@@ -569,7 +584,8 @@ async def api_calculate(payload: dict):
         compensations=compensations,
         student_counts=student_counts,
         course_types=course_types,
-        overrides=overrides
+        overrides=overrides,
+        week_num=week_num
     )
     return JSONResponse(content={"status": "success", "data": result})
 
@@ -838,6 +854,7 @@ async def api_delete_busy_duty(payload: dict):
 @app.post("/api/save_teacher_custom_edit")
 async def api_save_teacher_custom_edit(payload: dict):
     teacher_index = int(payload.get("teacher_index", 0))
+    week_num = int(payload.get("week_num", 1))
     classes = payload.get("classes")
     position = payload.get("position")
     duty = payload.get("duty")
@@ -860,8 +877,41 @@ async def api_save_teacher_custom_edit(payload: dict):
             
     if found:
         save_master(teachers)
+    
+    # Persist classes override by week into custom_overrides_master.json
+    if classes is not None:
+        ovr = load_custom_overrides()
+        if "weekly_teacher_overrides" not in ovr or not isinstance(ovr["weekly_teacher_overrides"], dict):
+            ovr["weekly_teacher_overrides"] = {}
+        override_key = f"{week_num}_{teacher_index}"
+        ovr["weekly_teacher_overrides"][override_key] = {
+            "teacher_index": teacher_index,
+            "week_num": week_num,
+            "classes": classes,
+            "updated_at": datetime.datetime.now().isoformat()
+        }
+        save_custom_overrides(ovr)
+
+    if found or classes is not None:
         return JSONResponse(content={"status": "success", "message": "บันทึกการแก้ไขของครูเรียบร้อยแล้ว"})
     return JSONResponse(content={"status": "error", "message": "ไม่พบข้อมูลครู"}, status_code=404)
+
+@app.post("/api/revert_teacher_custom_edit")
+async def api_revert_teacher_custom_edit(payload: dict):
+    teacher_index = int(payload.get("teacher_index", 0))
+    week_num = int(payload.get("week_num", 1))
+    
+    ovr = load_custom_overrides()
+    weekly_ovrs = ovr.get("weekly_teacher_overrides", {})
+    override_key = f"{week_num}_{teacher_index}"
+    changed = False
+    if override_key in weekly_ovrs:
+        del weekly_ovrs[override_key]
+        ovr["weekly_teacher_overrides"] = weekly_ovrs
+        save_custom_overrides(ovr)
+        changed = True
+        
+    return JSONResponse(content={"status": "success", "message": "คืนค่าเริ่มต้นเรียบร้อยแล้ว", "reverted": changed})
 
 @app.get("/api/signatories")
 async def api_get_signatories():
@@ -907,7 +957,8 @@ async def api_export_excel(payload: dict):
         holiday_days=holiday_days,
         leaves=leaves,
         substitutions=substitutions,
-        compensations=compensations
+        compensations=compensations,
+        week_num=week_num
     )
     
     try:
@@ -978,12 +1029,15 @@ def api_export_pdf(
         except Exception:
             pass
     
+    user_data_dir = tempfile.mkdtemp(prefix="browser_pdf_")
     cmd = [
         browser,
         "--headless=new",
         "--no-pdf-header-footer",
         "--disable-gpu",
         "--hide-scrollbars",
+        "--virtual-time-budget=5000",
+        f"--user-data-dir={user_data_dir}",
         f"--print-to-pdf={pdf_path}",
         target_url
     ]
