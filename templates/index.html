@@ -6035,6 +6035,12 @@
               const rateVs = (outVs && !isCompFiller) ? '270' : '';
               const amtVs = (!isCompFiller && c.amt_vs > 0) ? c.amt_vs.toLocaleString() : ((!isCompFiller && outVs) ? (outVs * 270).toLocaleString() : '0');
 
+              // ไฮไลต์สีเหลืองอ่อนพาสเทลเฉพาะช่องที่มีตัวเลขเท่านั้น ไม่ใช่ทั้งแถว
+              const inVcBg = (isWorkplace && inVc) ? 'background-color: #FEF9C3 !important;' : compCellBg;
+              const outVcBg = (isWorkplace && outVc) ? 'background-color: #FEF9C3 !important;' : compCellBg;
+              const inVsBg = (isWorkplace && inVs) ? 'background-color: #FEF9C3 !important;' : compCellBg;
+              const outVsBg = (isWorkplace && outVs) ? 'background-color: #FEF9C3 !important;' : compCellBg;
+
               rowsHtml += `
                 <tr id="row_${teacher.index}_${r}" class="teaching-row ${rowHeightClass} text-center" style="${rowBg}">
                   ${col1Html}
@@ -6049,14 +6055,14 @@
                   <td class="${slotEndClass} text-center text-black px-0.5 whitespace-nowrap overflow-hidden" style="white-space: nowrap !important; ${compCellBg}" contenteditable="true" onblur="onCellEdit(${teacher.index}, ${r}, 'time_str', this.innerText)">${timeStr}</td>
 
                   <!-- 9..12: ปวช.(คาบ) + เงิน + ยอดเงิน (บาท) -->
-                  <td class="${slotEndClass} text-center text-black" style="${hourCellBg}" contenteditable="true" onblur="onCellEdit(${teacher.index}, ${r}, 'in_vc', this.innerText)">${inVc}</td>
-                  <td class="${slotEndClass} text-center text-black" style="${hourCellBg}" contenteditable="true" onblur="onCellEdit(${teacher.index}, ${r}, 'out_vc', this.innerText)">${outVc}</td>
+                  <td class="${slotEndClass} text-center text-black" style="${inVcBg}" contenteditable="true" onblur="onCellEdit(${teacher.index}, ${r}, 'in_vc', this.innerText)">${inVc}</td>
+                  <td class="${slotEndClass} text-center text-black" style="${outVcBg}" contenteditable="true" onblur="onCellEdit(${teacher.index}, ${r}, 'out_vc', this.innerText)">${outVc}</td>
                   <td class="${slotEndClass} text-center text-black" style="${compCellBg}" id="rate_vc_${teacher.index}_${r}">${rateVc}</td>
                   <td class="${slotEndClass} amt-cell text-center text-black" style="${compCellBg}" id="amt_vc_${teacher.index}_${r}">${amtVc}</td>
 
                   <!-- 13..16: ปวส.(คาบ) [ใน, นอก, เงินต่อชม., ยอดเงิน (บาท)] -->
-                  <td class="${slotEndClass} text-center text-black" style="${hourCellBg}" contenteditable="true" onblur="onCellEdit(${teacher.index}, ${r}, 'in_vs', this.innerText)">${inVs}</td>
-                  <td class="${slotEndClass} text-center text-black" style="${hourCellBg}" contenteditable="true" onblur="onCellEdit(${teacher.index}, ${r}, 'out_vs', this.innerText)">${outVs}</td>
+                  <td class="${slotEndClass} text-center text-black" style="${inVsBg}" contenteditable="true" onblur="onCellEdit(${teacher.index}, ${r}, 'in_vs', this.innerText)">${inVs}</td>
+                  <td class="${slotEndClass} text-center text-black" style="${outVsBg}" contenteditable="true" onblur="onCellEdit(${teacher.index}, ${r}, 'out_vs', this.innerText)">${outVs}</td>
                   <td class="${slotEndClass} text-center text-black" style="${compCellBg}" id="rate_vs_${teacher.index}_${r}">${rateVs}</td>
                   <td class="${slotEndClass} amt-cell text-center text-black" style="${compCellBg}" id="amt_vs_${teacher.index}_${r}">${amtVs}</td>
                 </tr>

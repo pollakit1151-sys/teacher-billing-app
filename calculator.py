@@ -174,6 +174,10 @@ def is_workplace_class(code, name, class_info, room=''):
 def is_internship(code, name, class_info, room=''):
     return is_workplace_class(code, name, class_info, room)
 
+def is_weekend_day(day_str):
+    d = str(day_str or '').strip()
+    return 'เสาร์' in d or 'อาทิตย์' in d
+
 
 def normalize_day(d):
     if not d:
@@ -739,8 +743,10 @@ def calculate_week(teachers_master, holiday_days=None, leaves=None, substitution
             c['_is_vs'] = code.startswith('3') or 'ปวส' in class_info
 
             is_wp = is_workplace_class(code, c_name, class_info, c.get('room', ''))
+            is_wknd = is_weekend_day(c.get('day', ''))
             c['is_workplace'] = is_wp
             c['_is_workplace'] = is_wp
+            c['_is_weekend'] = is_wknd
 
             can_be_extra = True
             if is_activity(code, c_name):
@@ -772,128 +778,86 @@ def calculate_week(teachers_master, holiday_days=None, leaves=None, substitution
         reg_surplus = max(0, regular_hours - needed_in_for_teacher)
         max_claim_allowed = max(0, 12 - total_sub_out)
 
-        # Split active regular classes into normal classes and workplace classes
-        # เกณฑ์ตามที่ผู้ใช้กำหนด:
-        # 1) วิชาที่เรียนที่สถานประกอบการ จะเอาเป็นคาบในก่อนเสมอ
-        # 2) ยกเว้นไม่มีวิชาอื่นเป็นนอกแทน จึงจะเอาวิชานี้เป็นนอกได้
-        # 3) กิจกรรมที่เรียนในสถานประกอบการ ต้องเป็นในเท่านั้น (is_activity -> can_be_extra = False แล้ว)
-        normal_classes = [c for c in active_classes if not c['_is_workplace']]
-        workplace_classes = [c for c in active_classes if c['_is_workplace']]
+        # 4 Priority Groups for claiming 'นอก' (overflow/extra teaching hours):
+        # 1) วิชาปกติ วันธรรมดา (จันทร์ - ศุกร์): ให้สิทธิ์เบิก 'นอก' เป็นลำดับแรก
+        # 2) วิชาสถานประกอบการ วันธรรมดา (จันทร์ - ศุกร์): ถ้าวิชาปกติไม่พอเบิก ค่อยนำมาเบิกนอก
+        # 3) วิชาปกติ วันเสาร์ - อาทิตย์: เอาไว้คาบในก่อน ถ้าไม่ได้จริงๆ ค่อยเบิกนอก
+        # 4) วิชาสถานประกอบการ วันเสาร์ - อาทิตย์: เอาไว้คาบในก่อน ถ้าไม่ได้จริงๆ ค่อยเบิกนอก
+        g1 = [c for c in active_classes if not c['_is_weekend'] and not c['_is_workplace']]
+        g2 = [c for c in active_classes if not c['_is_weekend'] and c['_is_workplace']]
+        g3 = [c for c in active_classes if c['_is_weekend'] and not c['_is_workplace']]
+        g4 = [c for c in active_classes if c['_is_weekend'] and c['_is_workplace']]
 
-        norm_claimable = sum(c['_parsed_hrs'] for c in normal_classes if c['_can_be_extra'])
-        wp_claimable = sum(c['_parsed_hrs'] for c in workplace_classes if c['_can_be_extra'])
-        total_claimable = norm_claimable + wp_claimable
+        g1_claimable = sum(c['_parsed_hrs'] for c in g1 if c['_can_be_extra'])
+        g2_claimable = sum(c['_parsed_hrs'] for c in g2 if c['_can_be_extra'])
+        g3_claimable = sum(c['_parsed_hrs'] for c in g3 if c['_can_be_extra'])
+        g4_claimable = sum(c['_parsed_hrs'] for c in g4 if c['_can_be_extra'])
+        total_claimable = g1_claimable + g2_claimable + g3_claimable + g4_claimable
 
         target_claim = min(max_claim_allowed, total_claimable, reg_surplus)
 
-        # Normal classes take claim hours ('นอก') FIRST
-        target_claim_norm = min(norm_claimable, target_claim)
-        # Workplace classes only take claim hours ('นอก') if normal classes cannot fulfill target_claim
-        target_claim_wp = min(wp_claimable, target_claim - target_claim_norm)
+        # Allocate claim limits across groups in priority order
+        c1 = min(g1_claimable, target_claim)
+        c2 = min(g2_claimable, target_claim - c1)
+        c3 = min(g3_claimable, target_claim - c1 - c2)
+        c4 = min(g4_claimable, target_claim - c1 - c2 - c3)
 
-        # 1. Allocate within normal classes
-        rem_norm_claim = target_claim_norm
-        rem_norm_in = sum(c['_parsed_hrs'] for c in normal_classes) - target_claim_norm
-        norm_unclaim = sum(c['_parsed_hrs'] for c in normal_classes if not c['_can_be_extra'])
-        rem_norm_claimable_in = rem_norm_in - norm_unclaim
-
-        for c in normal_classes:
-            hrs = c['_parsed_hrs']
-            is_vs = c['_is_vs']
-            if not c['_can_be_extra']:
-                alloc_in = hrs
-                alloc_out = 0
-            else:
-                if rem_norm_claimable_in > 0:
-                    alloc_in = min(hrs, rem_norm_claimable_in)
-                    rem_norm_claimable_in -= alloc_in
-                    rem_hrs = hrs - alloc_in
-                else:
-                    alloc_in = 0
-                    rem_hrs = hrs
-
-                if rem_hrs > 0 and rem_norm_claim > 0:
-                    alloc_out = min(rem_hrs, rem_norm_claim)
-                    rem_norm_claim -= alloc_out
-                    rem_hrs -= alloc_out
-                else:
+        def allocate_subgroup(grp, c_target):
+            rem_claim = c_target
+            rem_in = sum(c['_parsed_hrs'] for c in grp) - c_target
+            unclaim = sum(c['_parsed_hrs'] for c in grp if not c['_can_be_extra'])
+            rem_claimable_in = rem_in - unclaim
+            for c in grp:
+                hrs = c['_parsed_hrs']
+                is_vs = c['_is_vs']
+                if not c['_can_be_extra']:
+                    alloc_in = hrs
                     alloc_out = 0
-
-                if rem_hrs > 0:
-                    alloc_in += rem_hrs
-
-            if is_vs:
-                c['in_vs'] = alloc_in
-                c['out_vs'] = alloc_out
-                c['in_vc'] = 0
-                c['out_vc'] = 0
-            else:
-                c['in_vc'] = alloc_in
-                c['out_vc'] = alloc_out
-                c['in_vs'] = 0
-                c['out_vs'] = 0
-
-            c['rate_vc'] = 200
-            c['rate_vs'] = 270
-            c['amt_vc'] = c['out_vc'] * 200
-            c['amt_vs'] = c['out_vs'] * 270
-
-            c.pop('_parsed_hrs', None)
-            c.pop('_is_vs', None)
-            c.pop('_can_be_extra', None)
-            c.pop('_is_workplace', None)
-
-        # 2. Allocate within workplace classes (ALWAYS prioritize 'ใน' first, only claim 'นอก' for leftover target_claim_wp)
-        rem_wp_claim = target_claim_wp
-        rem_wp_in = sum(c['_parsed_hrs'] for c in workplace_classes) - target_claim_wp
-        wp_unclaim = sum(c['_parsed_hrs'] for c in workplace_classes if not c['_can_be_extra'])
-        rem_wp_claimable_in = rem_wp_in - wp_unclaim
-
-        for c in workplace_classes:
-            hrs = c['_parsed_hrs']
-            is_vs = c['_is_vs']
-            if not c['_can_be_extra']:
-                alloc_in = hrs
-                alloc_out = 0
-            else:
-                if rem_wp_claimable_in > 0:
-                    alloc_in = min(hrs, rem_wp_claimable_in)
-                    rem_wp_claimable_in -= alloc_in
-                    rem_hrs = hrs - alloc_in
                 else:
-                    alloc_in = 0
-                    rem_hrs = hrs
+                    if rem_claimable_in > 0:
+                        alloc_in = min(hrs, rem_claimable_in)
+                        rem_claimable_in -= alloc_in
+                        rem_hrs = hrs - alloc_in
+                    else:
+                        alloc_in = 0
+                        rem_hrs = hrs
 
-                if rem_hrs > 0 and rem_wp_claim > 0:
-                    alloc_out = min(rem_hrs, rem_wp_claim)
-                    rem_wp_claim -= alloc_out
-                    rem_hrs -= alloc_out
+                    if rem_hrs > 0 and rem_claim > 0:
+                        alloc_out = min(rem_hrs, rem_claim)
+                        rem_claim -= alloc_out
+                        rem_hrs -= alloc_out
+                    else:
+                        alloc_out = 0
+
+                    if rem_hrs > 0:
+                        alloc_in += rem_hrs
+
+                if is_vs:
+                    c['in_vs'] = alloc_in
+                    c['out_vs'] = alloc_out
+                    c['in_vc'] = 0
+                    c['out_vc'] = 0
                 else:
-                    alloc_out = 0
+                    c['in_vc'] = alloc_in
+                    c['out_vc'] = alloc_out
+                    c['in_vs'] = 0
+                    c['out_vs'] = 0
 
-                if rem_hrs > 0:
-                    alloc_in += rem_hrs
+                c['rate_vc'] = 200
+                c['rate_vs'] = 270
+                c['amt_vc'] = c['out_vc'] * 200
+                c['amt_vs'] = c['out_vs'] * 270
 
-            if is_vs:
-                c['in_vs'] = alloc_in
-                c['out_vs'] = alloc_out
-                c['in_vc'] = 0
-                c['out_vc'] = 0
-            else:
-                c['in_vc'] = alloc_in
-                c['out_vc'] = alloc_out
-                c['in_vs'] = 0
-                c['out_vs'] = 0
+                c.pop('_parsed_hrs', None)
+                c.pop('_is_vs', None)
+                c.pop('_can_be_extra', None)
+                c.pop('_is_workplace', None)
+                c.pop('_is_weekend', None)
 
-            c['rate_vc'] = 200
-            c['rate_vs'] = 270
-            c['amt_vc'] = c['out_vc'] * 200
-            c['amt_vs'] = c['out_vs'] * 270
-
-            c.pop('_parsed_hrs', None)
-            c.pop('_is_vs', None)
-            c.pop('_can_be_extra', None)
-            c.pop('_is_workplace', None)
+        allocate_subgroup(g1, c1)
+        allocate_subgroup(g2, c2)
+        allocate_subgroup(g3, c3)
+        allocate_subgroup(g4, c4)
 
         sum_in_vc = sum(c.get('in_vc', 0) for c in weekly_classes)
         sum_in_vs = sum(c.get('in_vs', 0) for c in weekly_classes)

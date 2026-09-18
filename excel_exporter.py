@@ -358,11 +358,17 @@ def populate_weekly_sheet_teachers(ws, teachers, week_num, date_info=None, dept=
                     safe_set_cell(ws, r, 20, c.get("note", "") or "")
                     safe_set_cell(ws, r, 21, c.get("note2", "") or "")
 
-                    # Format workplace class hour cells in pastel light yellow
+                    # Format workplace class hour cells in pastel light yellow ONLY if cell has number
                     is_wp = c.get("is_workplace") or ('สถานประกอบการ' in str(c.get('room', '')) or 'สถานประกอบการ' in str(c.get('class_info', '')) or 'สถานประกอบการ' in str(c.get('subject_name', '')) or 'สถานประกอบการ' in str(c.get('name', '')))
                     if is_wp:
-                        for col_idx in (12, 13, 16, 17):
-                            ws.cell(r, col_idx).fill = PASTEL_YELLOW_FILL
+                        if in_vc > 0:
+                            ws.cell(r, 12).fill = PASTEL_YELLOW_FILL
+                        if out_vc > 0:
+                            ws.cell(r, 13).fill = PASTEL_YELLOW_FILL
+                        if in_vs > 0:
+                            ws.cell(r, 16).fill = PASTEL_YELLOW_FILL
+                        if out_vs > 0:
+                            ws.cell(r, 17).fill = PASTEL_YELLOW_FILL
 
                     # Format substitute class
                     if c.get("is_substitute"):
