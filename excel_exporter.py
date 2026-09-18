@@ -375,11 +375,14 @@ def populate_weekly_sheet_teachers(ws, teachers, week_num, date_info=None, dept=
                         abs_name = c.get("absent_teacher_name", "")
                         clean_abs = re.sub(r'^(นาย|นางสาว|นาง)\s*', '', abs_name).strip()
                         sub_label = c.get("sub_label") or f"สอนแทน อ.{clean_abs}"
-                        safe_set_cell(ws, r, 2, sub_label)
-                        cell_b = ws.cell(r, 2)
+                        # Shift substitute label down 1 row if it occurs at start_r (Monday slot 0), to avoid overwriting teacher name
+                        sub_r = r + 1 if r == start_r else r
+                        safe_set_cell(ws, sub_r, 2, sub_label)
+                        cell_b = ws.cell(sub_r, 2)
                         cell_b.font = RED_BOLD_FONT
+                        cell_b.fill = PEACH_FILL
 
-                        for col_idx in range(2, 20):
+                        for col_idx in range(3, 20):
                             ws.cell(r, col_idx).fill = PEACH_FILL
                 
         # Row 34: Quota

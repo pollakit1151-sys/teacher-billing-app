@@ -5766,6 +5766,7 @@
             rowType = 'compensatory';
             const dClasses = teacher._rowClasses.filter(x => x.day === cItem.day);
             const slotInDay = dClasses.indexOf(cItem);
+            const isMonday = (cItem.day === 'จันทร์');
             let mNote = cItem.missed_date_note || '';
             if (!mNote) {
               const anyCompInDay = dClasses.find(x => x.missed_date_note);
@@ -5775,17 +5776,56 @@
                 if (cpMatch) mNote = formatThaiShortDateFromYMD(cpMatch.missed_date || cpMatch.orig_day || cpMatch.missed_date_th || '');
               }
             }
-            if (slotInDay === 0) rowLabel = 'สอนชดเชย';
-            else if (slotInDay === 1) rowLabel = mNote || '';
-            else rowLabel = '';
-          } else if (isSub) {
-            rowType = 'substitute';
-            const absName = cItem.absent_teacher_name || '';
-            const cleanAbs = absName.replace(/^(นาย|นางสาว|นาง)\s*/, '').trim();
-            rowLabel = cItem.sub_label || `สอนแทน อ.${cleanAbs}`;
+            if (isMonday) {
+              if (slotInDay === 0) {
+                rowType = 'teacher_name';
+                rowLabel = teacher.name;
+              } else if (slotInDay === 1) {
+                rowType = 'compensatory';
+                rowLabel = 'สอนชดเชย';
+              } else if (slotInDay === 2) {
+                rowType = 'compensatory';
+                rowLabel = mNote || '';
+              } else {
+                rowType = 'normal';
+                rowLabel = '';
+              }
+            } else {
+              if (slotInDay === 0) rowLabel = 'สอนชดเชย';
+              else if (slotInDay === 1) rowLabel = mNote || '';
+              else rowLabel = '';
+            }
           } else {
-            rowType = 'normal';
-            rowLabel = teacher.name;
+            const isMonday = (cItem.day === 'จันทร์');
+            const dClasses = teacher._rowClasses.filter(x => x.day === cItem.day);
+            const slotInDay = dClasses.indexOf(cItem);
+            const monSubClasses = isMonday ? dClasses.filter(x => x && x.is_substitute) : [];
+
+            if (isMonday && monSubClasses.length > 0) {
+              if (slotInDay === 0) {
+                // Slot 0 on Monday: MUST KEEP TEACHER NAME! (สอนแทนทับชื่อครู แก้ให้เลื่อนลงมาอีก 1 บรรทัด)
+                rowType = 'teacher_name';
+                rowLabel = teacher.name;
+              } else if (slotInDay <= monSubClasses.length) {
+                // Shift substitute badge down to slot 1 (and subsequent slots if multiple)
+                const subItem = monSubClasses[slotInDay - 1];
+                rowType = 'substitute';
+                const absName = subItem.absent_teacher_name || '';
+                const cleanAbs = absName.replace(/^(นาย|นางสาว|นาง)\s*/, '').trim();
+                rowLabel = subItem.sub_label || `สอนแทน อ.${cleanAbs}`;
+              } else {
+                rowType = 'normal';
+                rowLabel = '';
+              }
+            } else if (isSub) {
+              rowType = 'substitute';
+              const absName = cItem.absent_teacher_name || '';
+              const cleanAbs = absName.replace(/^(นาย|นางสาว|นาง)\s*/, '').trim();
+              rowLabel = cItem.sub_label || `สอนแทน อ.${cleanAbs}`;
+            } else {
+              rowType = 'normal';
+              rowLabel = teacher.name;
+            }
           }
 
           if (rowType === 'teacher_name') {
@@ -5794,19 +5834,19 @@
               curBlock = null;
             }
             col2Blocks.push({ startRow: r, span: 1, type: 'teacher_name', label: rowLabel });
-          } else if (rowType === 'comp_leave' || rowType === 'compensatory') {
+          } else if (rowType === 'comp_leave' || rowType === 'compensatory' || rowType === 'substitute') {
             if (curBlock) {
               col2Blocks.push(curBlock);
               curBlock = null;
             }
             col2Blocks.push({ startRow: r, span: 1, type: rowType, label: rowLabel });
           } else if (!curBlock) {
-            curBlock = { startRow: r, span: 1, type: rowType, label: (r === 0 && rowType === 'normal') ? teacher.name : (rowType === 'substitute' ? rowLabel : '') };
-          } else if (curBlock.type === rowType && (rowType !== 'substitute' || curBlock.label === rowLabel)) {
+            curBlock = { startRow: r, span: 1, type: rowType, label: (r === 0 && rowType === 'normal') ? teacher.name : '' };
+          } else if (curBlock.type === rowType) {
             curBlock.span++;
           } else {
             col2Blocks.push(curBlock);
-            curBlock = { startRow: r, span: 1, type: rowType, label: (rowType === 'substitute') ? rowLabel : '' };
+            curBlock = { startRow: r, span: 1, type: rowType, label: '' };
           }
         }
         if (curBlock) {
@@ -5892,7 +5932,13 @@
             let col2Html = '';
             const bBlock = col2Blocks.find(b => b.startRow === r);
             if (bBlock) {
-              if (bBlock.type === 'comp_leave' || bBlock.type === 'compensatory') {
+              if (bBlock.type === 'teacher_name') {
+                col2Html = `
+                  <td rowspan="${bBlock.span}" class="teacher-meta-cell text-left px-1 text-black" style="vertical-align: top; padding-top: 4px; white-space: nowrap; background-color: #ffffff !important;">
+                    <div class="whitespace-nowrap font-bold" style="white-space: nowrap !important; overflow: visible;">${teacher.name}</div>
+                  </td>
+                `;
+              } else if (bBlock.type === 'comp_leave' || bBlock.type === 'compensatory') {
                 col2Html = `
                   <td rowspan="${bBlock.span}" class="${slotEndClass} teacher-meta-cell text-center px-1 font-bold whitespace-nowrap" style="vertical-align: middle; background-color: #F2DCDB !important; color: #000000 !important; border: 1px solid #000000 !important; font-weight: bold !important;">
                     <div class="whitespace-nowrap font-bold" style="color: #000000 !important; font-weight: bold !important; font-size: 14px;">${bBlock.label}</div>
@@ -5904,7 +5950,7 @@
                     <div class="whitespace-nowrap font-bold" style="color: #dc2626 !important;">${bBlock.label}</div>
                   </td>
                 `;
-              } else if (r === 0 || bBlock.startRow === 0 || bBlock.type === 'teacher_name') {
+              } else if (r === 0 || bBlock.startRow === 0) {
                 col2Html = `
                   <td rowspan="${bBlock.span}" class="teacher-meta-cell text-left px-1 text-black" style="vertical-align: top; padding-top: 4px; white-space: nowrap; background-color: #ffffff !important;">
                     <div class="whitespace-nowrap font-bold" style="white-space: nowrap !important; overflow: visible;">${teacher.name}</div>
