@@ -344,6 +344,59 @@ def apply_weekly_teacher_overrides(weekly_classes, ovr_classes):
                 
     return weekly_classes
 
+def compute_teacher_baseline_out(teacher, student_counts=None, course_types=None):
+    """
+    คำนวณสิทธิ์คาบนอกเดิมในสัปดาห์ปกติ (Baseline Normal Overtime Entitlement)
+    โดยคิดจากตารางสอนปกติที่ไม่มีวันหยุด ไม่มีลา ไม่มีสอนแทน ไม่มีสอนชดเชย
+    เพื่อใช้เป็นเพดานสูงสุด (Cap) ป้องกันไม่ให้การมีวันหยุด/สอนแทน/สอนชดเชยทำให้ได้คาบนอกเกินสิทธิ์เดิม
+    """
+    duty = teacher.get('duty', '')
+    level = teacher.get('level', 'ปวช.')
+    if 'required_min' in teacher and teacher['required_min'] is not None and int(teacher['required_min']) >= 0:
+        base_min = int(teacher['required_min'])
+    else:
+        is_head = bool(duty and duty.strip()) or (teacher.get('quota_rule') == 'head')
+        if level == 'ปวส.':
+            base_min = 10 if is_head else 15
+        else:
+            base_min = 12 if is_head else 18
+
+    background_required = (base_min + 2) if base_min > 0 else 0
+
+    total_reg_hrs = 0
+    claimable_hrs = 0
+
+    for c in teacher.get('schedule', []):
+        code = c.get('code', '')
+        c_name = c.get('subject_name') or c.get('name', '')
+        class_info = c.get('class_info', '')
+
+        std_cnt = get_class_student_count(class_info, student_counts)
+        if is_activity(code, c_name) and std_cnt < 26:
+            continue
+
+        periods = parse_periods_from_timestr(c.get('time_str', ''))
+        hrs = len(periods) if periods else (c.get('in_vc', 0) + c.get('out_vc', 0) + c.get('in_vs', 0) + c.get('out_vs', 0))
+        if hrs == 0:
+            hrs = 1
+
+        total_reg_hrs += hrs
+
+        can_be_extra = True
+        if is_activity(code, c_name):
+            can_be_extra = False
+        else:
+            is_th = is_theory_course(code, c_name, course_types)
+            min_threshold = 26 if is_th else 10
+            if std_cnt < min_threshold:
+                can_be_extra = False
+
+        if can_be_extra:
+            claimable_hrs += hrs
+
+    surplus = max(0, total_reg_hrs - background_required)
+    return min(12, surplus, claimable_hrs)
+
 def calculate_week(teachers_master, holiday_days=None, leaves=None, substitutions=None, compensations=None, student_counts=None, course_types=None, overrides=None, week_num=1, weekly_teacher_overrides=None):
     if holiday_days is None:
         holiday_days = []
@@ -848,11 +901,15 @@ def calculate_week(teachers_master, holiday_days=None, leaves=None, substitution
             if not c.get('_is_substitute_preallocated') and not c.get('_is_compensatory_preallocated'):
                 active_classes.append(c)
 
+        # สิทธิ์เดิมในสัปดาห์ปกติ (Baseline normal out)
+        baseline_normal_out = compute_teacher_baseline_out(teacher, student_counts=student_counts, course_types=course_types)
+        baseline_cap = baseline_normal_out if baseline_normal_out > 0 else 12
+
         # Calculate allocation for regular classes taking preallocated substitute hours into account
         regular_hours = sum(c['_parsed_hrs'] for c in active_classes)
         needed_in_for_teacher = max(0, background_required - total_sub_in)
         reg_surplus = max(0, regular_hours - needed_in_for_teacher)
-        max_claim_allowed = max(0, 12 - total_sub_out)
+        max_claim_allowed = max(0, min(12, baseline_cap) - total_sub_out)
 
         # 4 Priority Groups for claiming 'นอก' (overflow/extra teaching hours):
         # 1) วิชาปกติ วันธรรมดา (จันทร์ - ศุกร์): ให้สิทธิ์เบิก 'นอก' เป็นลำดับแรก
@@ -1046,10 +1103,10 @@ def calculate_round_breakdown_matrix(teachers_master, round_weeks, dept='ช่�
 
     weekly_results = {}
     for w in round_weeks:
-        w_holidays = holidays_map.get(w, [])
-        w_leaves = leaves_map.get(w, [])
-        w_subs = subs_map.get(w, [])
-        w_comps = comps_map.get(w, [])
+        w_holidays = holidays_map.get(w) or holidays_map.get(str(w)) or []
+        w_leaves = leaves_map.get(w) or leaves_map.get(str(w)) or []
+        w_subs = subs_map.get(w) or subs_map.get(str(w)) or []
+        w_comps = comps_map.get(w) or comps_map.get(str(w)) or []
         weekly_results[w] = calculate_week(
             dept_teachers,
             holiday_days=w_holidays,
@@ -1071,6 +1128,7 @@ def calculate_round_breakdown_matrix(teachers_master, round_weeks, dept='ช่�
         pos = t.get('position', 'ครู')
         duty = t.get('duty', '')
         level = t.get('level', 'ปวช.')
+        dept_name = t.get('dept', 'ช่างยนต์')
         # ยึด teacher_type ที่ผู้ใช้ตั้งค่าเป็นหลัก
         t_type = str(t.get('teacher_type', ''))
         if t_type == 'ครูพิเศษ':
@@ -1089,6 +1147,10 @@ def calculate_round_breakdown_matrix(teachers_master, round_weeks, dept='ช่�
         weeks_data = {}
         round_hours = 0
         round_money = 0
+        round_vc_hours = 0
+        round_vs_hours = 0
+        round_vc_money = 0
+        round_vs_money = 0
 
         for w in round_weeks:
             t_res = next((res for res in weekly_results[w] if res['index'] == t_idx), None)
@@ -1096,18 +1158,40 @@ def calculate_round_breakdown_matrix(teachers_master, round_weeks, dept='ช่�
                 hrs = t_res.get('claim_hours', 0)
                 mny = t_res.get('total_money', 0)
                 in_hrs = t_res.get('total_in', 0)
+                c_vc = t_res.get('claim_vc', 0)
+                c_vs = t_res.get('claim_vs', 0)
+                in_vc = t_res.get('sum_in_vc', 0)
+                in_vs = t_res.get('sum_in_vs', 0)
+                m_vc = c_vc * 200
+                m_vs = c_vs * 270
             else:
                 hrs = 0
                 mny = 0
                 in_hrs = 0
+                c_vc = 0
+                c_vs = 0
+                in_vc = 0
+                in_vs = 0
+                m_vc = 0
+                m_vs = 0
             
             weeks_data[w] = {
                 'claim_hours': hrs,
                 'total_money': mny,
-                'total_in': in_hrs
+                'total_in': in_hrs,
+                'claim_vc': c_vc,
+                'claim_vs': c_vs,
+                'in_vc': in_vc,
+                'in_vs': in_vs,
+                'amt_vc': m_vc,
+                'amt_vs': m_vs
             }
             round_hours += hrs
             round_money += mny
+            round_vc_hours += c_vc
+            round_vs_hours += c_vs
+            round_vc_money += m_vc
+            round_vs_money += m_vs
 
         row_data = {
             'index': t_idx,
@@ -1115,10 +1199,16 @@ def calculate_round_breakdown_matrix(teachers_master, round_weeks, dept='ช่�
             'position': pos,
             'duty': duty,
             'level': level,
+            'dept': dept_name,
+            'teacher_type': 'ครูพิเศษ' if is_sp else 'ครูประจำ',
             'is_special': is_sp,
             'weeks': weeks_data,
             'round_hours': round_hours,
-            'round_money': round_money
+            'round_money': round_money,
+            'round_vc_hours': round_vc_hours,
+            'round_vs_hours': round_vs_hours,
+            'round_vc_money': round_vc_money,
+            'round_vs_money': round_vs_money
         }
 
         teachers_matrix.append(row_data)

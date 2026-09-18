@@ -1,8 +1,88 @@
 {
-  "text_edits": {},
-  "template_overrides": {},
-  "font_sizes": {},
-  "font_weights": {},
+  "text_edits": {
+    "#teacher-card-1 > table:nth-of-type(3) > tbody > tr:nth-of-type(1) > td:nth-of-type(1) > div:nth-of-type(5)": "วันที่ <span contenteditable=\"true\" class=\"font-bold\" spellcheck=\"false\" style=\"font-weight: bold !important; font-size: 16px !important;\">22</span> เดือน <span contenteditable=\"true\" class=\"font-bold\" spellcheck=\"false\" style=\"font-weight: bold !important; font-size: 16px !important;\">กันยายน</span> พ.ศ.<span contenteditable=\"true\" class=\"font-bold\" spellcheck=\"false\" style=\"font-weight: bold !important; font-size: 16px !important;\">2569</span>",
+    "#teacher-card-1 > table:nth-of-type(3) > tbody > tr:nth-of-type(1) > td:nth-of-type(2) > div:nth-of-type(5)": "วันที่ <span contenteditable=\"true\" class=\"font-bold\" spellcheck=\"false\" style=\"font-weight: bold !important; font-size: 16px !important;\">22</span> เดือน <span contenteditable=\"true\" class=\"font-bold\" spellcheck=\"false\" style=\"font-weight: bold !important; font-size: 16px !important;\">กันยายน</span> พ.ศ.<span contenteditable=\"true\" class=\"font-bold\" spellcheck=\"false\" style=\"font-weight: bold !important; font-size: 16px !important;\">2569</span>",
+    "#teacher-card-1 > table:nth-of-type(3) > tbody > tr:nth-of-type(1) > td:nth-of-type(3) > div:nth-of-type(5)": "วันที่ <span contenteditable=\"true\" class=\"font-bold\" spellcheck=\"false\" style=\"font-weight: bold !important; font-size: 16px !important;\">22</span> เดือน <span contenteditable=\"true\" class=\"font-bold\" spellcheck=\"false\" style=\"font-weight: bold !important; font-size: 16px !important;\">กันยายน</span> พ.ศ.<span contenteditable=\"true\" class=\"font-bold\" spellcheck=\"false\" style=\"font-weight: bold !important; font-size: 16px !important;\">2569</span>",
+    "#teacher-card-1 > div:nth-of-type(2) > div:nth-of-type(2)": "\n  <span class=\"text-black font-bold select-none inline-block mr-1\" style=\"font-size: 16px !important;\" contenteditable=\"true\" spellcheck=\"false\" data-custom-font-size=\"16px\">✓   </span><span style=\"font-size: 15px !important;\" contenteditable=\"true\" spellcheck=\"false\" class=\"\">ครู</span>\n            ",
+    "#teacher-card-7 > div:nth-of-type(2) > div:nth-of-type(2)": "\n              <span class=\"text-black font-bold select-none inline-block mr-1\" style=\"font-size: 15px !important;\" contenteditable=\"true\" spellcheck=\"false\">✓</span><span style=\"font-size: 15px !important; font-weight: normal !important;\" contenteditable=\"true\" spellcheck=\"false\" data-custom-font-size=\"15px\" data-custom-font-weight=\"normal\" class=\"font-normal\">ครู</span>\n            ",
+    "#teacher-card-1 > div:nth-of-type(1) > div:nth-of-type(2)": "แผนกวิชาช่างยนต์",
+    "#teacher-card-1 > div:nth-of-type(1) > div:nth-of-type(1)": "ใบเบิกจ่ายเงินค่าสอนพิเศษและค่าสอนเกินภาระงานสอนในสถานศึกษา",
+    "#teacher-card-1 > div:nth-of-type(2) > div:nth-of-type(4)": "\n              <span class=\"whitespace-nowrap shrink-0\" style=\"font-size: 15px !important; white-space: nowrap !important;\" contenteditable=\"true\" spellcheck=\"false\">หน้าที่พิเศษ&nbsp; &nbsp; หัวหน้าแผนกวิชาช่างยนต์</span>\n            ",
+    "#teacher-card-1 > table:nth-of-type(3) > tbody > tr:nth-of-type(1) > td:nth-of-type(3) > div:nth-of-type(1)": "ผู้ตรวจ",
+    "#teacher-card-1 > table:nth-of-type(3) > tbody > tr:nth-of-type(1) > td:nth-of-type(2) > div:nth-of-type(1)": "ผู้รับรอง",
+    "#teacher-card-1 > table:nth-of-type(1) > tbody > tr:nth-of-type(1) > td:nth-of-type(3) > div": "ครู",
+    "#teacher-card-21 > table:nth-of-type(1) > tbody > tr:nth-of-type(1) > td:nth-of-type(3) > div": "พนักงาน<div style=\"font-size: 16px !important;\">ราชการ</div>",
+    "#teacher-card-11 > table:nth-of-type(1) > tbody > tr:nth-of-type(16) > td:nth-of-type(3)": "ชย.1/5,ชย.1/6 (26)",
+    "#teacher-card-1 > table:nth-of-type(1) > tbody > tr:nth-of-type(28) > td:nth-of-type(1)": "",
+    "#teacher-card-1 > table:nth-of-type(1) > tbody > tr:nth-of-type(29) > td:nth-of-type(1)": "<br>",
+    "#teacher-card-1 > table:nth-of-type(1) > tbody > tr:nth-of-type(1) > td:nth-of-type(2) > div": "นายชํานาญ แก้วจงประสิทธิ์",
+    "#teacher-card-1 > table:nth-of-type(1) > tbody > tr:nth-of-type(2) > td:nth-of-type(1)": "20101-2010",
+    "#teacher-card-1 > table:nth-of-type(1) > thead > tr:nth-of-type(1) > th:nth-of-type(6)": "ชั้น,แผนก,ห้อง",
+    ".a4-page > table:nth-of-type(1) > thead > tr:nth-of-type(1) > th:nth-of-type(3)": "ตำแหน่ง<br>ผู้ทำการสอน",
+    "#teacher-card-7 > table:nth-of-type(1) > tbody > tr:nth-of-type(17) > td:nth-of-type(4)": "5",
+    "#teacher-card-7 > table:nth-of-type(1) > tbody > tr:nth-of-type(17) > td:nth-of-type(5)": "1",
+    "#teacher-card-2 > table:nth-of-type(1) > tbody > tr:nth-of-type(18) > td:nth-of-type(8)": "<br>",
+    "#teacher-card-2 > table:nth-of-type(1) > tbody > tr:nth-of-type(20) > td:nth-of-type(9)": "",
+    "#teacher-card-2 > table:nth-of-type(1) > tbody > tr:nth-of-type(18) > td:nth-of-type(9)": "5",
+    "#teacher-card-2 > table:nth-of-type(1) > tbody > tr:nth-of-type(19) > td:nth-of-type(9)": ""
+  },
+  "template_overrides": {
+    "table:nth-of-type(3) > tbody > tr:nth-of-type(1) > td:nth-of-type(1) > div:nth-of-type(5)": {
+      "fontSize": "16px",
+      "fontWeight": "normal",
+      "html": "วันที่ <span contenteditable=\"true\" class=\"font-bold\" spellcheck=\"false\" style=\"font-weight: bold !important; font-size: 16px !important;\">22</span> เดือน <span contenteditable=\"true\" class=\"font-bold\" spellcheck=\"false\" style=\"font-weight: bold !important; font-size: 16px !important;\">กันยายน</span> พ.ศ.<span contenteditable=\"true\" class=\"font-bold\" spellcheck=\"false\" style=\"font-weight: bold !important; font-size: 16px !important;\">2569</span>"
+    },
+    "table:nth-of-type(3) > tbody > tr:nth-of-type(1) > td:nth-of-type(2) > div:nth-of-type(5)": {
+      "fontSize": "16px",
+      "fontWeight": "normal",
+      "html": "วันที่ <span contenteditable=\"true\" class=\"font-bold\" spellcheck=\"false\" style=\"font-weight: bold !important; font-size: 16px !important;\">22</span> เดือน <span contenteditable=\"true\" class=\"font-bold\" spellcheck=\"false\" style=\"font-weight: bold !important; font-size: 16px !important;\">กันยายน</span> พ.ศ.<span contenteditable=\"true\" class=\"font-bold\" spellcheck=\"false\" style=\"font-weight: bold !important; font-size: 16px !important;\">2569</span>"
+    },
+    "table:nth-of-type(3) > tbody > tr:nth-of-type(1) > td:nth-of-type(3) > div:nth-of-type(5)": {
+      "fontSize": "16px",
+      "fontWeight": "normal",
+      "html": "วันที่ <span contenteditable=\"true\" class=\"font-bold\" spellcheck=\"false\" style=\"font-weight: bold !important; font-size: 16px !important;\">22</span> เดือน <span contenteditable=\"true\" class=\"font-bold\" spellcheck=\"false\" style=\"font-weight: bold !important; font-size: 16px !important;\">กันยายน</span> พ.ศ.<span contenteditable=\"true\" class=\"font-bold\" spellcheck=\"false\" style=\"font-weight: bold !important; font-size: 16px !important;\">2569</span>"
+    },
+    "div:nth-of-type(2) > div:nth-of-type(2) > span:nth-of-type(2)": {
+      "fontSize": "15px",
+      "fontWeight": "normal",
+      "html": "ครู"
+    },
+    "table:nth-of-type(2) > tbody > tr:nth-of-type(1) > td:nth-of-type(1) > div:nth-of-type(1)": {
+      "fontSize": "16px",
+      "fontWeight": "bold"
+    },
+    "table:nth-of-type(2) > tbody > tr:nth-of-type(1) > td:nth-of-type(1) > div:nth-of-type(2)": {
+      "fontSize": "16px",
+      "fontWeight": "bold"
+    },
+    "table:nth-of-type(2) > tbody > tr:nth-of-type(1) > td:nth-of-type(1) > div:nth-of-type(2) > span": {
+      "fontSize": "17px",
+      "fontWeight": "normal"
+    }
+  },
+  "font_sizes": {
+    "#teacher-card-1 > table:nth-of-type(1) > tbody > tr:nth-of-type(1) > td:nth-of-type(2) > div": "14px",
+    "#teacher-card-1 > table:nth-of-type(1) > tbody > tr:nth-of-type(1) > td:nth-of-type(5)": "14px",
+    "#teacher-card-1 > table:nth-of-type(1) > tbody > tr:nth-of-type(6) > td:nth-of-type(1)": "14px",
+    "#teacher-card-1 > table:nth-of-type(1) > tbody > tr:nth-of-type(11) > td:nth-of-type(1)": "14px",
+    "#teacher-card-1 > table:nth-of-type(1) > tbody > tr:nth-of-type(16) > td:nth-of-type(1)": "14px",
+    "#teacher-card-1 > table:nth-of-type(1) > tbody > tr:nth-of-type(21) > td:nth-of-type(1)": "14px",
+    "#teacher-card-1 > table:nth-of-type(1) > tbody > tr:nth-of-type(26) > td:nth-of-type(1)": "14px",
+    "#teacher-card-1 > div:nth-of-type(1) > div:nth-of-type(1)": "16px",
+    "#teacher-card-1 > div:nth-of-type(1) > div:nth-of-type(2)": "15px",
+    "#teacher-card-1 > div:nth-of-type(1) > div:nth-of-type(3)": "15px",
+    "#teacher-card-1 > div:nth-of-type(2) > div:nth-of-type(4)": "15px",
+    "#teacher-card-1 > div:nth-of-type(2) > div:nth-of-type(2)": "15px",
+    "#teacher-card-1 > div:nth-of-type(2) > div:nth-of-type(2) > span:nth-of-type(1)": "16px",
+    "#teacher-card-1 > table:nth-of-type(3) > tbody > tr:nth-of-type(1) > td:nth-of-type(3) > div:nth-of-type(1)": "16px",
+    ".a4-page > table:nth-of-type(2) > tbody > tr:nth-of-type(1) > td:nth-of-type(1) > div:nth-of-type(2)": "16px",
+    ".a4-page > table:nth-of-type(2) > tbody > tr:nth-of-type(1) > td:nth-of-type(1) > div:nth-of-type(2) > span": "17px"
+  },
+  "font_weights": {
+    "#teacher-card-1 > table:nth-of-type(3) > tbody > tr:nth-of-type(1) > td:nth-of-type(1) > div:nth-of-type(5)": "normal",
+    "#teacher-card-1 > table:nth-of-type(3) > tbody > tr:nth-of-type(1) > td:nth-of-type(2) > div:nth-of-type(5)": "normal",
+    "#teacher-card-1 > table:nth-of-type(3) > tbody > tr:nth-of-type(1) > td:nth-of-type(3) > div:nth-of-type(5)": "normal"
+  },
   "weekly_teacher_overrides": {
     "1_7": {
       "teacher_index": 7,
@@ -22,11 +102,12 @@
           "in_vs": 0,
           "out_vs": 0,
           "rate_vc": 200,
-          "rate_vs": 270,
+          "rate_vs": 0,
           "note": "",
           "is_workplace": false,
           "amt_vc": 800,
-          "amt_vs": 0
+          "amt_vs": 0,
+          "_override_applied": true
         },
         {
           "day": "จันทร์",
@@ -42,11 +123,12 @@
           "in_vs": 0,
           "out_vs": 0,
           "rate_vc": 200,
-          "rate_vs": 270,
+          "rate_vs": 0,
           "note": "",
           "is_workplace": false,
           "amt_vc": 600,
-          "amt_vs": 0
+          "amt_vs": 0,
+          "_override_applied": true
         },
         {
           "day": "จันทร์",
@@ -61,12 +143,34 @@
           "out_vc": 0,
           "in_vs": 0,
           "out_vs": 0,
-          "rate_vc": 200,
-          "rate_vs": 270,
+          "rate_vc": 0,
+          "rate_vs": 0,
           "note": "",
           "is_workplace": true,
           "amt_vc": 0,
-          "amt_vs": 0
+          "amt_vs": 0,
+          "_override_applied": true
+        },
+        {
+          "day": "จันทร์"
+        },
+        {
+          "day": "จันทร์"
+        },
+        {
+          "day": "อังคาร"
+        },
+        {
+          "day": "อังคาร"
+        },
+        {
+          "day": "อังคาร"
+        },
+        {
+          "day": "อังคาร"
+        },
+        {
+          "day": "อังคาร"
         },
         {
           "day": "พุธ",
@@ -82,11 +186,12 @@
           "in_vs": 0,
           "out_vs": 0,
           "rate_vc": 200,
-          "rate_vs": 270,
+          "rate_vs": 0,
           "note": "",
           "is_workplace": false,
           "amt_vc": 800,
-          "amt_vs": 0
+          "amt_vs": 0,
+          "_override_applied": true
         },
         {
           "day": "พุธ",
@@ -101,12 +206,13 @@
           "out_vc": 0,
           "in_vs": 0,
           "out_vs": 0,
-          "rate_vc": 200,
-          "rate_vs": 270,
+          "rate_vc": 0,
+          "rate_vs": 0,
           "note": "",
           "is_workplace": true,
           "amt_vc": 0,
-          "amt_vs": 0
+          "amt_vs": 0,
+          "_override_applied": true
         },
         {
           "day": "พุธ",
@@ -121,12 +227,19 @@
           "out_vc": 0,
           "in_vs": 0,
           "out_vs": 0,
-          "rate_vc": 200,
-          "rate_vs": 270,
+          "rate_vc": 0,
+          "rate_vs": 0,
           "note": "",
           "is_workplace": true,
           "amt_vc": 0,
-          "amt_vs": 0
+          "amt_vs": 0,
+          "_override_applied": true
+        },
+        {
+          "day": "พุธ"
+        },
+        {
+          "day": "พุธ"
         },
         {
           "day": "พฤหัส",
@@ -141,12 +254,13 @@
           "out_vc": 0,
           "in_vs": 0,
           "out_vs": 0,
-          "rate_vc": 200,
-          "rate_vs": 270,
+          "rate_vc": 0,
+          "rate_vs": 0,
           "note": "",
           "is_workplace": true,
           "amt_vc": 0,
-          "amt_vs": 0
+          "amt_vs": 0,
+          "_override_applied": true
         },
         {
           "day": "พฤหัส",
@@ -157,16 +271,41 @@
           "time_str": "15.10 - 21.10",
           "start_col": 7,
           "end_col": 12,
-          "in_vc": 6,
-          "out_vc": 0,
+          "in_vc": 5,
+          "out_vc": 1,
           "in_vs": 0,
           "out_vs": 0,
-          "rate_vc": 0,
-          "rate_vs": 270,
+          "rate_vc": 200,
+          "rate_vs": 0,
           "note": "",
           "is_workplace": true,
-          "amt_vc": 0,
-          "amt_vs": 0
+          "amt_vc": 200,
+          "amt_vs": 0,
+          "_override_applied": true
+        },
+        {
+          "day": "พฤหัส"
+        },
+        {
+          "day": "พฤหัส"
+        },
+        {
+          "day": "พฤหัส"
+        },
+        {
+          "day": "ศุกร์"
+        },
+        {
+          "day": "ศุกร์"
+        },
+        {
+          "day": "ศุกร์"
+        },
+        {
+          "day": "ศุกร์"
+        },
+        {
+          "day": "ศุกร์"
         },
         {
           "day": "เสาร์",
@@ -181,12 +320,13 @@
           "out_vc": 0,
           "in_vs": 0,
           "out_vs": 0,
-          "rate_vc": 200,
-          "rate_vs": 270,
+          "rate_vc": 0,
+          "rate_vs": 0,
           "note": "",
           "is_workplace": true,
           "amt_vc": 0,
-          "amt_vs": 0
+          "amt_vs": 0,
+          "_override_applied": true
         },
         {
           "day": "เสาร์",
@@ -201,15 +341,22 @@
           "out_vc": 0,
           "in_vs": 0,
           "out_vs": 0,
-          "rate_vc": 200,
-          "rate_vs": 270,
+          "rate_vc": 0,
+          "rate_vs": 0,
           "note": "",
           "is_workplace": true,
           "amt_vc": 0,
-          "amt_vs": 0
+          "amt_vs": 0,
+          "_override_applied": true
+        },
+        {
+          "day": "เสาร์"
+        },
+        {
+          "day": "เสาร์"
         }
       ],
-      "updated_at": "2026-09-18T11:16:25.389927"
+      "updated_at": "2026-09-18T11:21:03.462944"
     }
   },
   "course_types": {

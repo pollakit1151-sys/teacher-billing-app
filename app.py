@@ -530,13 +530,27 @@ async def api_add_teacher(payload: dict):
     save_master(teachers)
     return JSONResponse(content={"status": "success", "message": f"เพิ่มครูใหม่ '{name}' เรียบร้อยแล้ว", "teacher": new_t})
 
-@app.get("/api/round_breakdown_matrix")
-async def api_round_breakdown_matrix(round_num: int = 1, dept: str = "ทั้งหมด", weeks: str = ""):
+@app.api_route("/api/round_breakdown_matrix", methods=["GET", "POST"])
+async def api_round_breakdown_matrix(request: Request, round_num: int = 1, dept: str = "ทั้งหมด", weeks: str = ""):
+    payload = {}
+    if request.method == "POST":
+        try:
+            payload = await request.json()
+        except Exception:
+            payload = {}
+
+    if "round_num" in payload:
+        round_num = int(payload["round_num"])
+    if "dept" in payload:
+        dept = payload["dept"]
+    if "weeks" in payload:
+        weeks = str(payload["weeks"])
+
     teachers = load_master()
     if weeks:
         try:
-            round_weeks = [int(w.strip()) for w in weeks.split(",") if w.strip()]
-        except:
+            round_weeks = [int(w.strip()) for w in str(weeks).split(",") if w.strip()]
+        except Exception:
             round_weeks = [1, 2, 3, 4, 5]
     else:
         if round_num == 1:
@@ -553,7 +567,23 @@ async def api_round_breakdown_matrix(round_num: int = 1, dept: str = "ทั้�
     ovr = load_custom_overrides()
     st_counts = ovr.get("student_counts", {})
     c_types = ovr.get("course_types", {})
-    result = calculate_round_breakdown_matrix(teachers, round_weeks, dept=dept, student_counts=st_counts, course_types=c_types)
+
+    holidays_map = payload.get("holidays_map") or payload.get("week_holiday_map") or None
+    leaves_map = payload.get("leaves_map") or None
+    subs_map = payload.get("subs_map") or None
+    comps_map = payload.get("comps_map") or payload.get("compensations_map") or None
+
+    result = calculate_round_breakdown_matrix(
+        teachers,
+        round_weeks,
+        dept=dept,
+        holidays_map=holidays_map,
+        leaves_map=leaves_map,
+        subs_map=subs_map,
+        comps_map=comps_map,
+        student_counts=st_counts,
+        course_types=c_types
+    )
     return JSONResponse(content={"status": "success", "round_num": round_num, "data": result})
 
 @app.post("/api/calculate")

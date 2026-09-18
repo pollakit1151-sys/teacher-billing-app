@@ -5005,10 +5005,15 @@
           if (resp.ok) {
             successCount++;
             dirtyTeacherIds.delete(tIdx);
+            cachedRoundMatrix = null;
           }
         } catch (e) {
           console.error('Save teacher custom edit failed:', e);
         }
+      }
+
+      if (successCount > 0) {
+        cachedRoundMatrix = null;
       }
 
       if (btn) {
@@ -6954,6 +6959,7 @@
         const result = await res.json();
         if (result.status === 'success') {
           calculatedData = result.data;
+          cachedRoundMatrix = null;
           renderAllTeachersInGroup();
           if (currentMainTab === 'covers') {
             renderCoverSheetView();
@@ -8557,15 +8563,48 @@
       renderCoverSheetView();
     }
 
-    function renderCoverSheetView() {
+    let cachedRoundMatrix = null;
+
+    async function getRoundMatrixData(force = false) {
+      const curRoundNum = parseInt(document.getElementById('inputRoundNum')?.value) || 1;
+      if (!force && cachedRoundMatrix && cachedRoundMatrix.round_num === curRoundNum) {
+        return cachedRoundMatrix;
+      }
+      try {
+        const res = await fetch('/api/round_breakdown_matrix', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            round_num: curRoundNum,
+            dept: 'ทั้งหมด',
+            holidays_map: window.weekHolidayMap || {},
+            compensations_map: (typeof compensationsList !== 'undefined' ? compensationsList : [])
+          })
+        });
+        const json = await res.json();
+        if (json.status === 'success' && json.data) {
+          cachedRoundMatrix = json.data;
+          cachedRoundMatrix.round_num = curRoundNum;
+          return cachedRoundMatrix;
+        }
+      } catch (err) {
+        console.error('Error fetching round matrix for cover sheet:', err);
+      }
+      return null;
+    }
+
+    async function renderCoverSheetView() {
       const file = COVER_8_FILES[currentCoverFileIndex] || COVER_8_FILES[0];
-      const filtered = calculatedData.filter(t => {
+      const matrix = await getRoundMatrixData();
+
+      const sourceTeachers = (matrix && matrix.teachers && matrix.teachers.length > 0) ? matrix.teachers : calculatedData;
+      const filtered = sourceTeachers.filter(t => {
         const tDept = t.dept || 'ช่างยนต์';
         const matchDept = (tDept === file.dept || tDept.includes(file.dept));
         const type = String(t.teacher_type || '').trim();
         const pos = String(t.position || '').trim();
         let isSpecial = false;
-        if (type === 'ครูพิเศษ') {
+        if (type === 'ครูพิเศษ' || t.is_special) {
           isSpecial = true;
         } else if (type === 'ครูประจำ') {
           isSpecial = false;
@@ -8645,8 +8684,14 @@
 
         let pageTeachersMoney = 0;
         for (const t of pageTeachers) {
-          const roundTotalMoney = (t.total_money || 0) * roundWeeks;
-          pageTeachersMoney += roundTotalMoney;
+          const mt = (matrix?.teachers || sourceTeachers)?.find(m => m.index === t.index);
+          let tMny = 0;
+          if (mt) {
+            tMny = (file.level === 'ปวส.') ? (mt.round_vs_money ?? mt.round_money ?? 0) : (mt.round_vc_money ?? mt.round_money ?? 0);
+          } else {
+            tMny = (t.total_money || 0) * roundWeeks;
+          }
+          pageTeachersMoney += tMny;
         }
 
         cumulativeMoney = broughtForwardMoney + pageTeachersMoney;
@@ -8684,8 +8729,22 @@
         for (let idx = 0; idx < pageTeachers.length; idx++) {
           const t = pageTeachers[idx];
           const globalSeqNum = (isFirstPage ? 0 : 8 + (p - 2) * 7) + idx + 1;
-          const roundClaimHours = (t.claim_hours || 0) * roundWeeks;
-          const roundTotalMoney = (t.total_money || 0) * roundWeeks;
+          
+          let roundClaimHours = 0;
+          let roundTotalMoney = 0;
+          const mt = (matrix?.teachers || sourceTeachers)?.find(m => m.index === t.index);
+          if (mt) {
+            if (file.level === 'ปวส.') {
+              roundClaimHours = mt.round_vs_hours ?? mt.round_hours ?? 0;
+              roundTotalMoney = mt.round_vs_money ?? mt.round_money ?? 0;
+            } else {
+              roundClaimHours = mt.round_vc_hours ?? mt.round_hours ?? 0;
+              roundTotalMoney = mt.round_vc_money ?? mt.round_money ?? 0;
+            }
+          } else {
+            roundClaimHours = (t.claim_hours || 0) * roundWeeks;
+            roundTotalMoney = (t.total_money || 0) * roundWeeks;
+          }
 
           const isPvc = (t.level === 'ปวช.' || (!t.level && file.level === 'ปวช.'));
           const isPvs = (t.level === 'ปวส.' || (!t.level && file.level === 'ปวส.'));
