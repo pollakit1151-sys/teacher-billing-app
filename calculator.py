@@ -823,6 +823,16 @@ def calculate_week(teachers_master, holiday_days=None, leaves=None, substitution
                 ep = int(sc['end_p'])
                 time_str = f"{PERIOD_TO_TIME.get(sp, ('08.10','09.10'))[0]} - {PERIOD_TO_TIME.get(ep, ('11.10','12.10'))[1]}"
 
+            if not code or not class_info:
+                a_idx = sc.get('absent_teacher_idx')
+                absent_t = next((t for t in teachers_master if t['index'] == a_idx), None)
+                if absent_t and absent_t.get('schedule'):
+                    first_c = next((c for c in absent_t['schedule'] if c.get('code')), absent_t['schedule'][0])
+                    if not code:
+                        code = first_c.get('code', '')
+                    if not class_info:
+                        class_info = first_c.get('class_info', '')
+
             is_vs_code = code.startswith('3') or 'ปวส' in class_info
             target_level = 'ปวส.' if is_vs_code else 'ปวช.'
 

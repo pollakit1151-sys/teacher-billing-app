@@ -2291,6 +2291,8 @@
             k.includes('foot_claim_hrs') || k.includes('foot_tot_money') ||
             k.includes('foot_over_') || k.includes('foot_sum_') || k.includes('foot_tot_') ||
             k.includes('covTotalMoney') || k.includes('covBahtText') || k.includes('tfoot') ||
+            k.includes('tr:nth-of-type(2)') || k.includes('tr:nth-of-type(3)') || k.includes('tr:nth-of-type(28)') || k.includes('tr:nth-of-type(29)') ||
+            (k.includes('table:nth-of-type(1) > tbody > tr') && (k.includes('td:nth-of-type(1)') || !val || val === '<br>' || val.includes('สอนแทน') || val.includes('20101-2010'))) ||
             (typeof val === 'string' && (val.includes('รวมจำนวนหน่วยชั่วโมงที่ขอเบิกค่าสอน') || val.includes('ยอดเงินรวม') || val.includes('รวมจำนวนเงินค่าสอนพิเศษทั้งสิ้น') || val.includes('หนึ่งแสนห้าหมื่นหกพันบาทถ้วน')))) {
           delete customTextEditsMap[k];
           changed = true;
@@ -2824,7 +2826,8 @@
                 key.includes('foot_claim_hrs') || key.includes('foot_tot_money') ||
                 key.includes('foot_over_') || key.includes('foot_sum_') || key.includes('foot_tot_') ||
                 key.includes('covTotalMoney') || key.includes('covBahtText') || key.includes('tfoot') ||
-                (key.includes('tr:nth-of-type(2) > td:nth-of-type(1)') && typeof htmlContent === 'string' && htmlContent.includes('20101-2010')) ||
+                key.includes('tr:nth-of-type(2)') || key.includes('tr:nth-of-type(3)') || key.includes('tr:nth-of-type(28)') || key.includes('tr:nth-of-type(29)') ||
+                (key.includes('table:nth-of-type(1) > tbody > tr') && (key.includes('td:nth-of-type(1)') || !htmlContent || htmlContent === '<br>' || htmlContent.includes('สอนแทน') || htmlContent.includes('20101-2010'))) ||
                 (typeof htmlContent === 'string' && (htmlContent.includes('รวมจำนวนหน่วยชั่วโมงที่ขอเบิกค่าสอน') || htmlContent.includes('ยอดเงินรวม') || htmlContent.includes('รวมจำนวนเงินค่าสอนพิเศษทั้งสิ้น') || htmlContent.includes('หนึ่งแสนห้าหมื่นหกพันบาทถ้วน')))) {
               delete customTextEditsMap[key];
               continue;
@@ -5811,11 +5814,20 @@
         // Pre-calculate Col 2 (ชื่อ-สกุล) blocks to cleanly display teacher name, comp leave, and compensatory notes
         const col2Blocks = [];
         let curBlock = null;
+        let currentDayCol2 = '';
+        const seenSubsInDay = new Set();
+
         for (let r = 0; r < totalTeachingRows; r++) {
           const cItem = teacher._rowClasses[r];
           const isSub = !!(cItem && cItem.is_substitute);
           const isCompLeave = !!(cItem && cItem.is_compensated_leave);
           const isComp = !!(cItem && cItem.is_compensatory);
+          const cDay = cItem ? cItem.day : '';
+
+          if (cDay !== currentDayCol2) {
+            currentDayCol2 = cDay;
+            seenSubsInDay.clear();
+          }
 
           let rowType = 'normal';
           let rowLabel = '';
@@ -5893,9 +5905,15 @@
               rowType = 'teacher_name_sub';
               rowLabel = teacher.name;
               subLabelText = sLabel;
+              seenSubsInDay.add(sLabel);
+            } else if (seenSubsInDay.has(sLabel)) {
+              // User requirement: วันจันทร์สอนแทนคนเดียวกันให้แสดงแค่ชื่อเดียวครับ
+              rowType = 'sub_continuation';
+              rowLabel = '';
             } else {
               rowType = 'substitute';
               rowLabel = sLabel;
+              seenSubsInDay.add(sLabel);
             }
           } else {
             if (r === 0) {
@@ -5907,17 +5925,26 @@
             }
           }
 
-          if (!curBlock) {
-            curBlock = { startRow: r, span: 1, type: rowType, label: rowLabel, subLabel: (rowType === 'teacher_name_sub' ? subLabelText : '') };
-          } else {
-            const canMergeTeacherName = (curBlock.type === 'teacher_name' && rowType === 'normal');
-            const canMergeSameType = (curBlock.type === rowType && (rowType === 'normal' || curBlock.label === rowLabel));
-            if (canMergeTeacherName || canMergeSameType) {
-              curBlock.span++;
-            } else {
-              col2Blocks.push(curBlock);
-              curBlock = { startRow: r, span: 1, type: rowType, label: rowLabel, subLabel: (rowType === 'teacher_name_sub' ? subLabelText : '') };
+          let canMerge = false;
+          if (curBlock) {
+            if (curBlock.type === 'teacher_name' && rowType === 'normal') {
+              canMerge = true;
+            } else if (curBlock.type === 'teacher_name_sub' && rowType === 'sub_continuation' && curBlock.day === cDay) {
+              canMerge = true;
+            } else if (curBlock.type === 'substitute' && rowType === 'sub_continuation' && curBlock.day === cDay) {
+              canMerge = true;
+            } else if (curBlock.type === rowType && rowType === 'normal' && curBlock.day === cDay) {
+              canMerge = true;
+            } else if (curBlock.type === rowType && (curBlock.type === 'comp_leave' || curBlock.type === 'compensatory') && curBlock.label === rowLabel) {
+              canMerge = true;
             }
+          }
+
+          if (canMerge) {
+            curBlock.span++;
+          } else {
+            if (curBlock) col2Blocks.push(curBlock);
+            curBlock = { startRow: r, span: 1, type: rowType, label: rowLabel, subLabel: (rowType === 'teacher_name_sub' ? subLabelText : ''), day: cDay };
           }
         }
         if (curBlock) {
@@ -5944,10 +5971,10 @@
           const isHoliDay = isHoli || (cList && cList.some(c => c && c.is_holiday));
 
           // Check if teacher is absent or on compensated leave on this day (matching 2567.เทอม2.3ช่างยนต์.xlsx)
-          const dayAbsSubs = substitutionsList.filter(sub => sub.absent_teacher_idx === teacher.index && sub.day === dayStr);
+          const dayAbsSubs = substitutionsList.filter(sub => Number(sub.absent_teacher_idx) === Number(teacher.index) && String(sub.day || '').trim() === String(dayStr || '').trim());
           const isCompLeaveDay = (dayStr in compLeaveDaysMap) || (cList && cList.some(c => c && c.is_compensated_leave));
           const isCompDay = (cList && cList.some(c => c && c.is_compensatory));
-          const isAbsentDay = !isHoliDay && !isCompLeaveDay && (dayAbsSubs.length > 0 || leavesList.some(l => l.teacher_idx === teacher.index && l.day === dayStr) || cList.some(c => c.is_absent || c.is_substituted));
+          const isAbsentDay = !isHoliDay && !isCompLeaveDay && (dayAbsSubs.length > 0 || leavesList.some(l => Number(l.teacher_idx) === Number(teacher.index) && String(l.day || '').trim() === String(dayStr || '').trim()) || cList.some(c => c.is_absent || c.is_substituted));
 
           let leaveReason = 'ไปราชการ';
           if (isCompLeaveDay && compLeaveDaysMap[dayStr]?.leave_reason) {
@@ -5955,7 +5982,7 @@
           } else if (dayAbsSubs.length > 0 && dayAbsSubs[0].reason) {
             leaveReason = dayAbsSubs[0].reason;
           } else {
-            const lv = leavesList.find(l => l.teacher_idx === teacher.index && l.day === dayStr);
+            const lv = leavesList.find(l => Number(l.teacher_idx) === Number(teacher.index) && String(l.day || '').trim() === String(dayStr || '').trim());
             if (lv && lv.reason) leaveReason = lv.reason;
             else {
               const ac = cList.find(c => c.leave_reason);
@@ -5968,32 +5995,33 @@
             // Group substitutions by substitute teacher on this day (กรณีคนสอนแทนคือคนเดียวกันในวันนั้นให้แสดงผลแค่บรรทัดเดียว)
             const groupedSubs = {};
             dayAbsSubs.forEach(sub => {
-              const sIdx = sub.sub_teacher_idx;
+              const sIdx = Number(sub.sub_teacher_idx);
               if (!groupedSubs[sIdx]) {
-                const subTeacherObj = (typeof calculatedData !== 'undefined' && calculatedData.find(t => t.index === sIdx)) || (typeof masterTeachers !== 'undefined' && masterTeachers.find(t => t.index === sIdx));
+                const subTeacherObj = (typeof calculatedData !== 'undefined' && calculatedData.find(t => Number(t.index) === sIdx)) || (typeof masterTeachers !== 'undefined' && masterTeachers.find(t => Number(t.index) === sIdx));
                 groupedSubs[sIdx] = {
                   subTeacherIdx: sIdx,
                   name: (subTeacherObj && subTeacherObj.name) ? subTeacherObj.name : (sub.sub_name || sub.sub_teacher_name || 'ครูสอนแทน'),
                   totalHours: 0
                 };
               }
-              groupedSubs[sIdx].totalHours += (sub.hours || 0);
+              groupedSubs[sIdx].totalHours += (Number(sub.hours) || 0);
             });
 
             Object.values(groupedSubs).forEach(grp => {
-              const subTeacher = calculatedData.find(t => t.index === grp.subTeacherIdx);
+              const subTeacher = (typeof calculatedData !== 'undefined') ? calculatedData.find(t => Number(t.index) === grp.subTeacherIdx) : null;
               let inH = 0, outH = 0;
               if (subTeacher && subTeacher.classes) {
-                const scList = subTeacher.classes.filter(sc => sc.is_substitute && sc.day === dayStr);
+                const scList = subTeacher.classes.filter(sc => sc.is_substitute && String(sc.day || '').trim() === String(dayStr || '').trim());
                 scList.forEach(sc => {
-                  inH += (sc.in_vc || 0) + (sc.in_vs || 0);
-                  outH += (sc.out_vc || 0) + (sc.out_vs || 0);
+                  inH += (Number(sc.in_vc) || 0) + (Number(sc.in_vs) || 0);
+                  outH += (Number(sc.out_vc) || 0) + (Number(sc.out_vs) || 0);
                 });
               }
               const parts = [];
               if (inH > 0) parts.push(`ใน ${inH}`);
               if (outH > 0) parts.push(`นอก ${outH}`);
-              if (parts.length === 0) parts.push(`${grp.totalHours || 4}`);
+              if (parts.length === 0 && grp.totalHours > 0) parts.push(`นอก ${grp.totalHours}`);
+              else if (parts.length === 0) parts.push('นอก 4');
               subNotes.push(`${grp.name} สอนแทน (${parts.join(' ')} ชม.)`);
             });
           } else {
@@ -7307,12 +7335,14 @@
 
       // Match target class from absent teacher's schedule
       let matchedClass = null;
-      if (absentTeacher && absentTeacher.schedule) {
+      if (absentTeacher && absentTeacher.schedule && absentTeacher.schedule.length > 0) {
         matchedClass = absentTeacher.schedule.find(c => {
           if (c.day !== day) return false;
           const ps = parsePeriodsFromTimeStr(c.time_str);
           return ps.some(p => p >= startP && p <= endP);
-        }) || absentTeacher.schedule.find(c => c.day === day);
+        }) || absentTeacher.schedule.find(c => c.day === day)
+           || absentTeacher.schedule.find(c => c.code && !isActivityOrInternship(c.code, c.subject_name || c.name, c.class_info))
+           || absentTeacher.schedule[0];
       }
 
       if (matchedClass && isActivityOrInternship(matchedClass.code, matchedClass.subject_name || matchedClass.name, matchedClass.class_info)) {

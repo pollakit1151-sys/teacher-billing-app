@@ -164,7 +164,15 @@ def sanitize_custom_overrides(data):
             continue
         if isinstance(v, str) and any(p in v for p in bad_val_patterns):
             continue
-        if "tr:nth-of-type(2) > td:nth-of-type(1)" in k and v == "20101-2010":
+        if any(bad_row in k for bad_row in [
+            "tr:nth-of-type(2) > td:nth-of-type(1)",
+            "tr:nth-of-type(3) > td:nth-of-type(1)",
+            "tr:nth-of-type(28) > td:nth-of-type(1)",
+            "tr:nth-of-type(29) > td:nth-of-type(1)",
+            "tr:nth-of-type(2) > td:nth-of-type(1) > div"
+        ]):
+            continue
+        if "table:nth-of-type(1) > tbody > tr" in k and "td:nth-of-type(1)" in k and (v == "" or v == "<br>"):
             continue
         cleaned_texts[k] = v
     data["text_edits"] = cleaned_texts
