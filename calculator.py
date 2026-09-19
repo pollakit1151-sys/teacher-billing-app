@@ -1094,6 +1094,61 @@ def calculate_week(teachers_master, holiday_days=None, leaves=None, substitution
             ovr_classes = t_ovr.get("classes", []) if isinstance(t_ovr, dict) else t_ovr
             apply_weekly_teacher_overrides(weekly_classes, ovr_classes)
 
+        # -------------------------------------------------------------
+        # กฎเหล็ก: "คาบในยังไม่ครบขั้นต่ำ จะเบิกเป็นคาบนอกไม่ได้ ทั้งส่วนของตัวเอง และสอนแทน"
+        # - รวมชั่วโมงที่สอนจริงทั้งหมด (T = ใน + นอก)
+        # - หาก T <= base_min: ห้ามมีคาบนอกเด็ดขาด (คาบนอก = 0, ต้องเป็นคาบในทั้งหมด)
+        # - หาก T > base_min: คาบในต้องมีอย่างน้อยเท่ากับ base_min เสมอ (ส่วนที่เกินจึงจะเป็นคาบนอกได้)
+        # -------------------------------------------------------------
+        if base_min > 0:
+            actual_classes = [
+                c for c in weekly_classes 
+                if not c.get('is_absent') 
+                and not c.get('is_holiday') 
+                and not c.get('is_comp_filler') 
+                and not (is_activity(c.get('code', ''), c.get('subject_name') or c.get('name', '')) and get_class_student_count(c.get('class_info', ''), student_counts) < 26)
+            ]
+            
+            tot_taught = sum(c.get('in_vc', 0) + c.get('out_vc', 0) + c.get('in_vs', 0) + c.get('out_vs', 0) for c in actual_classes)
+            curr_in = sum(c.get('in_vc', 0) + c.get('in_vs', 0) for c in actual_classes)
+            curr_out = sum(c.get('out_vc', 0) + c.get('out_vs', 0) for c in actual_classes)
+            
+            target_min_in = min(base_min, tot_taught)
+            if curr_in < target_min_in and curr_out > 0:
+                deficit = target_min_in - curr_in
+                
+                # ลำดับที่ 1: ดึงคาบนอกของวิชาปกติของตนเองมาเป็นคาบในก่อน เพื่อให้ภาระงานตนเองครบ
+                for c in actual_classes:
+                    if not c.get('is_substitute') and deficit > 0:
+                        if c.get('out_vc', 0) > 0:
+                            shift = min(c['out_vc'], deficit)
+                            c['out_vc'] -= shift
+                            c['in_vc'] = c.get('in_vc', 0) + shift
+                            c['amt_vc'] = c['out_vc'] * 200
+                            deficit -= shift
+                        if deficit > 0 and c.get('out_vs', 0) > 0:
+                            shift = min(c['out_vs'], deficit)
+                            c['out_vs'] -= shift
+                            c['in_vs'] = c.get('in_vs', 0) + shift
+                            c['amt_vs'] = c['out_vs'] * 270
+                            deficit -= shift
+                            
+                # ลำดับที่ 2: หากวิชาปกติของตนเองยังไม่พอ ต้องดึงคาบสอนแทนมาเติมเป็นคาบในให้ครบขั้นต่ำก่อน จึงจะเบิกส่วนที่เหลือเป็นคาบนอกได้
+                for c in actual_classes:
+                    if c.get('is_substitute') and deficit > 0:
+                        if c.get('out_vc', 0) > 0:
+                            shift = min(c['out_vc'], deficit)
+                            c['out_vc'] -= shift
+                            c['in_vc'] = c.get('in_vc', 0) + shift
+                            c['amt_vc'] = c['out_vc'] * 200
+                            deficit -= shift
+                        if deficit > 0 and c.get('out_vs', 0) > 0:
+                            shift = min(c['out_vs'], deficit)
+                            c['out_vs'] -= shift
+                            c['in_vs'] = c.get('in_vs', 0) + shift
+                            c['amt_vs'] = c['out_vs'] * 270
+                            deficit -= shift
+
         sum_in_vc = sum(c.get('in_vc', 0) for c in weekly_classes)
         sum_in_vs = sum(c.get('in_vs', 0) for c in weekly_classes)
 
@@ -1137,31 +1192,37 @@ def calculate_week(teachers_master, holiday_days=None, leaves=None, substitution
 
     # Pass 2: Annotate absent teacher classes with exact allocated hours of substitute teacher
     # (e.g. "นายสุเมธ เฉลิมพันธ์ สอนแทน (นอก 4 ชม.)" or "(ใน 3 นอก 7 ชม.)")
-    sub_alloc_map = {}
-    for t in processed_teachers:
-        for c in t.get('classes', []):
-            if c.get('is_substitute'):
-                key = (t.get('index'), c.get('day'))
-                if key not in sub_alloc_map:
-                    sub_alloc_map[key] = {'in': 0, 'out': 0}
-                sub_alloc_map[key]['in'] += c.get('in_vc', 0) + c.get('in_vs', 0)
-                sub_alloc_map[key]['out'] += c.get('out_vc', 0) + c.get('out_vs', 0)
+    sub_teacher_map = {t.get('index'): t for t in processed_teachers}
 
     for t in processed_teachers:
         for c in t.get('classes', []):
             if c.get('is_substituted') and c.get('sub_match'):
                 sm = c.get('sub_match')
                 sub_name = sm.get('sub_name') or sm.get('sub_teacher_name') or 'ครูสอนแทน'
-                in_h = sm.get('_alloc_in', 0)
-                out_h = sm.get('_alloc_out', 0)
-                if in_h == 0 and out_h == 0:
-                    s_idx = sm.get('sub_teacher_idx')
-                    day = sm.get('day')
-                    alloc = sub_alloc_map.get((s_idx, day), {'in': 0, 'out': 0})
-                    in_h = alloc.get('in', 0)
-                    out_h = alloc.get('out', 0)
-                if in_h == 0 and out_h == 0:
-                    out_h = sm.get('hours') or 4
+                s_idx = sm.get('sub_teacher_idx')
+                day = sm.get('day')
+                
+                # Look for matching substitute class in substitute teacher's actual classes
+                in_h = 0
+                out_h = 0
+                found_match = False
+                if s_idx in sub_teacher_map:
+                    sub_t = sub_teacher_map[s_idx]
+                    for sc in sub_t.get('classes', []):
+                        if sc.get('is_substitute') and sc.get('day') == day:
+                            # Match by time_str or code if possible
+                            if (c.get('time_str') and sc.get('time_str') == c.get('time_str')) or (c.get('code') and sc.get('code') == c.get('code')):
+                                in_h = sc.get('in_vc', 0) + sc.get('in_vs', 0)
+                                out_h = sc.get('out_vc', 0) + sc.get('out_vs', 0)
+                                found_match = True
+                                break
+                
+                if not found_match:
+                    in_h = sm.get('_alloc_in', 0)
+                    out_h = sm.get('_alloc_out', 0)
+                    if in_h == 0 and out_h == 0:
+                        out_h = sm.get('hours') or 4
+                        
                 parts = []
                 if in_h > 0:
                     parts.append(f"ใน {in_h}")

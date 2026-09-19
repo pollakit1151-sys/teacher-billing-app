@@ -5173,25 +5173,49 @@
     }
 
     async function revertCurrentTeacherEdits() {
-      if (!confirm('ต้องการคืนค่าเดิมจากตารางสอนใช่หรือไม่? การแก้ไขด้วยมือของสัปดาห์นี้จะถูกรีเซ็ต')) return;
-      showToast('กำลังโหลด', 'กำลังดึงข้อมูลต้นฉบับจากตารางสอน...', true);
       const curWk = getCurrentWeekNum();
-      const tIdx = currentA4TeacherIndex;
-      if (tIdx) {
-        try {
-          await fetch('/api/revert_teacher_custom_edit', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              teacher_index: tIdx,
-              week_num: curWk
-            })
-          });
-        } catch (e) {
-          console.error('Revert teacher custom edit failed:', e);
+      const dropdown = document.getElementById('teacherSelectDropdown');
+      const tIdx = (a4ViewMode === 'single' && (currentA4TeacherIndex || (dropdown ? parseInt(dropdown.value) : null))) || null;
+
+      const confirmMsg = tIdx 
+        ? `ต้องการคืนค่าเดิมจากตารางสอนของครูท่านนี้ในสัปดาห์ที่ ${curWk} ใช่หรือไม่? การแก้ไขด้วยมือจะถูกรีเซ็ต`
+        : `ต้องการคืนค่าเดิมจากตารางสอนของครูทุกคนในสัปดาห์ที่ ${curWk} ใช่หรือไม่? การแก้ไขด้วยมือจะถูกรีเซ็ต`;
+      if (!confirm(confirmMsg)) return;
+
+      showToast('กำลังโหลด', 'กำลังดึงข้อมูลต้นฉบับจากตารางสอน...', true);
+      try {
+        await fetch('/api/revert_teacher_custom_edit', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            teacher_index: tIdx || 0,
+            week_num: curWk
+          })
+        });
+      } catch (e) {
+        console.error('Revert teacher custom edit failed:', e);
+      }
+
+      // Clear matching client-side custom text edits
+      if (typeof customTextEditsMap === 'object' && customTextEditsMap) {
+        let changed = false;
+        for (const k of Object.keys(customTextEditsMap)) {
+          if (!tIdx || k.includes(`#teacher-card-${tIdx}`)) {
+            delete customTextEditsMap[k];
+            changed = true;
+          }
+        }
+        if (changed) {
+          try { localStorage.setItem('user_custom_text_edits', JSON.stringify(customTextEditsMap)); } catch (e) {}
         }
       }
-      dirtyTeacherIds.clear();
+
+      if (tIdx) {
+        dirtyTeacherIds.delete(tIdx);
+      } else {
+        dirtyTeacherIds.clear();
+      }
+
       const saveBtn = document.getElementById('btnSaveA4Edits');
       if (saveBtn) {
         saveBtn.innerHTML = `<i data-lucide="save" class="w-3.5 h-3.5"></i> <span>💾 บันทึกการแก้ไข</span>`;

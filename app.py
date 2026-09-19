@@ -1012,13 +1012,31 @@ async def api_revert_teacher_custom_edit(payload: dict):
     
     ovr = load_custom_overrides()
     weekly_ovrs = ovr.get("weekly_teacher_overrides", {})
-    override_key = f"{week_num}_{teacher_index}"
     changed = False
-    if override_key in weekly_ovrs:
-        del weekly_ovrs[override_key]
+    
+    if teacher_index > 0:
+        override_key = f"{week_num}_{teacher_index}"
+        if override_key in weekly_ovrs:
+            del weekly_ovrs[override_key]
+            changed = True
+        # Also remove any text_edits specifically for this teacher
+        text_edits = ovr.get("text_edits", {})
+        keys_to_del = [k for k in text_edits if f"#teacher-card-{teacher_index}" in k]
+        for k in keys_to_del:
+            del text_edits[k]
+            changed = True
+        if keys_to_del:
+            ovr["text_edits"] = text_edits
+    else:
+        # Revert all teachers for this week
+        keys_to_del = [k for k in weekly_ovrs if k.startswith(f"{week_num}_")]
+        for k in keys_to_del:
+            del weekly_ovrs[k]
+            changed = True
+            
+    if changed:
         ovr["weekly_teacher_overrides"] = weekly_ovrs
         save_custom_overrides(ovr)
-        changed = True
         
     return JSONResponse(content={"status": "success", "message": "คืนค่าเริ่มต้นเรียบร้อยแล้ว", "reverted": changed})
 
