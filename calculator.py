@@ -425,6 +425,8 @@ def compute_teacher_baseline_out(teacher, student_counts=None, course_types=None
         else:
             base_min = 12 if is_head else 18
 
+    background_required = (base_min + 2) if base_min > 0 else 0
+
     total_reg_hrs = 0
     claimable_hrs = 0
 
@@ -456,8 +458,7 @@ def compute_teacher_baseline_out(teacher, student_counts=None, course_types=None
         if can_be_extra:
             claimable_hrs += hrs
 
-    # คำนวณจากชั่วโมงขั้นต่ำหน้ากระดาษจริงๆ ไม่มีบวก 2 ในเบื้องหลัง
-    surplus = max(0, total_reg_hrs - base_min)
+    surplus = max(0, total_reg_hrs - background_required)
     return min(12, surplus, claimable_hrs)
 
 def calculate_week(teachers_master, holiday_days=None, leaves=None, substitutions=None, compensations=None, student_counts=None, course_types=None, overrides=None, week_num=1, weekly_teacher_overrides=None):
@@ -701,8 +702,11 @@ def calculate_week(teachers_master, holiday_days=None, leaves=None, substitution
         teacher_comp_missed = comp_missed_map.get(t_idx, [])
         has_leave = len(teacher_absent_days) > 0 or len(teacher_absent_subs) > 0 or len(teacher_comp_missed) > 0
 
-        # ชั่วโมงขั้นต่ำตามหน้ากระดาษจริง (คำนวณตามหน้ากระดาษ ไม่มีบวก 2 ในเบื้องหลัง)
-        required_in = base_min
+        # ถ้าไม่มีวันหยุดหรือลาให้ +2 แต่ให้คิดในเบื้องหลัง
+        if base_min > 0 and not has_holiday and not has_leave:
+            background_required = base_min + 2
+        else:
+            background_required = base_min
 
         weekly_classes = []
 
@@ -1072,8 +1076,7 @@ def calculate_week(teachers_master, holiday_days=None, leaves=None, substitution
         baseline_cap = baseline_normal_out if baseline_normal_out > 0 else 12
 
         # Calculate allocation for regular classes
-        # คำนวณจากหน้ากระดาษจริง ไม่มี +2 ในเบื้องหลัง
-        needed_in_for_teacher = max(0, base_min - total_sub_in - total_comp_in)
+        needed_in_for_teacher = max(0, background_required - total_sub_in - total_comp_in)
         reg_surplus = max(0, regular_hours - needed_in_for_teacher)
         max_claim_allowed = min(12, baseline_cap)
 
@@ -1272,7 +1275,7 @@ def calculate_week(teachers_master, holiday_days=None, leaves=None, substitution
             'is_special': is_special,
             'is_pending_schedule': is_pending_sched,
             'required_min': base_min,
-            'background_required': base_min,
+            'background_required': background_required,
             'sum_in_vc': sum_in_vc,
             'sum_out_vc': sum_out_vc,
             'sum_in_vs': sum_in_vs,
