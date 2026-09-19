@@ -305,6 +305,16 @@ async def api_save_custom_overrides(payload: dict):
                     current[k].update(payload[k])
                 else:
                     current[k] = payload[k]
+
+    # Strictly sanitize template_overrides: teaching schedule rows/cells (ตารางสอน, ชั่วโมง, กลุ่ม, วิชา) must NEVER be stored as template_overrides
+    if "template_overrides" in current and isinstance(current["template_overrides"], dict):
+        clean_tmpl = {}
+        for tk, tv in current["template_overrides"].items():
+            if "table:nth-of-type(1) > tbody" in tk or "teaching-row" in tk or "a4-table > tbody" in tk or "a4-table" in tk:
+                continue
+            clean_tmpl[tk] = tv
+        current["template_overrides"] = clean_tmpl
+
     save_custom_overrides(current)
     return JSONResponse(content={"status": "success", "message": "Saved custom overrides successfully"})
 
@@ -1031,12 +1041,65 @@ async def api_revert_teacher_custom_edit(payload: dict):
             changed = True
         if keys_to_del:
             ovr["text_edits"] = text_edits
+            
+        # Also remove any teacher-specific font sizes & weights on the teaching table
+        font_sizes = ovr.get("font_sizes", {})
+        fs_del = [k for k in font_sizes if f"#teacher-card-{teacher_index} > table:nth-of-type(1)" in k]
+        for k in fs_del:
+            del font_sizes[k]
+            changed = True
+        if fs_del:
+            ovr["font_sizes"] = font_sizes
+
+        font_weights = ovr.get("font_weights", {})
+        fw_del = [k for k in font_weights if f"#teacher-card-{teacher_index} > table:nth-of-type(1)" in k]
+        for k in fw_del:
+            del font_weights[k]
+            changed = True
+        if fw_del:
+            ovr["font_weights"] = font_weights
     else:
         # Revert all teachers for this week
         keys_to_del = [k for k in weekly_ovrs if k.startswith(f"{week_num}_")]
         for k in keys_to_del:
             del weekly_ovrs[k]
             changed = True
+        # Also remove any text_edits for all teacher cards and schedule table
+        text_edits = ovr.get("text_edits", {})
+        keys_to_del = [k for k in text_edits if "#teacher-card-" in k or "table:nth-of-type(1)" in k]
+        for k in keys_to_del:
+            del text_edits[k]
+            changed = True
+        if keys_to_del:
+            ovr["text_edits"] = text_edits
+
+        font_sizes = ovr.get("font_sizes", {})
+        fs_del = [k for k in font_sizes if "table:nth-of-type(1)" in k]
+        for k in fs_del:
+            del font_sizes[k]
+            changed = True
+        if fs_del:
+            ovr["font_sizes"] = font_sizes
+
+        font_weights = ovr.get("font_weights", {})
+        fw_del = [k for k in font_weights if "table:nth-of-type(1)" in k]
+        for k in fw_del:
+            del font_weights[k]
+            changed = True
+        if fw_del:
+            ovr["font_weights"] = font_weights
+
+    # Purge any schedule-related overrides from template_overrides (ตารางสอน, ชั่วโมง, กลุ่ม, วิชา)
+    tmpl_ovrs = ovr.get("template_overrides", {})
+    bad_tmpl_keys = [
+        k for k in tmpl_ovrs 
+        if "table:nth-of-type(1) > tbody" in k or "teaching-row" in k or "a4-table > tbody" in k or "a4-table" in k
+    ]
+    for k in bad_tmpl_keys:
+        del tmpl_ovrs[k]
+        changed = True
+    if bad_tmpl_keys:
+        ovr["template_overrides"] = tmpl_ovrs
             
     if changed:
         ovr["weekly_teacher_overrides"] = weekly_ovrs
