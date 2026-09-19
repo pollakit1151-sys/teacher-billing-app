@@ -2827,7 +2827,7 @@
                 key.includes('foot_over_') || key.includes('foot_sum_') || key.includes('foot_tot_') ||
                 key.includes('covTotalMoney') || key.includes('covBahtText') || key.includes('tfoot') ||
                 key.includes('tr:nth-of-type(2)') || key.includes('tr:nth-of-type(3)') || key.includes('tr:nth-of-type(28)') || key.includes('tr:nth-of-type(29)') ||
-                (key.includes('table:nth-of-type(1) > tbody > tr') && (key.includes('td:nth-of-type(1)') || !htmlContent || htmlContent === '<br>' || htmlContent.includes('สอนแทน') || htmlContent.includes('20101-2010'))) ||
+                key.includes('table:nth-of-type(1) > tbody > tr') ||
                 (typeof htmlContent === 'string' && (htmlContent.includes('รวมจำนวนหน่วยชั่วโมงที่ขอเบิกค่าสอน') || htmlContent.includes('ยอดเงินรวม') || htmlContent.includes('รวมจำนวนเงินค่าสอนพิเศษทั้งสิ้น') || htmlContent.includes('หนึ่งแสนห้าหมื่นหกพันบาทถ้วน')))) {
               delete customTextEditsMap[key];
               continue;
@@ -5971,10 +5971,10 @@
           const isHoliDay = isHoli || (cList && cList.some(c => c && c.is_holiday));
 
           // Check if teacher is absent or on compensated leave on this day (matching 2567.เทอม2.3ช่างยนต์.xlsx)
-          const dayAbsSubs = substitutionsList.filter(sub => Number(sub.absent_teacher_idx) === Number(teacher.index) && String(sub.day || '').trim() === String(dayStr || '').trim());
+          const dayAbsSubs = substitutionsList.filter(sub => Number(sub.absent_teacher_idx) === Number(teacher.index) && String(sub.day || '').trim() === String(dayStr || '').trim() && (!sub.week_num || Number(sub.week_num) === Number(curWk)));
           const isCompLeaveDay = (dayStr in compLeaveDaysMap) || (cList && cList.some(c => c && c.is_compensated_leave));
           const isCompDay = (cList && cList.some(c => c && c.is_compensatory));
-          const isAbsentDay = !isHoliDay && !isCompLeaveDay && (dayAbsSubs.length > 0 || leavesList.some(l => Number(l.teacher_idx) === Number(teacher.index) && String(l.day || '').trim() === String(dayStr || '').trim()) || cList.some(c => c.is_absent || c.is_substituted));
+          const isAbsentDay = !isHoliDay && !isCompLeaveDay && (dayAbsSubs.length > 0 || leavesList.some(l => Number(l.teacher_idx) === Number(teacher.index) && String(l.day || '').trim() === String(dayStr || '').trim() && (!l.week_num || Number(l.week_num) === Number(curWk))) || cList.some(c => c.is_absent || c.is_substituted));
 
           let leaveReason = 'ไปราชการ';
           if (isCompLeaveDay && compLeaveDaysMap[dayStr]?.leave_reason) {
@@ -5982,7 +5982,7 @@
           } else if (dayAbsSubs.length > 0 && dayAbsSubs[0].reason) {
             leaveReason = dayAbsSubs[0].reason;
           } else {
-            const lv = leavesList.find(l => Number(l.teacher_idx) === Number(teacher.index) && String(l.day || '').trim() === String(dayStr || '').trim());
+            const lv = leavesList.find(l => Number(l.teacher_idx) === Number(teacher.index) && String(l.day || '').trim() === String(dayStr || '').trim() && (!l.week_num || Number(l.week_num) === Number(curWk)));
             if (lv && lv.reason) leaveReason = lv.reason;
             else {
               const ac = cList.find(c => c.leave_reason);
@@ -7416,12 +7416,15 @@
 
     function renderActiveSubstitutions() {
       const list = document.getElementById('activeSubList');
-      if (substitutionsList.length === 0) {
-        list.innerHTML = `<p class="text-xs text-slate-400 italic">ยังไม่มีการสอนแทน</p>`;
+      if (!list) return;
+      const curWk = (typeof getCurrentWeekNum === 'function') ? getCurrentWeekNum() : (typeof currentWeekNum !== 'undefined' ? currentWeekNum : 1);
+      const activeSubs = substitutionsList.filter(s => !s.week_num || Number(s.week_num) === Number(curWk));
+      if (activeSubs.length === 0) {
+        list.innerHTML = `<p class="text-xs text-slate-400 italic">ยังไม่มีการสอนแทนในสัปดาห์นี้</p>`;
         return;
       }
 
-      list.innerHTML = substitutionsList.map(s => `
+      list.innerHTML = activeSubs.map(s => `
         <div class="bg-indigo-50/80 border border-indigo-200 p-2 rounded-xl text-xs flex items-center justify-between">
           <div>
             <div class="font-bold text-slate-800">${s.sub_name} สอนแทน ${s.absent_name}</div>
@@ -7463,60 +7466,65 @@
         });
         const result = await res.json();
         if (result.status === 'success') {
-          showToast("ส่งเข้า Drive สำเร็จ!", result.message, true);
+          showToast("ส่งเข้า Drive สำเร็จ", `บันทึกคำขอสอนแทนลงโฟลเดอร์ Google Drive เรียบร้อยแล้ว`, true);
           if (btn) {
-            btn.innerHTML = `<i data-lucide="check" class="w-3.5 h-3.5 text-white"></i> ส่ง Drive แล้ว`;
-            btn.className = "px-2 py-1 bg-slate-700 text-white rounded text-[11px] font-semibold flex items-center gap-1 cursor-default";
+            btn.classList.remove('bg-emerald-600', 'hover:bg-emerald-700');
+            btn.classList.add('bg-slate-500');
+            btn.innerHTML = `✓ สำเร็จ`;
           }
         } else {
-          showToast("เกิดข้อผิดพลาด", result.message || "ไม่สามารถส่งข้อมูลได้", false);
+          showToast("เกิดข้อผิดพลาด", result.message || 'ไม่สามารถส่งเข้า Drive ได้', false);
           if (btn) {
             btn.disabled = false;
-            btn.innerHTML = `<i data-lucide="cloud" class="w-3.5 h-3.5"></i> บันทึกลง Drive`;
+            btn.innerHTML = `<i data-lucide="cloud" class="w-3.5 h-3.5"></i> ลองใหม่`;
+            lucide.createIcons();
           }
         }
-      } catch (e) {
-        showToast("เกิดข้อผิดพลาด", e.message, false);
+      } catch (err) {
+        showToast("เกิดข้อผิดพลาด", err.message, false);
         if (btn) {
           btn.disabled = false;
-          btn.innerHTML = `<i data-lucide="cloud" class="w-3.5 h-3.5"></i> บันทึกลง Drive`;
+          btn.innerHTML = `<i data-lucide="cloud" class="w-3.5 h-3.5"></i> ลองใหม่`;
+          lucide.createIcons();
         }
       }
-      if (window.lucide) lucide.createIcons();
     }
 
     function openGasWebForm(id) {
       const sub = substitutionsList.find(s => s.id === id);
       if (!sub) return;
-      const absentT = masterTeachers.find(t => t.index === sub.absent_teacher_idx);
-      const subT = masterTeachers.find(t => t.index === sub.sub_teacher_idx);
       
-      let code = sub.code || "";
-      let name = sub.subject_name || "";
-      let cls = "";
-      let grp = "";
-      
-      const cl = (sub.class_info || "").replace(/\s*\(\s*\d+\s*\)$/, '').trim();
-      if (cl.includes("/")) {
-        const parts = cl.split("/");
-        cls = parts[0].trim();
-        grp = parts[1].trim();
-      } else {
-        cls = cl;
+      const periodTimeMap = {
+        1: ['08.10', '09.10'], 2: ['09.10', '10.10'], 3: ['10.10', '11.10'], 4: ['11.10', '12.10'],
+        5: ['13.10', '14.10'], 6: ['14.10', '15.10'], 7: ['15.10', '16.10'], 8: ['16.10', '17.10'],
+        9: ['17.10', '18.10'], 10: ['18.10', '19.10'], 11: ['19.10', '20.10'], 12: ['20.10', '21.10']
+      };
+      const sT = periodTimeMap[sub.start_p] ? periodTimeMap[sub.start_p][0] : '08.10';
+      const eT = periodTimeMap[sub.end_p] ? periodTimeMap[sub.end_p][1] : '12.10';
+
+      const curWk = getCurrentWeekNum();
+      let teachDateStr = '';
+      if (weekDateMap[curWk]) {
+        const dayOffsets = { 'จันทร์': 0, 'อังคาร': 1, 'พุธ': 2, 'พฤหัส': 3, 'ศุกร์': 4, 'เสาร์': 5, 'อาทิตย์': 6 };
+        const offset = dayOffsets[sub.day] ?? 0;
+        const s = parseYMD(weekDateMap[curWk].start);
+        const d = new Date(s.getTime() + offset * 86400000);
+        teachDateStr = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
       }
 
       const params = new URLSearchParams({
-        absent_teacher: sub.absent_name || (absentT ? absentT.name : ""),
-        absent_dept: (absentT ? absentT.dept : "ช่างยนต์"),
-        sub_teacher: sub.sub_name || (subT ? subT.name : ""),
-        sub_dept: (subT ? subT.dept : "ช่างยนต์"),
-        leave_reason: sub.reason || "ไปราชการ",
-        sub1_code: code,
-        sub1_name: name,
-        sub1_class: cls,
-        sub1_group: grp,
-        sub1_period: `${sub.start_p} - ${sub.end_p}`,
-        sub1_hours: sub.hours || 4
+        absent_teacher: sub.absent_name,
+        sub_teacher: sub.sub_name,
+        subject_code: sub.code || '',
+        subject_name: sub.subject_name || '',
+        class_group: sub.class_info || '',
+        day: sub.day || '',
+        teach_date: teachDateStr,
+        start_time: sT,
+        end_time: eT,
+        hours: sub.hours || '',
+        level: sub.level || 'ปวช.',
+        reason: sub.reason || 'ไปราชการ'
       });
 
       const webAppUrl = `https://script.google.com/macros/s/AKfycbzZ8OV3PcBCNtF7zHhOTisJ9SEY_VW-4YSPp-KhMXT4UqpeOpdgybzdYnUmjCDMiGjLvw/exec?${params.toString()}`;
@@ -7528,8 +7536,12 @@
       if (idx !== -1) {
         const sub = substitutionsList[idx];
         substitutionsList.splice(idx, 1);
-        const lIdx = leavesList.findIndex(l => l.teacher_idx === sub.absent_teacher_idx && l.day === sub.day);
-        if (lIdx !== -1) leavesList.splice(lIdx, 1);
+        const subWk = sub.week_num || 1;
+        const remainingOnDay = substitutionsList.some(s => s.absent_teacher_idx === sub.absent_teacher_idx && s.day === sub.day && (s.week_num || 1) === subWk);
+        if (!remainingOnDay) {
+          const lIdx = leavesList.findIndex(l => l.teacher_idx === sub.absent_teacher_idx && l.day === sub.day && (l.week_num || 1) === subWk);
+          if (lIdx !== -1) leavesList.splice(lIdx, 1);
+        }
         await syncSubstitutionsToServer();
         renderActiveSubstitutions();
         recalculateAll();
@@ -10058,6 +10070,7 @@ function selectRound(roundNum) {
       // 5. Immediate re-render of current view with holidays for this week
       updateHolidayUI();
       recalculateAll();
+      renderActiveSubstitutions();
       
       updateActiveFileBadge();
 

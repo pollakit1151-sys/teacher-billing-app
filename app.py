@@ -172,7 +172,7 @@ def sanitize_custom_overrides(data):
             "tr:nth-of-type(2) > td:nth-of-type(1) > div"
         ]):
             continue
-        if "table:nth-of-type(1) > tbody > tr" in k and "td:nth-of-type(1)" in k and (v == "" or v == "<br>"):
+        if "table:nth-of-type(1) > tbody > tr" in k:
             continue
         cleaned_texts[k] = v
     data["text_edits"] = cleaned_texts
