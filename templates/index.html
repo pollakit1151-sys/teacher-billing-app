@@ -5055,10 +5055,6 @@
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ counts: manualStudentCounts })
               }).catch(console.warn);
-              if (typeof recalculateAll === 'function') {
-                recalculateAll();
-                return;
-              }
             }
           }
         }
@@ -5168,6 +5164,11 @@
       clearTimeout(_teacherAutoSaveTimer);
       _teacherAutoSaveTimer = setTimeout(async () => {
         if (dirtyTeacherIds.size > 0) {
+          if (document.activeElement && document.activeElement.isContentEditable) {
+            // User is still actively editing a cell; postpone autosave
+            scheduleAutoSaveTeacherEdits();
+            return;
+          }
           await saveAllTeacherCustomEdits(true);
         }
       }, 1500);
@@ -5203,6 +5204,9 @@
 
     async function saveAllTeacherCustomEdits(silent = false) {
       const btn = document.getElementById('btnSaveA4Edits');
+      if (document.activeElement && typeof document.activeElement.blur === 'function') {
+        document.activeElement.blur();
+      }
       if (document.activeElement && document.activeElement.isContentEditable) {
         saveElementTextEdit(document.activeElement);
       }
