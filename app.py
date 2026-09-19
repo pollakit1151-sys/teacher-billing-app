@@ -1144,7 +1144,7 @@ def api_export_pdf(
     
     import urllib.parse
     enc_dept = urllib.parse.quote(dept)
-    target_url = f"http://127.0.0.1:8000/?mode=print&view={view}&week={week_num}&teacher_idx={teacher_idx}&a4mode={mode}&dept={enc_dept}&cover_idx={cover_idx}"
+    target_url = f"http://127.0.0.1:8000/?mode=print&view={view}&week={week_num}&round={round_num}&teacher_idx={teacher_idx}&a4mode={mode}&dept={enc_dept}&cover_idx={cover_idx}"
     
     tmp_dir = os.path.join(os.path.dirname(__file__), "tmp_pdf")
     os.makedirs(tmp_dir, exist_ok=True)

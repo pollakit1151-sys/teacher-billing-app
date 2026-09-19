@@ -3246,15 +3246,8 @@
     document.addEventListener('DOMContentLoaded', async () => {
       lucide.createIcons();
       closeFontResizerBar();
-      initCalendarDates();
-      setupDropzones();
-      await loadHolidayMapFromStorage();
-      await loadInitialMasterData();
-      await initSignatories();
-      renderActiveCompensations();
-      renderActiveSubstitutions();
 
-      // URL parameters handling for PDF export and direct navigation
+      // URL parameters and localStorage handling for initial week, round, and mode
       const urlParams = new URLSearchParams(window.location.search);
       const qMode = urlParams.get('mode');
       if (qMode === 'print' || qMode === 'preview') {
@@ -3262,12 +3255,36 @@
         const sidebar = document.getElementById('leftSidebar');
         if (sidebar) sidebar.classList.add('hidden');
       }
-      const qWeek = urlParams.get('week') || urlParams.get('week_num');
+      let qWeek = urlParams.get('week') || urlParams.get('week_num');
+      let qRound = urlParams.get('round') || urlParams.get('round_num');
+      const isPrintOrPreview = (qMode === 'print' || qMode === 'preview');
+      if (!isPrintOrPreview) {
+        if (!qWeek) {
+          try { qWeek = localStorage.getItem('teacher_billing_selected_week'); } catch(e) {}
+        }
+        if (!qRound) {
+          try { qRound = localStorage.getItem('teacher_billing_selected_round'); } catch(e) {}
+        }
+      }
       if (qWeek) {
         const wkNum = parseInt(qWeek);
+        window.currentSelectedWeek = wkNum;
         const wkSel = document.getElementById('weekSelect');
         if (wkSel) wkSel.value = wkNum;
       }
+      if (qRound) {
+        const rNum = parseInt(qRound);
+        const rInp = document.getElementById('inputRoundNum');
+        if (rInp) rInp.value = rNum;
+      }
+
+      initCalendarDates();
+      setupDropzones();
+      await loadHolidayMapFromStorage();
+      await loadInitialMasterData();
+      await initSignatories();
+      renderActiveCompensations();
+      renderActiveSubstitutions();
       const qDept = urlParams.get('dept');
       if (qDept) {
         setDepartmentFilter(decodeURIComponent(qDept));
@@ -3450,7 +3467,6 @@
       document.getElementById('endDatePicker').value = fmt(sunday);
       updateDateRangeDisplay();
       initSemesterStartDate();
-      parseRoundPattern();
     }
 
     function onStartDateChange() {
@@ -5256,10 +5272,12 @@
       const mode = a4ViewMode || 'all';
       const coverIdx = parseInt(document.getElementById('coverFileSelect8')?.value) || 0;
       const dept = currentDeptFilter || 'ช่างยนต์';
+      const curR = parseInt(document.getElementById('inputRoundNum')?.value) || 1;
 
       currentPreviewParams = {
         view: isCover ? 'cover' : 'weekly',
         week_num: curWk,
+        round_num: curR,
         teacher_idx: teacherIdx,
         mode: mode,
         dept: dept,
@@ -5273,7 +5291,6 @@
 
       if (badge) {
         if (isCover) {
-          const curR = document.getElementById('inputRoundNum')?.value || 1;
           badge.innerText = `งบหน้ารวม แนวนอน (รอบที่ ${curR})`;
         } else {
           const t = masterTeachers.find(x => x.index === teacherIdx);
@@ -5286,7 +5303,7 @@
       if (modal) modal.classList.remove('hidden');
 
       const encDept = encodeURIComponent(dept);
-      const previewUrl = `/?mode=preview&view=${currentPreviewParams.view}&week=${curWk}&teacher_idx=${teacherIdx}&a4mode=${mode}&dept=${encDept}&cover_idx=${coverIdx}&t=${Date.now()}`;
+      const previewUrl = `/?mode=preview&view=${currentPreviewParams.view}&week=${curWk}&round=${curR}&teacher_idx=${teacherIdx}&a4mode=${mode}&dept=${encDept}&cover_idx=${coverIdx}&t=${Date.now()}`;
 
       if (iframe) {
         iframe.onload = () => {
@@ -5323,7 +5340,7 @@
       const encDept = encodeURIComponent(p.dept || 'ช่างยนต์');
       const _t = document.getElementById('inputTerm')?.value || '2';
       const _y = document.getElementById('inputYear')?.value || '2569';
-      const _r = document.getElementById('inputRoundNum')?.value || '1';
+      const _r = p.round_num || document.getElementById('inputRoundNum')?.value || '1';
       const pdfUrl = `/api/export_pdf?view=${p.view}&week_num=${p.week_num}&teacher_idx=${p.teacher_idx}&mode=${p.mode}&dept=${encDept}&cover_idx=${p.cover_idx}&term=${_t}&year=${_y}&round_num=${_r}`;
 
       try {
@@ -5335,8 +5352,8 @@
         a.href = downloadUrl;
         const _term = document.getElementById('inputTerm')?.value || '2';
         const _year = document.getElementById('inputYear')?.value || '2569';
-        const _round = document.getElementById('inputRoundNum')?.value || '1';
-        const filename = (p.view === 'cover') ? `งบหน้ารวม_${_term}-${_year}_รอบ${_round}.pdf` : `ใบเบิกรายสัปดาห์_${_term}-${_year}_รอบ${_round}.pdf`;
+        const _round = _r;
+        const filename = (p.view === 'cover') ? `งบหน้ารวม_${_term}-${_year}_รอบ${_round}.pdf` : `ใบเบิกรายสัปดาห์_${_term}-${_year}_รอบ${_round}_สัปดาห์${p.week_num}.pdf`;
         a.download = filename;
         document.body.appendChild(a);
         a.click();
@@ -9430,7 +9447,7 @@
     let activePreset = 'pvc';   // 'pvc' (5,5,5,2 = 17 wks) or 'pvs' (5,5,5 = 15 wks)
     let liveSyncTimer = null;
 
-    function setCurriculumPreset(preset) {
+    function setCurriculumPreset(preset, targetRound = null, targetWeek = null) {
       activePreset = preset;
       const btnPvc = document.getElementById('btnPresetPvc');
       const btnPvs = document.getElementById('btnPresetPvs');
@@ -9447,7 +9464,7 @@
         if (btnPvs) btnPvs.className = 'p-2 rounded-xl border-2 font-bold text-xs flex flex-col items-center justify-center gap-0.5 transition bg-indigo-600 text-white border-indigo-700 shadow-xs';
         document.getElementById('inputRoundPattern').value = patPvs;
       }
-      parseRoundPattern();
+      parseRoundPattern(targetRound, targetWeek);
     }
 
     function onPatternPvcChange() {
@@ -9575,7 +9592,7 @@
       }
     }
 
-    function parseRoundPattern() {
+    function parseRoundPattern(targetRound = null, targetWeek = null) {
       const patInput = document.getElementById('inputRoundPattern');
       if (!patInput) return;
       const patStr = patInput.value.trim();
@@ -9610,7 +9627,49 @@
       });
 
       renderRoundButtons();
-      selectRound(parseInt(document.getElementById('inputRoundNum').value) || 1);
+
+      let desiredWeek = targetWeek || window.currentSelectedWeek;
+      let desiredRound = targetRound || parseInt(document.getElementById('inputRoundNum')?.value) || 1;
+      
+      if (!desiredWeek) {
+        try {
+          const lsW = localStorage.getItem('teacher_billing_selected_week');
+          if (lsW) desiredWeek = parseInt(lsW);
+        } catch(e) {}
+      }
+      if (!desiredRound || desiredRound === 1) {
+        try {
+          const lsR = localStorage.getItem('teacher_billing_selected_round');
+          if (lsR) desiredRound = parseInt(lsR);
+        } catch(e) {}
+      }
+      
+      let rInfo = null;
+      if (desiredWeek && !isNaN(desiredWeek)) {
+        rInfo = currentRoundSchedule.find(r => r.weeksList && r.weeksList.includes(parseInt(desiredWeek)));
+      }
+      if (!rInfo && desiredRound) {
+        rInfo = currentRoundSchedule.find(r => r.round === parseInt(desiredRound));
+      }
+      if (!rInfo) {
+        rInfo = currentRoundSchedule[0];
+      }
+
+      if (rInfo) {
+        const roundInput = document.getElementById('inputRoundNum');
+        if (roundInput) roundInput.value = rInfo.round;
+        const roundBadge = document.getElementById('currentRoundBadge');
+        if (roundBadge) roundBadge.innerText = `รอบที่ ${rInfo.round} (สัปดาห์ที่ ${rInfo.startWeek} - ${rInfo.endWeek})`;
+        currentActiveWeeks = rInfo.weeksList;
+        renderRoundButtons();
+        renderWeeksInRoundButtons(rInfo);
+      }
+
+      let finalWeek = desiredWeek;
+      if (!finalWeek || !rInfo || !rInfo.weeksList.includes(parseInt(finalWeek))) {
+        finalWeek = rInfo ? rInfo.startWeek : 1;
+      }
+      selectWeekInRound(finalWeek);
     }
 
     function renderRoundButtons() {
@@ -9965,7 +10024,7 @@
       lucide.createIcons();
     }
 
-function selectRound(roundNum) {
+function selectRound(roundNum, targetWeek = null) {
       const rInfo = currentRoundSchedule.find(r => r.round === roundNum) || currentRoundSchedule[0];
       if (!rInfo) return;
 
@@ -9973,12 +10032,24 @@ function selectRound(roundNum) {
       document.getElementById('currentRoundBadge').innerText = `รอบที่ ${rInfo.round} (สัปดาห์ที่ ${rInfo.startWeek} - ${rInfo.endWeek})`;
       currentActiveWeeks = rInfo.weeksList;
 
+      try {
+        localStorage.setItem('teacher_billing_selected_round', rInfo.round);
+      } catch (e) {}
+
       updateRoundSummary();
       renderRoundButtons();
       renderWeeksInRoundButtons(rInfo);
       
-      // Select the first week of this round
-      selectWeekInRound(rInfo.startWeek);
+      let weekToSelect = targetWeek;
+      if (!weekToSelect) {
+        const curW = window.currentSelectedWeek;
+        if (curW && rInfo.weeksList && rInfo.weeksList.includes(curW)) {
+          weekToSelect = curW;
+        } else {
+          weekToSelect = rInfo.startWeek;
+        }
+      }
+      selectWeekInRound(weekToSelect);
     }
 
     function onRoundNumChange() {
@@ -10027,12 +10098,19 @@ function selectRound(roundNum) {
       const w = parseInt(wkNum) || 1;
       window.currentSelectedWeek = w;
 
+      try {
+        localStorage.setItem('teacher_billing_selected_week', w);
+      } catch (e) {}
+
       const lblW = document.getElementById('lblWeekNum');
       if (lblW) lblW.innerText = `สัปดาห์ที่ ${w}`;
       
       // 1. Find which round this week belongs to
       const rInfo = currentRoundSchedule.find(r => r.weeksList && r.weeksList.includes(w));
       if (rInfo) {
+        try {
+          localStorage.setItem('teacher_billing_selected_round', rInfo.round);
+        } catch (e) {}
         currentActiveWeeks = rInfo.weeksList;
         const roundInput = document.getElementById('inputRoundNum');
         if (roundInput) roundInput.value = rInfo.round;
@@ -10590,20 +10668,41 @@ function selectRound(roundNum) {
         document.body.classList.add('mode-print-preview');
       }
       const paramView = urlParams.get('view');
-      const paramWeek = urlParams.get('week') || urlParams.get('week_num');
+      let paramWeek = urlParams.get('week') || urlParams.get('week_num');
+      let paramRound = urlParams.get('round') || urlParams.get('round_num');
       const paramDept = urlParams.get('dept');
       const paramTeacherIdx = urlParams.get('teacher_idx');
       const paramA4Mode = urlParams.get('a4mode');
       const paramCoverIdx = urlParams.get('cover_idx');
 
+      const isPrintOrPreview = (urlParams.get('mode') === 'print' || urlParams.get('mode') === 'preview');
+      if (!isPrintOrPreview) {
+        if (!paramWeek) {
+          try {
+            paramWeek = localStorage.getItem('teacher_billing_selected_week');
+          } catch(e) {}
+        }
+        if (!paramRound) {
+          try {
+            paramRound = localStorage.getItem('teacher_billing_selected_round');
+          } catch(e) {}
+        }
+      }
+
       if (paramDept) {
         currentDeptFilter = decodeURIComponent(paramDept);
       }
-      if (paramWeek) {
-        const wkVal = parseInt(paramWeek);
-        window.currentSelectedWeek = wkVal;
+      const initWk = paramWeek ? parseInt(paramWeek) : null;
+      const initRd = paramRound ? parseInt(paramRound) : null;
+
+      if (initWk) {
+        window.currentSelectedWeek = initWk;
         const sel = document.getElementById('weekSelect') || document.getElementById('quickWeekSelect') || document.getElementById('weekSelectDropdown');
-        if (sel) sel.value = wkVal;
+        if (sel) sel.value = initWk;
+      }
+      if (initRd) {
+        const rInp = document.getElementById('inputRoundNum');
+        if (rInp) rInp.value = initRd;
       }
       if (paramTeacherIdx) {
         currentA4TeacherIndex = parseInt(paramTeacherIdx);
@@ -10614,7 +10713,7 @@ function selectRound(roundNum) {
 
       await loadInitialMasterData();
       await initSignatories();
-      setCurriculumPreset('pvc'); // Default to ปวช. (5, 5, 5, 2)
+      setCurriculumPreset('pvc', initRd, initWk); // Default to ปวช. (5, 5, 5, 2)
       updateHolidayUI();
       if (paramTeacherIdx) {
         currentA4TeacherIndex = parseInt(paramTeacherIdx);
