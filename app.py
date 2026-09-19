@@ -11,7 +11,7 @@ import urllib.request
 import requests
 import datetime
 import uvicorn
-from calculator import calculate_week, find_substitute_candidates, PERIOD_TO_TIME, calculate_round_breakdown_matrix, find_overlapping_periods, parse_periods_from_timestr
+from calculator import calculate_week, find_substitute_candidates, PERIOD_TO_TIME, calculate_round_breakdown_matrix, find_overlapping_periods, parse_periods_from_timestr, normalize_day
 from excel_exporter import export_to_excel
 from pdf_parser import parse_pdf_timetable, merge_teachers, validate_all_schedules, extract_all_course_types_from_pdf
 
@@ -672,7 +672,7 @@ async def api_round_breakdown_matrix(request: Request, round_num: int = 1, dept:
 @app.post("/api/calculate")
 async def api_calculate(payload: dict):
     teachers = load_master()
-    week_num = int(payload.get("week_num", 1))
+    week_num = int(payload.get("week_num") or payload.get("week") or 1)
     ovr = load_custom_overrides()
     holiday_days = payload.get("holiday_days", None)
     if not holiday_days:
@@ -1106,6 +1106,174 @@ async def api_revert_teacher_custom_edit(payload: dict):
         save_custom_overrides(ovr)
         
     return JSONResponse(content={"status": "success", "message": "คืนค่าเริ่มต้นเรียบร้อยแล้ว", "reverted": changed})
+
+@app.post("/api/apply_teacher_schedule_to_all_weeks")
+async def api_apply_teacher_schedule_to_all_weeks(payload: dict):
+    teacher_index = int(payload.get("teacher_index", 0))
+    field = str(payload.get("field", "")).strip()
+    value = str(payload.get("value", "")).strip()
+    sched_index = payload.get("sched_index")
+    day = str(payload.get("day", "")).strip()
+    time_str = str(payload.get("time_str", "")).strip()
+    code = str(payload.get("code", "")).strip()
+    class_info = str(payload.get("class_info", "")).strip()
+
+    if teacher_index <= 0:
+        return JSONResponse(content={"status": "error", "message": "ไม่พบรหัสครูผู้สอน"}, status_code=400)
+
+    if field not in ["code", "class_info", "time_str"]:
+        return JSONResponse(content={"status": "error", "message": f"ฟิลด์ '{field}' ไม่อนุญาตให้ใช้กับทุกสัปดาห์ (อนุญาตเฉพาะ รหัสวิชา, ชั้นแผนกห้อง, และเวลาสอน)"}, status_code=400)
+
+    teachers = load_master()
+    target_t = next((t for t in teachers if t.get("index") == teacher_index), None)
+    if not target_t:
+        return JSONResponse(content={"status": "error", "message": f"ไม่พบครูลำดับที่ {teacher_index} ในระบบ"}, status_code=404)
+
+    sched = target_t.get("schedule", [])
+    matched_entry = None
+    matched_idx = -1
+
+    # 1. Try matching by sched_index if valid
+    if sched_index is not None:
+        try:
+            s_idx_int = int(sched_index)
+            if 0 <= s_idx_int < len(sched):
+                cand = sched[s_idx_int]
+                c_day = normalize_day(cand.get("day", ""))
+                t_day = normalize_day(day)
+                if not t_day or c_day == t_day:
+                    matched_entry = cand
+                    matched_idx = s_idx_int
+        except (ValueError, TypeError):
+            pass
+
+    # 2. Try matching by (day, time_str)
+    if matched_entry is None and day and time_str:
+        norm_day = normalize_day(day)
+        clean_time = time_str.replace(" ", "").replace(":", ".")
+        for i, s in enumerate(sched):
+            s_day = normalize_day(s.get("day", ""))
+            s_time = s.get("time_str", "").replace(" ", "").replace(":", ".")
+            if s_day == norm_day and s_time == clean_time:
+                matched_entry = s
+                matched_idx = i
+                break
+
+    # 3. Try matching by (day, code)
+    if matched_entry is None and day and code:
+        norm_day = normalize_day(day)
+        clean_code = code.strip()
+        for i, s in enumerate(sched):
+            s_day = normalize_day(s.get("day", ""))
+            s_code = s.get("code", "").strip()
+            if s_day == norm_day and s_code == clean_code:
+                matched_entry = s
+                matched_idx = i
+                break
+
+    # 4. Try matching by (day, class_info)
+    if matched_entry is None and day and class_info:
+        norm_day = normalize_day(day)
+        clean_info = class_info.strip()
+        for i, s in enumerate(sched):
+            s_day = normalize_day(s.get("day", ""))
+            s_info = s.get("class_info", "").strip()
+            if s_day == norm_day and s_info == clean_info:
+                matched_entry = s
+                matched_idx = i
+                break
+
+    # 5. Fallback: match by day and order
+    if matched_entry is None and day:
+        norm_day = normalize_day(day)
+        day_sched = [s for s in sched if normalize_day(s.get("day", "")) == norm_day]
+        if day_sched:
+            matched_entry = day_sched[0]
+            matched_idx = sched.index(matched_entry)
+
+    if matched_entry is None:
+        return JSONResponse(content={"status": "error", "message": "ไม่พบคลาสที่ตรงกันในตารางสอนหลัก"}, status_code=404)
+
+    # Store old identifiers before updating
+    old_day = normalize_day(matched_entry.get("day", ""))
+    old_time = (matched_entry.get("time_str") or time_str).replace(" ", "").replace(":", ".")
+    old_code = (matched_entry.get("code") or code).strip()
+
+    # Update in teachers_master.json
+    matched_entry[field] = value
+    if field == "time_str":
+        periods = parse_periods_from_timestr(value)
+        if periods:
+            matched_entry["start_col"] = periods[0]
+            matched_entry["end_col"] = periods[-1]
+    save_master(teachers)
+
+    # Load custom overrides
+    ovr = load_custom_overrides()
+
+    # If field is class_info, parse student count and update student_counts
+    if field == "class_info":
+        m = re.search(r"\(\s*(\d+)\s*\)", value)
+        if m:
+            count = int(m.group(1))
+            raw_cls = re.sub(r"\s*\(\s*\d+\s*\)", "", value).strip()
+            if raw_cls:
+                std_counts = ovr.get("student_counts", {})
+                std_counts[raw_cls] = count
+                base_room = re.sub(r"\s+", "", raw_cls)
+                base_room = re.sub(r"ทวิ|ทวี|ทรี|ทร", "", base_room)
+                if base_room:
+                    std_counts[base_room] = count
+                ovr["student_counts"] = std_counts
+
+    # Update any existing weekly_teacher_overrides for this teacher across all weeks
+    weekly_ovrs = ovr.get("weekly_teacher_overrides", {})
+    updated_weeks = []
+    suffix = f"_{teacher_index}"
+
+    for k, w_data in weekly_ovrs.items():
+        if k.endswith(suffix) and isinstance(w_data, dict):
+            w_classes = w_data.get("classes", [])
+            w_matched = False
+            for w_c in w_classes:
+                w_day = normalize_day(w_c.get("day", ""))
+                if w_day != old_day:
+                    continue
+                w_time = w_c.get("time_str", "").replace(" ", "").replace(":", ".")
+                w_code = w_c.get("code", "").strip()
+
+                # Match by time or code or order
+                if (old_time and w_time == old_time) or (old_code and w_code == old_code):
+                    w_c[field] = value
+                    if field == "time_str":
+                        periods = parse_periods_from_timestr(value)
+                        if periods:
+                            w_c["start_col"] = periods[0]
+                            w_c["end_col"] = periods[-1]
+                    w_matched = True
+                    break
+            if w_matched:
+                w_num = w_data.get("week_num")
+                if w_num and w_num not in updated_weeks:
+                    updated_weeks.append(w_num)
+
+    ovr["weekly_teacher_overrides"] = weekly_ovrs
+    save_custom_overrides(ovr)
+
+    field_names = {
+        "code": "รหัสวิชา",
+        "class_info": "ชั้น/แผนก/ห้อง",
+        "time_str": "เวลาสอน"
+    }
+    f_title = field_names.get(field, field)
+
+    return JSONResponse(content={
+        "status": "success",
+        "message": f"นำ {f_title} '{value}' ไปใช้กับทุกสัปดาห์ (สัปดาห์ 1-17) ของ {target_t.get('name', '')} เรียบร้อยแล้ว",
+        "teacher_index": teacher_index,
+        "matched_sched_index": matched_idx,
+        "updated_weekly_overrides": updated_weeks
+    })
 
 @app.get("/api/signatories")
 async def api_get_signatories():

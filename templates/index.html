@@ -2494,6 +2494,39 @@
       return false;
     }
 
+    function getTeachingScheduleEditableField(el) {
+      if (!el) return null;
+      const cell = el.closest('td, th');
+      if (!cell) return null;
+      if (cell.classList.contains('holiday-merged-cell') || cell.innerText.trim() === 'หยุด') return null;
+
+      const onblurAttr = cell.getAttribute('onblur') || '';
+      const match = onblurAttr.match(/onCellEdit\s*\(\s*(\d+)\s*,\s*(\d+)\s*,\s*['"]([^'"]+)['"]/);
+      if (match) {
+        const tIdx = parseInt(match[1], 10);
+        const rIdx = parseInt(match[2], 10);
+        const field = match[3];
+        if (['code', 'class_info', 'time_str'].includes(field)) {
+          // Check if this row is a holiday, substitute, leave, or compensatory row
+          if (typeof calculatedData !== 'undefined') {
+            const teacher = calculatedData.find(t => t.index === tIdx);
+            const targetClasses = (teacher && teacher._rowClasses && teacher._rowClasses.length > 0) ? teacher._rowClasses : ((teacher && teacher.classes) || []);
+            const cls = targetClasses[rIdx];
+            if (cls && (cls.is_holiday || cls.is_absent || cls.is_substitute || cls.is_compensatory || cls.is_compensated_leave || cls.is_comp_filler || cls.is_comp_leave_filler)) {
+              return null;
+            }
+          }
+          return {
+            cell: cell,
+            teacherIndex: tIdx,
+            rowIndex: rIdx,
+            field: field
+          };
+        }
+      }
+      return null;
+    }
+
     function isElementBold(el) {
       if (!el) return false;
       if (el.dataset && el.dataset.customFontWeight) {
@@ -2538,12 +2571,23 @@
 
       const applyAllBtn = document.getElementById('fontResizerApplyAllBtn');
       if (applyAllBtn) {
-        const isSchedule = isTeachingScheduleElement(currentFontResizerTarget);
-        if (isSchedule) {
+        const schedField = getTeachingScheduleEditableField(currentFontResizerTarget);
+        if (schedField) {
+          const fieldNames = {
+            'code': 'รหัสวิชา',
+            'class_info': 'ชั้น/แผนก/ห้อง',
+            'time_str': 'เวลาสอน'
+          };
+          const fName = fieldNames[schedField.field] || 'ข้อมูล';
+          applyAllBtn.disabled = false;
+          applyAllBtn.className = "px-2.5 py-0.5 rounded bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white text-[10px] font-bold flex items-center gap-1 border border-emerald-500 cursor-pointer shadow-xs transition";
+          applyAllBtn.title = `นำ${fName}นี้ไปใช้กับตารางสอนทุกสัปดาห์ (สัปดาห์ 1-17) ของครูท่านนี้`;
+          applyAllBtn.innerHTML = '<i data-lucide="calendar-range" class="w-3 h-3 text-emerald-200"></i><span>ใช้กับทุกสัปดาห์</span>';
+        } else if (isTeachingScheduleElement(currentFontResizerTarget)) {
           applyAllBtn.disabled = true;
           applyAllBtn.className = "px-2 py-0.5 rounded bg-slate-800 text-slate-500 text-[10px] font-bold flex items-center gap-1 border border-slate-700 cursor-not-allowed select-none opacity-50";
-          applyAllBtn.title = "🔒 ข้อมูลตารางสอน (ชั่วโมง, กลุ่ม, รหัส/ชื่อวิชา) ถูกล็อกไว้ ไม่สามารถใช้กับทุกหน้าได้ เพื่อป้องกันข้อมูลครูท่านอื่นเสียหาย";
-          applyAllBtn.innerHTML = '<i data-lucide="lock" class="w-3 h-3 text-slate-400"></i><span>ล็อก (เฉพาะหน้านี้)</span>';
+          applyAllBtn.title = "🔒 ข้อมูลชั่วโมงและยอดเงินถูกล็อกไว้สำหรับสัปดาห์นี้เท่านั้น ไม่สามารถใช้กับทุกสัปดาห์ได้ เพื่อป้องกันการคำนวณสัปดาห์อื่นคลาดเคลื่อน";
+          applyAllBtn.innerHTML = '<i data-lucide="lock" class="w-3 h-3 text-slate-400"></i><span>ล็อก (เฉพาะสัปดาห์นี้)</span>';
         } else {
           applyAllBtn.disabled = false;
           applyAllBtn.className = "px-2 py-0.5 rounded bg-amber-600 hover:bg-amber-500 active:scale-95 text-white text-[10px] font-bold flex items-center gap-1 border border-amber-500 cursor-pointer shadow-xs transition";
@@ -2662,8 +2706,14 @@
       showToast(isBold ? 'เปลี่ยนเป็นตัวหนา' : 'เปลี่ยนเป็นตัวปกติ', `ปรับรูปแบบของข้อความเป็น "${isBold ? 'ตัวหนา' : 'ตัวปกติ'}" เรียบร้อยแล้ว`, true);
     }
 
-    function applySelectedElementToAllPages() {
+    async function applySelectedElementToAllPages() {
       if (!currentFontResizerTarget) return;
+
+      const schedField = getTeachingScheduleEditableField(currentFontResizerTarget);
+      if (schedField) {
+        await applyScheduleFieldToAllWeeks(schedField, currentFontResizerTarget);
+        return;
+      }
 
       const paths = getElementPaths(currentFontResizerTarget);
       if (!paths || !paths.relPath) {
@@ -2741,6 +2791,63 @@
 
       fitPaperTypography();
       showToast('นำไปใช้กับทุกหน้าสำเร็จ', `อัปเดตฟอร์มทุกหน้า (${updatedCount} หน้า) และจำค่าถาวรแล้ว`, true);
+    }
+
+    async function applyScheduleFieldToAllWeeks(schedField, targetEl) {
+      if (!schedField || !targetEl) return;
+
+      const teacher = (typeof calculatedData !== 'undefined' && calculatedData.find(t => t.index === schedField.teacherIndex)) || null;
+      const targetClasses = (teacher && teacher._rowClasses && teacher._rowClasses.length > 0) ? teacher._rowClasses : ((teacher && teacher.classes) || []);
+      const cls = targetClasses[schedField.rowIndex] || {};
+
+      const val = (targetEl.innerText || targetEl.textContent || '').trim();
+      const fieldNames = {
+        'code': 'รหัสวิชา',
+        'class_info': 'ชั้น/แผนก/ห้อง',
+        'time_str': 'เวลาสอน'
+      };
+      const fName = fieldNames[schedField.field] || schedField.field;
+      const teacherName = teacher ? teacher.name : `ลำดับที่ ${schedField.teacherIndex}`;
+
+      const confirmMsg = `ต้องการนำ ${fName} "${val}" ไปใช้กับตารางสอนทุกสัปดาห์ (สัปดาห์ 1-17) ของ ${teacherName} ใช่หรือไม่?\n\n(ข้อมูลจะเปลี่ยนเฉพาะครูท่านนี้ทุกสัปดาห์ ครูท่านอื่นจะไม่ได้รับผลกระทบ)`;
+      if (!confirm(confirmMsg)) return;
+
+      // Update in-memory cell value immediately
+      onCellEdit(schedField.teacherIndex, schedField.rowIndex, schedField.field, val);
+
+      showToast('กำลังดำเนินการ', `กำลังนำ ${fName} ไปใช้กับทุกสัปดาห์ของ ${teacherName}...`, true);
+
+      try {
+        const payload = {
+          teacher_index: schedField.teacherIndex,
+          field: schedField.field,
+          value: val,
+          sched_index: (cls._sched_idx !== undefined) ? cls._sched_idx : null,
+          day: cls.day || '',
+          time_str: cls.time_str || '',
+          code: cls.code || '',
+          class_info: cls.class_info || ''
+        };
+
+        const resp = await fetch('/api/apply_teacher_schedule_to_all_weeks', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+
+        const res = await resp.json();
+        if (resp.ok && res.status === 'success') {
+          dirtyTeacherIds.delete(schedField.teacherIndex);
+          cachedRoundMatrix = null;
+          await recalculateAll();
+          showToast('นำไปใช้ทุกสัปดาห์สำเร็จ', `นำ ${fName} "${val}" ไปใช้กับทุกสัปดาห์ (สัปดาห์ 1-17) ของ ${teacherName} เรียบร้อยแล้ว`, true);
+        } else {
+          showToast('เกิดข้อผิดพลาด', res.message || 'ไม่สามารถนำไปใช้กับทุกสัปดาห์ได้', false);
+        }
+      } catch (err) {
+        console.error('Error applying schedule to all weeks:', err);
+        showToast('เกิดข้อผิดพลาด', 'ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้', false);
+      }
     }
 
     function saveElementTextEdit(el) {

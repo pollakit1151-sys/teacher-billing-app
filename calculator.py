@@ -298,6 +298,10 @@ def _merge_class_override(wc, oc):
             except (ValueError, TypeError):
                 pass
 
+    for f in ['code', 'class_info', 'time_str', 'subject_name', 'note', 'sub_info', 'room']:
+        if f in oc and oc[f] is not None and str(oc[f]).strip() != '':
+            wc[f] = str(oc[f]).strip()
+
     # ถ้าเป็นวันหยุดหรือวันที่ลา และผู้ใช้ไม่ได้ระบุตัวเลขลงไป ให้คงเป็น 0 ตามเดิม
     # แต่ถ้าผู้ใช้แก้ไขตัวเลขด้วยตนเอง ให้ยึดค่าที่ผู้ใช้แก้ไขเป็นอันดับหนึ่ง (Manual Override เหนือกฎอัตโนมัติ)
     if (wc.get('is_absent') or wc.get('is_holiday') or wc.get('is_substituted')) and not has_explicit_hours:
@@ -322,9 +326,6 @@ def _merge_class_override(wc, oc):
                 wc[f] = float(oc[f]) if str(oc[f]).strip() != '' else 0.0
             except (ValueError, TypeError):
                 wc[f] = 0.0
-    for f in ['code', 'class_info', 'time_str', 'subject_name', 'note', 'sub_info', 'room']:
-        if f in oc and oc[f] is not None and str(oc[f]).strip() != '':
-            wc[f] = str(oc[f]).strip()
     
     out_vc = wc.get('out_vc', 0)
     out_vs = wc.get('out_vs', 0)
@@ -711,8 +712,9 @@ def calculate_week(teachers_master, holiday_days=None, leaves=None, substitution
         weekly_classes = []
 
         # 1. Normal schedule
-        for c in teacher.get('schedule', []):
+        for s_idx, c in enumerate(teacher.get('schedule', [])):
             item = dict(c)
+            item['_sched_idx'] = s_idx
             item['class_info'] = format_class_with_students(item.get('class_info', ''))
             item['is_workplace'] = is_workplace_class(item.get('code'), item.get('subject_name') or item.get('name'), item.get('class_info'), item.get('room'))
             day = item.get('day', '')
