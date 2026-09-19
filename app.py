@@ -654,7 +654,8 @@ async def api_round_breakdown_matrix(request: Request, round_num: int = 1, dept:
         subs_map=subs_map,
         comps_map=comps_map,
         student_counts=st_counts,
-        course_types=c_types
+        course_types=c_types,
+        weekly_teacher_overrides=ovr.get("weekly_teacher_overrides", {})
     )
     return JSONResponse(content={"status": "success", "round_num": round_num, "data": result})
 
@@ -684,6 +685,9 @@ async def api_calculate(payload: dict):
     if course_types is None:
         course_types = ovr.get("course_types", {})
     overrides = payload.get("overrides", {})
+    weekly_teacher_overrides = payload.get("weekly_teacher_overrides", None)
+    if weekly_teacher_overrides is None:
+        weekly_teacher_overrides = ovr.get("weekly_teacher_overrides", {})
     
     result = calculate_week(
         teachers_master=teachers,
@@ -694,7 +698,8 @@ async def api_calculate(payload: dict):
         student_counts=student_counts,
         course_types=course_types,
         overrides=overrides,
-        week_num=week_num
+        week_num=week_num,
+        weekly_teacher_overrides=weekly_teacher_overrides
     )
     return JSONResponse(content={"status": "success", "data": result})
 
@@ -973,8 +978,7 @@ async def api_save_teacher_custom_edit(payload: dict):
     found = False
     for t in teachers:
         if t.get("index") == teacher_index:
-            if classes is not None:
-                t["classes"] = classes
+            # อัปเดตเฉพาะข้อมูลโปรไฟล์ครูใน teachers_master.json (ไม่อัปเดต classes ของสัปดาห์ลงในมาสเตอร์)
             if position is not None:
                 t["position"] = position
             if duty is not None:
@@ -1103,7 +1107,10 @@ async def api_export_excel(payload: dict):
         leaves=leaves,
         substitutions=substitutions,
         compensations=compensations,
-        week_num=week_num
+        student_counts=ovr.get("student_counts", {}),
+        course_types=ovr.get("course_types", {}),
+        week_num=week_num,
+        weekly_teacher_overrides=ovr.get("weekly_teacher_overrides", {})
     )
     
     try:
@@ -1574,7 +1581,8 @@ async def api_distribution_summary(round_num: int = 1, weeks_count: int = 4, dep
             subs_map=subs,
             comps_map=comps,
             student_counts=st_counts,
-            course_types=c_types
+            course_types=c_types,
+            weekly_teacher_overrides=ovr.get("weekly_teacher_overrides", {})
         )
         
         # Calculate individual revenues for each teacher

@@ -287,7 +287,20 @@ def classify_teacher_group(teacher):
             return 'sp_vs', 'ครูพิเศษ (ปวส.)'
 
 def _merge_class_override(wc, oc):
-    if wc.get('is_absent') or wc.get('is_holiday') or wc.get('is_substituted'):
+    # ตรวจสอบว่าในข้อมูล override ผู้ใช้มีการระบุชั่วโมงหรือไม่
+    has_explicit_hours = False
+    for f in ['in_vc', 'out_vc', 'in_vs', 'out_vs']:
+        if f in oc and oc[f] is not None and str(oc[f]).strip() != '':
+            try:
+                if float(oc[f]) > 0:
+                    has_explicit_hours = True
+                    break
+            except (ValueError, TypeError):
+                pass
+
+    # ถ้าเป็นวันหยุดหรือวันที่ลา และผู้ใช้ไม่ได้ระบุตัวเลขลงไป ให้คงเป็น 0 ตามเดิม
+    # แต่ถ้าผู้ใช้แก้ไขตัวเลขด้วยตนเอง ให้ยึดค่าที่ผู้ใช้แก้ไขเป็นอันดับหนึ่ง (Manual Override เหนือกฎอัตโนมัติ)
+    if (wc.get('is_absent') or wc.get('is_holiday') or wc.get('is_substituted')) and not has_explicit_hours:
         wc['in_vc'] = 0.0
         wc['out_vc'] = 0.0
         wc['in_vs'] = 0.0
@@ -300,7 +313,7 @@ def _merge_class_override(wc, oc):
         return
 
     if wc.get('is_substitute'):
-        if not oc.get('is_substitute'):
+        if not oc.get('is_substitute') and not has_explicit_hours:
             return
 
     for f in ['in_vc', 'out_vc', 'in_vs', 'out_vs']:
@@ -309,7 +322,7 @@ def _merge_class_override(wc, oc):
                 wc[f] = float(oc[f]) if str(oc[f]).strip() != '' else 0.0
             except (ValueError, TypeError):
                 wc[f] = 0.0
-    for f in ['code', 'class_info', 'time_str']:
+    for f in ['code', 'class_info', 'time_str', 'subject_name', 'note', 'sub_info', 'room']:
         if f in oc and oc[f] is not None and str(oc[f]).strip() != '':
             wc[f] = str(oc[f]).strip()
     
@@ -325,44 +338,74 @@ def apply_weekly_teacher_overrides(weekly_classes, ovr_classes):
     if not ovr_classes or not isinstance(ovr_classes, list):
         return weekly_classes
     
-    same_length = (len(weekly_classes) == len(ovr_classes))
-    days_match = same_length and all(
-        (wc.get('day') == oc.get('day'))
-        for wc, oc in zip(weekly_classes, ovr_classes)
-        if wc.get('day') and oc.get('day')
-    )
+    # กรองแถว filler ว่างๆ ออก (แถวที่ไม่มีรหัส ไม่มีเวลา และไม่มีชั่วโมง)
+    clean_ovrs = []
+    for oc in ovr_classes:
+        has_content = (
+            bool(oc.get('code')) or 
+            bool(oc.get('time_str')) or 
+            bool(oc.get('subject_name')) or
+            bool(oc.get('class_info')) or
+            any(oc.get(f) is not None and str(oc.get(f)).strip() not in ['', '0', '0.0'] for f in ['in_vc', 'out_vc', 'in_vs', 'out_vs'])
+        )
+        if has_content:
+            clean_ovrs.append(oc)
+
+    used_ovr_ids = set()
+
+    # จัดกลุ่มตามวัน
+    ovr_by_day = {}
+    for oc in clean_ovrs:
+        d = oc.get('day')
+        if d:
+            ovr_by_day.setdefault(d, []).append(oc)
     
-    if days_match:
-        for i in range(len(weekly_classes)):
-            _merge_class_override(weekly_classes[i], ovr_classes[i])
-    else:
-        ovr_by_day = {}
-        for oc in ovr_classes:
-            d = oc.get('day')
-            if d:
-                ovr_by_day.setdefault(d, []).append(oc)
+    for d, d_ovrs in ovr_by_day.items():
+        w_day_classes = [c for c in weekly_classes if c.get('day') == d]
         
-        for d, d_ovrs in ovr_by_day.items():
-            w_day_classes = [c for c in weekly_classes if c.get('day') == d]
-            used_ovrs = set()
-            
-            # Step 1: Match by exact time_str
-            for wc in w_day_classes:
-                wc_time = wc.get('time_str', '').replace(' ', '').replace(':', '.')
-                for idx, oc in enumerate(d_ovrs):
-                    if idx in used_ovrs: continue
-                    oc_time = oc.get('time_str', '').replace(' ', '').replace(':', '.')
-                    if wc_time and oc_time and wc_time == oc_time:
-                        _merge_class_override(wc, oc)
-                        used_ovrs.add(idx)
-                        break
-            
-            # Step 2: Match remaining in day by order
-            unmatched_wc = [c for c in w_day_classes if not c.get('_override_applied')]
-            remaining_ovrs = [oc for idx, oc in enumerate(d_ovrs) if idx not in used_ovrs]
-            for wc, oc in zip(unmatched_wc, remaining_ovrs):
-                _merge_class_override(wc, oc)
-                
+        # Step 1: แมปด้วยเวลาที่ตรงกันเป๊ะ
+        for wc in w_day_classes:
+            wc_time = wc.get('time_str', '').replace(' ', '').replace(':', '.')
+            for oc in d_ovrs:
+                if id(oc) in used_ovr_ids: continue
+                oc_time = oc.get('time_str', '').replace(' ', '').replace(':', '.')
+                if wc_time and oc_time and wc_time == oc_time:
+                    _merge_class_override(wc, oc)
+                    used_ovr_ids.add(id(oc))
+                    break
+        
+        # Step 2: สำหรับคลาสที่ยังไม่ได้แมป ให้แมปด้วยรหัสวิชา (code)
+        unmatched_wc = [c for c in w_day_classes if not c.get('_override_applied')]
+        for wc in unmatched_wc:
+            wc_code = wc.get('code', '').strip()
+            for oc in d_ovrs:
+                if id(oc) in used_ovr_ids: continue
+                oc_code = oc.get('code', '').strip()
+                if wc_code and oc_code and wc_code == oc_code:
+                    _merge_class_override(wc, oc)
+                    used_ovr_ids.add(id(oc))
+                    break
+
+        # Step 3: สำหรับคลาสที่เหลือในวัน ให้แมปตามลำดับ
+        unmatched_wc = [c for c in w_day_classes if not c.get('_override_applied')]
+        remaining_ovrs = [oc for oc in d_ovrs if id(oc) not in used_ovr_ids]
+        for wc, oc in zip(unmatched_wc, remaining_ovrs):
+            _merge_class_override(wc, oc)
+            used_ovr_ids.add(id(oc))
+
+    # Step 4: หากมีแถวที่ผู้ใช้เพิ่มขึ้นมาเองในหน้ากระดาษ (ไม่มีใน schedule ต้นฉบับ) ให้นำเข้ามาใน weekly_classes ด้วย
+    for oc in clean_ovrs:
+        if id(oc) not in used_ovr_ids:
+            new_wc = dict(oc)
+            new_wc['_override_applied'] = True
+            out_vc = float(new_wc.get('out_vc') or 0)
+            out_vs = float(new_wc.get('out_vs') or 0)
+            new_wc['rate_vc'] = 200 if out_vc > 0 else 0
+            new_wc['amt_vc'] = out_vc * 200
+            new_wc['rate_vs'] = 270 if out_vs > 0 else 0
+            new_wc['amt_vs'] = out_vs * 270
+            weekly_classes.append(new_wc)
+
     return weekly_classes
 
 def compute_teacher_baseline_out(teacher, student_counts=None, course_types=None):
@@ -381,8 +424,6 @@ def compute_teacher_baseline_out(teacher, student_counts=None, course_types=None
             base_min = 10 if is_head else 15
         else:
             base_min = 12 if is_head else 18
-
-    background_required = (base_min + 2) if base_min > 0 else 0
 
     total_reg_hrs = 0
     claimable_hrs = 0
@@ -415,7 +456,8 @@ def compute_teacher_baseline_out(teacher, student_counts=None, course_types=None
         if can_be_extra:
             claimable_hrs += hrs
 
-    surplus = max(0, total_reg_hrs - background_required)
+    # คำนวณจากชั่วโมงขั้นต่ำหน้ากระดาษจริงๆ ไม่มีบวก 2 ในเบื้องหลัง
+    surplus = max(0, total_reg_hrs - base_min)
     return min(12, surplus, claimable_hrs)
 
 def calculate_week(teachers_master, holiday_days=None, leaves=None, substitutions=None, compensations=None, student_counts=None, course_types=None, overrides=None, week_num=1, weekly_teacher_overrides=None):
@@ -659,11 +701,8 @@ def calculate_week(teachers_master, holiday_days=None, leaves=None, substitution
         teacher_comp_missed = comp_missed_map.get(t_idx, [])
         has_leave = len(teacher_absent_days) > 0 or len(teacher_absent_subs) > 0 or len(teacher_comp_missed) > 0
 
-        # ถ้าไม่มีวันหยุดหรือลาให้ +2 แต่ให้คิดในเบื้องหลัง
-        if base_min > 0 and not has_holiday and not has_leave:
-            background_required = base_min + 2
-        else:
-            background_required = base_min
+        # ชั่วโมงขั้นต่ำตามหน้ากระดาษจริง (คำนวณตามหน้ากระดาษ ไม่มีบวก 2 ในเบื้องหลัง)
+        required_in = base_min
 
         weekly_classes = []
 
@@ -969,10 +1008,41 @@ def calculate_week(teachers_master, holiday_days=None, leaves=None, substitution
             if not c.get('_is_substitute_preallocated') and not c.get('_is_compensatory_preallocated'):
                 active_classes.append(c)
 
-        # ตรวจสอบว่าคนที่ทำการสอนแทนมี 'ใน' ครบขั้นต่ำหรือไม่
-        # หากมี 'ใน' ไม่ครบขั้นต่ำ จะไม่สามารถเบิกนอกให้คนไปราชการได้ (ต้องดึงคาบสอนแทนมาเติม 'ใน' ให้ครบขั้นต่ำก่อน)
+        # นับชั่วโมงสอนของตนเอง: รวมทั้งวิชาปกติและวิชาสอนชดเชย
+        comp_hours = sum(c['_parsed_hrs'] for c in weekly_classes if c.get('is_compensatory') and not c.get('is_comp_filler'))
+        total_comp_in = sum(c.get('in_vc', 0) + c.get('in_vs', 0) for c in weekly_classes if c.get('is_compensatory'))
+        total_comp_out = sum(c.get('out_vc', 0) + c.get('out_vs', 0) for c in weekly_classes if c.get('is_compensatory'))
         regular_hours = sum(c['_parsed_hrs'] for c in active_classes)
-        sub_teacher_own_shortage = max(0, base_min - regular_hours)
+        own_taught_hours = regular_hours + comp_hours
+
+        # ถ้าครูมีวิชาสอนชดเชย และชั่วโมงตนเองยังไม่ถึง base_min
+        # ให้ดึงคาบสอนชดเชยมาเป็น 'ใน' ก่อน เพื่อให้ภาระงานตนเองครบ
+        comp_shortage = max(0, base_min - regular_hours)
+        if comp_shortage > 0 and total_comp_out > 0:
+            for cc in weekly_classes:
+                if cc.get('is_compensatory') and comp_shortage > 0:
+                    out_vs = cc.get('out_vs', 0)
+                    out_vc = cc.get('out_vc', 0)
+                    if out_vs > 0:
+                        shift = min(out_vs, comp_shortage)
+                        cc['out_vs'] -= shift
+                        cc['in_vs'] = cc.get('in_vs', 0) + shift
+                        cc['rate_vs'] = 270 if cc['out_vs'] > 0 else 0
+                        cc['amt_vs'] = cc['out_vs'] * 270
+                        comp_shortage -= shift
+                    elif out_vc > 0:
+                        shift = min(out_vc, comp_shortage)
+                        cc['out_vc'] -= shift
+                        cc['in_vc'] = cc.get('in_vc', 0) + shift
+                        cc['rate_vc'] = 200 if cc['out_vc'] > 0 else 0
+                        cc['amt_vc'] = cc['out_vc'] * 200
+                        comp_shortage -= shift
+            total_comp_in = sum(c.get('in_vc', 0) + c.get('in_vs', 0) for c in weekly_classes if c.get('is_compensatory'))
+            total_comp_out = sum(c.get('out_vc', 0) + c.get('out_vs', 0) for c in weekly_classes if c.get('is_compensatory'))
+
+        # ตรวจสอบว่าคนที่ทำการสอนแทนมี 'ใน' ครบขั้นต่ำหรือไม่
+        # ให้นับชั่วโมงสอนของตนเองทั้งหมด (ปกติ + สอนชดเชย)
+        sub_teacher_own_shortage = max(0, base_min - own_taught_hours)
         if sub_teacher_own_shortage > 0:
             for sc in weekly_classes:
                 if sc.get('is_substitute') and sub_teacher_own_shortage > 0:
@@ -982,12 +1052,14 @@ def calculate_week(teachers_master, holiday_days=None, leaves=None, substitution
                         shift = min(out_vs, sub_teacher_own_shortage)
                         sc['out_vs'] -= shift
                         sc['in_vs'] = sc.get('in_vs', 0) + shift
+                        sc['rate_vs'] = 270 if sc['out_vs'] > 0 else 0
                         sc['amt_vs'] = sc['out_vs'] * 270
                         sub_teacher_own_shortage -= shift
                     elif out_vc > 0:
                         shift = min(out_vc, sub_teacher_own_shortage)
                         sc['out_vc'] -= shift
                         sc['in_vc'] = sc.get('in_vc', 0) + shift
+                        sc['rate_vc'] = 200 if sc['out_vc'] > 0 else 0
                         sc['amt_vc'] = sc['out_vc'] * 200
                         sub_teacher_own_shortage -= shift
 
@@ -1000,9 +1072,8 @@ def calculate_week(teachers_master, holiday_days=None, leaves=None, substitution
         baseline_cap = baseline_normal_out if baseline_normal_out > 0 else 12
 
         # Calculate allocation for regular classes
-        # สำหรับคนที่สอนแทน จะสามารถเบิกนอกเกิน 12 คาบได้ คือ ของตัวเอง (สูงสุดตาม baseline_cap หรือ 12) + ของคนที่ไปราชการ (total_sub_out)
-        # ดังนั้น max_claim_allowed สำหรับวิชาปกติของตัวเองจึงไม่ถูกหักลบด้วย total_sub_out
-        needed_in_for_teacher = max(0, background_required - total_sub_in)
+        # คำนวณจากหน้ากระดาษจริง ไม่มี +2 ในเบื้องหลัง
+        needed_in_for_teacher = max(0, base_min - total_sub_in - total_comp_in)
         reg_surplus = max(0, regular_hours - needed_in_for_teacher)
         max_claim_allowed = min(12, baseline_cap)
 
@@ -1088,19 +1159,23 @@ def calculate_week(teachers_master, holiday_days=None, leaves=None, substitution
         allocate_subgroup(g4, c4)
 
         # Apply weekly manual overrides if present for this teacher and week
+        has_manual_override = False
         ovr_key = f"{week_num}_{t_idx}"
         if weekly_teacher_overrides and ovr_key in weekly_teacher_overrides:
             t_ovr = weekly_teacher_overrides[ovr_key]
             ovr_classes = t_ovr.get("classes", []) if isinstance(t_ovr, dict) else t_ovr
             apply_weekly_teacher_overrides(weekly_classes, ovr_classes)
+            has_manual_override = True
 
         # -------------------------------------------------------------
         # กฎเหล็ก: "คาบในยังไม่ครบขั้นต่ำ จะเบิกเป็นคาบนอกไม่ได้ ทั้งส่วนของตัวเอง และสอนแทน"
         # - รวมชั่วโมงที่สอนจริงทั้งหมด (T = ใน + นอก)
         # - หาก T <= base_min: ห้ามมีคาบนอกเด็ดขาด (คาบนอก = 0, ต้องเป็นคาบในทั้งหมด)
         # - หาก T > base_min: คาบในต้องมีอย่างน้อยเท่ากับ base_min เสมอ (ส่วนที่เกินจึงจะเป็นคาบนอกได้)
+        #
+        # ข้อยกเว้น: หากผู้ใช้มีการแก้ไขด้วยมือ (Manual Override) ให้การแก้ด้วยมือเหนือกว่า 100%
         # -------------------------------------------------------------
-        if base_min > 0:
+        if base_min > 0 and not has_manual_override:
             actual_classes = [
                 c for c in weekly_classes 
                 if not c.get('is_absent') 
@@ -1119,44 +1194,67 @@ def calculate_week(teachers_master, holiday_days=None, leaves=None, substitution
                 
                 # ลำดับที่ 1: ดึงคาบนอกของวิชาปกติของตนเองมาเป็นคาบในก่อน เพื่อให้ภาระงานตนเองครบ
                 for c in actual_classes:
-                    if not c.get('is_substitute') and deficit > 0:
+                    if not c.get('is_substitute') and not c.get('is_compensatory') and deficit > 0:
                         if c.get('out_vc', 0) > 0:
                             shift = min(c['out_vc'], deficit)
                             c['out_vc'] -= shift
                             c['in_vc'] = c.get('in_vc', 0) + shift
+                            c['rate_vc'] = 200 if c['out_vc'] > 0 else 0
                             c['amt_vc'] = c['out_vc'] * 200
                             deficit -= shift
                         if deficit > 0 and c.get('out_vs', 0) > 0:
                             shift = min(c['out_vs'], deficit)
                             c['out_vs'] -= shift
                             c['in_vs'] = c.get('in_vs', 0) + shift
+                            c['rate_vs'] = 270 if c['out_vs'] > 0 else 0
+                            c['amt_vs'] = c['out_vs'] * 270
+                            deficit -= shift
+
+                # ลำดับที่ 2: ดึงคาบสอนชดเชยของตนเองมาเติมเป็นคาบใน
+                for c in actual_classes:
+                    if c.get('is_compensatory') and deficit > 0:
+                        if c.get('out_vc', 0) > 0:
+                            shift = min(c['out_vc'], deficit)
+                            c['out_vc'] -= shift
+                            c['in_vc'] = c.get('in_vc', 0) + shift
+                            c['rate_vc'] = 200 if c['out_vc'] > 0 else 0
+                            c['amt_vc'] = c['out_vc'] * 200
+                            deficit -= shift
+                        if deficit > 0 and c.get('out_vs', 0) > 0:
+                            shift = min(c['out_vs'], deficit)
+                            c['out_vs'] -= shift
+                            c['in_vs'] = c.get('in_vs', 0) + shift
+                            c['rate_vs'] = 270 if c['out_vs'] > 0 else 0
                             c['amt_vs'] = c['out_vs'] * 270
                             deficit -= shift
                             
-                # ลำดับที่ 2: หากวิชาปกติของตนเองยังไม่พอ ต้องดึงคาบสอนแทนมาเติมเป็นคาบในให้ครบขั้นต่ำก่อน จึงจะเบิกส่วนที่เหลือเป็นคาบนอกได้
+                # ลำดับที่ 3: หากวิชาปกติและชดเชยของตนเองยังไม่พอ ต้องดึงคาบสอนแทนมาเติมเป็นคาบในให้ครบขั้นต่ำก่อน จึงจะเบิกส่วนที่เหลือเป็นคาบนอกได้
                 for c in actual_classes:
                     if c.get('is_substitute') and deficit > 0:
                         if c.get('out_vc', 0) > 0:
                             shift = min(c['out_vc'], deficit)
                             c['out_vc'] -= shift
                             c['in_vc'] = c.get('in_vc', 0) + shift
+                            c['rate_vc'] = 200 if c['out_vc'] > 0 else 0
                             c['amt_vc'] = c['out_vc'] * 200
                             deficit -= shift
                         if deficit > 0 and c.get('out_vs', 0) > 0:
                             shift = min(c['out_vs'], deficit)
                             c['out_vs'] -= shift
                             c['in_vs'] = c.get('in_vs', 0) + shift
+                            c['rate_vs'] = 270 if c['out_vs'] > 0 else 0
                             c['amt_vs'] = c['out_vs'] * 270
                             deficit -= shift
 
-        sum_in_vc = sum(c.get('in_vc', 0) for c in weekly_classes)
-        sum_in_vs = sum(c.get('in_vs', 0) for c in weekly_classes)
+        sum_in_vc = sum(c.get('in_vc', 0) for c in weekly_classes if not c.get('is_comp_filler'))
+        sum_in_vs = sum(c.get('in_vs', 0) for c in weekly_classes if not c.get('is_comp_filler'))
 
-        sum_out_vc = sum(c.get('out_vc', 0) for c in weekly_classes)
-        sum_out_vs = sum(c.get('out_vs', 0) for c in weekly_classes)
+        sum_out_vc = sum(c.get('out_vc', 0) for c in weekly_classes if not c.get('is_comp_filler'))
+        sum_out_vs = sum(c.get('out_vs', 0) for c in weekly_classes if not c.get('is_comp_filler'))
         total_out = sum_out_vc + sum_out_vs
+        total_in = sum_in_vc + sum_in_vs
 
-        # ยอดเงินคำนวณจากแถวรายวิชาที่จำกัดไว้ไม่เกิน 12 ชม. แล้ว
+        # ยอดเงินคำนวณจากแถวรายวิชาที่จำกัดไว้ไม่เกิน 12 ชม. แล้ว (หรือตามที่แก้ไขด้วยมือ)
         total_money = (sum_out_vc * 200) + (sum_out_vs * 270)
         is_pending_sched = (len(teacher.get('schedule', [])) == 0)
 
@@ -1174,7 +1272,7 @@ def calculate_week(teachers_master, holiday_days=None, leaves=None, substitution
             'is_special': is_special,
             'is_pending_schedule': is_pending_sched,
             'required_min': base_min,
-            'background_required': background_required,
+            'background_required': base_min,
             'sum_in_vc': sum_in_vc,
             'sum_out_vc': sum_out_vc,
             'sum_in_vs': sum_in_vs,
@@ -1225,11 +1323,15 @@ def calculate_week(teachers_master, holiday_days=None, leaves=None, substitution
                         
                 parts = []
                 if in_h > 0:
-                    parts.append(f"ใน {in_h}")
+                    disp_in = int(in_h) if in_h == int(in_h) else in_h
+                    parts.append(f"ใน {disp_in}")
                 if out_h > 0:
-                    parts.append(f"นอก {out_h}")
+                    disp_out = int(out_h) if out_h == int(out_h) else out_h
+                    parts.append(f"นอก {disp_out}")
                 if not parts:
-                    parts.append(f"{sm.get('hours', 4)}")
+                    hrs_val = sm.get('hours', 4)
+                    disp_h = int(hrs_val) if hrs_val == int(hrs_val) else hrs_val
+                    parts.append(f"{disp_h}")
                 hrs_str = " ".join(parts) + " ชม."
                 alloc_text = f"{sub_name} สอนแทน ({hrs_str})"
                 c['sub_alloc_text'] = alloc_text
@@ -1238,7 +1340,7 @@ def calculate_week(teachers_master, holiday_days=None, leaves=None, substitution
 
     return processed_teachers
 
-def calculate_round_breakdown_matrix(teachers_master, round_weeks, dept='ช่างยนต์', holidays_map=None, leaves_map=None, subs_map=None, comps_map=None, student_counts=None, course_types=None):
+def calculate_round_breakdown_matrix(teachers_master, round_weeks, dept='ช่างยนต์', holidays_map=None, leaves_map=None, subs_map=None, comps_map=None, student_counts=None, course_types=None, weekly_teacher_overrides=None):
     """
     คำนวณยอดสรุปตารางแจกแจงรายบุคคลระดับรอบเบิก (Multi-week Matrix)
     เช่น รอบที่ 1: สัปดาห์ที่ 1, 2, 3, 4, 5
@@ -1250,6 +1352,7 @@ def calculate_round_breakdown_matrix(teachers_master, round_weeks, dept='ช่�
     if comps_map is None: comps_map = {}
     if student_counts is None: student_counts = {}
     if course_types is None: course_types = {}
+    if weekly_teacher_overrides is None: weekly_teacher_overrides = {}
 
     # กรองครูตามแผนก (ถ้า dept เป็น 'ทั้งหมด' หรือ 'ทั้งสองแผนก' ให้รวมทั้งสองแผนก ช่างยนต์ + ยานยนต์ไฟฟ้า)
     if not dept or dept in ['ทั้งหมด', 'ทั้งสองแผนก', 'ช่างยนต์และยานยนต์ไฟฟ้า', 'auto_ev', 'all']:
@@ -1286,7 +1389,8 @@ def calculate_round_breakdown_matrix(teachers_master, round_weeks, dept='ช่�
             compensations=w_comps,
             student_counts=student_counts,
             course_types=course_types,
-            week_num=w
+            week_num=w,
+            weekly_teacher_overrides=weekly_teacher_overrides
         )
 
     teachers_matrix = []
