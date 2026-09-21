@@ -606,12 +606,9 @@ def calculate_week(teachers_master, holiday_days=None, leaves=None, substitution
         # 1. เช็คชั่วโมงของคนไปราชการว่าในครบขั้นต่ำไหม
         shortage = max(0, a_min - a_own_hours)
 
-        # 2. ห้ามเบิกเกินสิทธิ์เดิมเหมือนเดิม: เพดานคาบนอกเดิมของคนไปราชการ (Baseline Normal Out)
+        # 2. ห้ามเบิกเกินสิทธิ์เดิม: เพดานคาบนอกเดิมของคนไปราชการ (Baseline Normal Out)
         a_baseline_out = compute_teacher_baseline_out(absent_teacher, student_counts=student_counts, course_types=course_types)
-        a_bg_req = (a_min + 2) if a_min > 0 else 0
-        a_own_surplus = max(0, a_own_hours - a_bg_req)
-        a_own_out = min(a_baseline_out, a_own_surplus)
-        a_max_sub_out = max(0, a_baseline_out - a_own_out)
+        a_max_sub_out = a_baseline_out if a_baseline_out > 0 else 12
 
         sorted_asubs = sorted(a_subs, key=lambda s: (DAY_ORDER.index(s.get('day', '')) if s.get('day', '') in DAY_ORDER else 99, int(s.get('start_p', 1))))
         for asub in sorted_asubs:
@@ -1082,10 +1079,19 @@ def calculate_week(teachers_master, holiday_days=None, leaves=None, substitution
         baseline_normal_out = compute_teacher_baseline_out(teacher, student_counts=student_counts, course_types=course_types)
         baseline_cap = baseline_normal_out if baseline_normal_out > 0 else 12
 
+        # หักสิทธิ์คาบนอกที่ถูกนำไปใช้ในการสอนแทน (สำหรับครูผู้ลา/ไปราชการ)
+        # ถ้านำไปให้ครูสอนแทนเบิกนอกแล้ว สิทธิ์ที่เหลือของตนเองต้องลดลง เพื่อไม่ให้ยอดเบิกนอกรวมของหลักสูตรเกินเพดานเดิม
+        sub_out_given = sum(s.get('_alloc_out', 0) for s in absent_sub_map.get(t_idx, []))
+        baseline_cap = max(0, baseline_cap - sub_out_given)
+
         # Calculate allocation for regular classes
         needed_in_for_teacher = max(0, background_required - total_sub_in - total_comp_in)
         reg_surplus = max(0, regular_hours - needed_in_for_teacher)
-        max_claim_allowed = min(12, baseline_cap)
+        
+        # เพดานคาบนอกสำหรับคาบปกติของตนเอง:
+        # 1) ต้องไม่เกิน baseline_cap ที่เหลืออยู่ (หลังหักคาบที่ให้คนอื่นสอนแทนเบิกนอกไปแล้ว)
+        # 2) เมื่อรวมกับคาบสอนแทนของตนเอง (total_sub_out) และสอนชดเชย (total_comp_out) ต้องไม่เกินเพดานสูงสุด 12 คาบ/สัปดาห์
+        max_claim_allowed = max(0, min(12, baseline_cap) - total_sub_out - total_comp_out)
 
         # 4 Priority Groups for claiming 'นอก' (overflow/extra teaching hours):
         # 1) วิชาปกติ วันธรรมดา (จันทร์ - ศุกร์): ให้สิทธิ์เบิก 'นอก' เป็นลำดับแรก
@@ -1185,7 +1191,7 @@ def calculate_week(teachers_master, holiday_days=None, leaves=None, substitution
         #
         # ข้อยกเว้น: หากผู้ใช้มีการแก้ไขด้วยมือ (Manual Override) ให้การแก้ด้วยมือเหนือกว่า 100%
         # -------------------------------------------------------------
-        if base_min > 0 and not has_manual_override:
+        if base_min > 0:
             actual_classes = [
                 c for c in weekly_classes 
                 if not c.get('is_absent') 
@@ -1202,9 +1208,9 @@ def calculate_week(teachers_master, holiday_days=None, leaves=None, substitution
             if curr_in < target_min_in and curr_out > 0:
                 deficit = target_min_in - curr_in
                 
-                # ลำดับที่ 1: ดึงคาบนอกของวิชาปกติของตนเองมาเป็นคาบในก่อน เพื่อให้ภาระงานตนเองครบ
+                # ลำดับที่ 1: ดึงคาบนอกของวิชาปกติของตนเองมาเป็นคาบในก่อน เพื่อให้ภาระงานตนเองครบ (ข้ามคลาสที่ผู้ใช้ตั้งใจ override ไว้)
                 for c in actual_classes:
-                    if not c.get('is_substitute') and not c.get('is_compensatory') and deficit > 0:
+                    if not c.get('is_substitute') and not c.get('is_compensatory') and not c.get('_override_applied') and deficit > 0:
                         if c.get('out_vc', 0) > 0:
                             shift = min(c['out_vc'], deficit)
                             c['out_vc'] -= shift
@@ -1220,9 +1226,9 @@ def calculate_week(teachers_master, holiday_days=None, leaves=None, substitution
                             c['amt_vs'] = c['out_vs'] * 270
                             deficit -= shift
 
-                # ลำดับที่ 2: ดึงคาบสอนชดเชยของตนเองมาเติมเป็นคาบใน
+                # ลำดับที่ 2: ดึงคาบสอนชดเชยของตนเองมาเติมเป็นคาบใน (ข้ามคลาสที่ผู้ใช้ตั้งใจ override ไว้)
                 for c in actual_classes:
-                    if c.get('is_compensatory') and deficit > 0:
+                    if c.get('is_compensatory') and not c.get('_override_applied') and deficit > 0:
                         if c.get('out_vc', 0) > 0:
                             shift = min(c['out_vc'], deficit)
                             c['out_vc'] -= shift
@@ -1238,9 +1244,9 @@ def calculate_week(teachers_master, holiday_days=None, leaves=None, substitution
                             c['amt_vs'] = c['out_vs'] * 270
                             deficit -= shift
                             
-                # ลำดับที่ 3: หากวิชาปกติและชดเชยของตนเองยังไม่พอ ต้องดึงคาบสอนแทนมาเติมเป็นคาบในให้ครบขั้นต่ำก่อน จึงจะเบิกส่วนที่เหลือเป็นคาบนอกได้
+                # ลำดับที่ 3: หากวิชาปกติและชดเชยของตนเองยังไม่พอ ต้องดึงคาบสอนแทนมาเติมเป็นคาบในให้ครบขั้นต่ำก่อน (ข้ามคลาสที่ผู้ใช้ตั้งใจ override ไว้)
                 for c in actual_classes:
-                    if c.get('is_substitute') and deficit > 0:
+                    if c.get('is_substitute') and not c.get('_override_applied') and deficit > 0:
                         if c.get('out_vc', 0) > 0:
                             shift = min(c['out_vc'], deficit)
                             c['out_vc'] -= shift

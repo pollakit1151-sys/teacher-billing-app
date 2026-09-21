@@ -779,15 +779,27 @@ def merge_teachers(existing_teachers, new_teachers, dept=None):
     # Preserve existing teachers from departments NOT present in new_teachers
     preserved = [t for t in existing_teachers if not any(nd in t.get('dept', '') or t.get('dept', '') in nd for nd in new_depts)]
 
-    # If an existing teacher has the same name and had classes, but new teacher has 0 classes, keep existing classes
-    existing_by_name = {t.get('name'): t for t in existing_teachers if t.get('name')}
+    # If an existing teacher has the same name, preserve metadata and classes if empty
+    existing_by_name = {}
+    for t in existing_teachers:
+        if t.get('name'):
+            existing_by_name[t['name']] = t
+            existing_by_name[t['name'].replace(' ', '')] = t
+
+    meta_fields = ['duty', 'position', 'teacher_type', 'level', 'is_head', 'is_special', 'min_vc', 'min_vs', 'required_min', 'base_quota', 'quota_rule']
+
     for t in new_teachers:
-        if len(t.get('schedule', [])) == 0 and t.get('name') in existing_by_name:
-            prev_t = existing_by_name[t.get('name')]
-            if len(prev_t.get('schedule', [])) > 0:
+        t_name = t.get('name', '')
+        clean_name = t_name.replace(' ', '')
+        prev_t = existing_by_name.get(t_name) or existing_by_name.get(clean_name)
+        if prev_t:
+            if len(t.get('schedule', [])) == 0 and len(prev_t.get('schedule', [])) > 0:
                 t['schedule'] = prev_t.get('schedule', [])
                 t['header_total_hours'] = prev_t.get('header_total_hours', t.get('header_total_hours'))
                 t['grid_total_hours'] = prev_t.get('grid_total_hours', t.get('grid_total_hours'))
+            for mf in meta_fields:
+                if mf in prev_t and prev_t[mf] not in (None, ''):
+                    t[mf] = prev_t[mf]
 
     combined = list(new_teachers) + preserved
 

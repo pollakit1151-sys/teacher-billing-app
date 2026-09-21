@@ -1599,6 +1599,13 @@ async def api_analyze_schedule(file: UploadFile = File(...)):
     existing_teachers = load_teachers_master()
     merged = merge_teachers(existing_teachers, new_teachers)
 
+    # Immediately save to teachers_master.json so data persists across reloads
+    save_master(merged)
+    try:
+        create_backup_snapshot(note=f"วิเคราะห์ตารางสอน: {file.filename}")
+    except Exception as ex:
+        print(f"Auto-backup warning: {ex}")
+
     # Cache in session memory
     LATEST_ANALYZED_SCHEDULE['temp_path'] = temp_path
     LATEST_ANALYZED_SCHEDULE['filename'] = file.filename
