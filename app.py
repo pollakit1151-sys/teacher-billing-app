@@ -716,12 +716,20 @@ async def api_calculate(payload: dict):
 @app.post("/api/find_substitutes")
 async def api_find_substitutes(payload: dict):
     teachers = load_master()
-    absent_teacher_idx = int(payload.get("absent_teacher_idx"))
+    absent_teacher_idx = payload.get("absent_teacher_idx")
+    absent_teacher_name = str(payload.get("absent_teacher_name", "")).strip()
     day = payload.get("day")
     start_p = int(payload.get("start_p", 1))
     end_p = int(payload.get("end_p", 4))
     
-    candidates = find_substitute_candidates(teachers, absent_teacher_idx, day, start_p, end_p)
+    candidates = find_substitute_candidates(
+        teachers_master=teachers,
+        absent_teacher_idx=absent_teacher_idx,
+        day=day,
+        start_period=start_p,
+        end_period=end_p,
+        absent_teacher_name=absent_teacher_name
+    )
     return JSONResponse(content={"status": "success", "candidates": candidates})
 
 GAS_SUB_WEBAPP_URL = "https://script.google.com/macros/s/AKfycbzZ8OV3PcBCNtF7zHhOTisJ9SEY_VW-4YSPp-KhMXT4UqpeOpdgybzdYnUmjCDMiGjLvw/exec"

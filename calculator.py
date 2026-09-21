@@ -1538,18 +1538,37 @@ def calculate_round_breakdown_matrix(teachers_master, round_weeks, dept='ช่�
         }
     }
 
-def find_substitute_candidates(teachers_master, absent_teacher_idx, day, start_period, end_period):
-    target_absent = next((t for t in teachers_master if t['index'] == absent_teacher_idx), None)
+def find_substitute_candidates(teachers_master, absent_teacher_idx, day, start_period, end_period, absent_teacher_name=""):
+    target_absent = None
+    if absent_teacher_idx is not None:
+        try:
+            a_idx = int(absent_teacher_idx)
+            target_absent = next((t for t in teachers_master if t.get('index') == a_idx), None)
+        except (ValueError, TypeError):
+            pass
+
+    if not target_absent and absent_teacher_name:
+        clean_target = absent_teacher_name.replace("นาย", "").replace("นางสาว", "").replace("นาง", "").strip()
+        target_absent = next((t for t in teachers_master if clean_target in t.get('name', '') or t.get('name', '') in absent_teacher_name), None)
+
     if not target_absent:
         return []
 
+    target_idx = target_absent.get('index')
+    target_name = target_absent.get('name', '').strip()
+    clean_target_name = target_name.replace("นาย", "").replace("นางสาว", "").replace("นาง", "").strip()
     target_level = target_absent.get('level', 'ปวช.')
     target_periods = set(range(start_period, end_period + 1))
 
     candidates = []
 
     for t in teachers_master:
-        if t['index'] == absent_teacher_idx:
+        t_idx = t.get('index')
+        t_name = t.get('name', '').strip()
+        clean_t_name = t_name.replace("นาย", "").replace("นางสาว", "").replace("นาง", "").strip()
+
+        # Exclude the absent teacher themselves (by index OR by name)
+        if t_idx == target_idx or (clean_target_name and clean_target_name in t_name) or (clean_t_name and clean_t_name in target_name):
             continue
 
         if t.get('level') != target_level:
