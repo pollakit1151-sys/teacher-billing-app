@@ -45,7 +45,8 @@ def sync_live_data(server_url=None):
         print("❌ ไม่พบข้อมูล files ในแพ็กเกจสำรองข้อมูล")
         return False
 
-    now = datetime.datetime.now()
+    TZ_THAI = datetime.timezone(datetime.timedelta(hours=7))
+    now = datetime.datetime.now(TZ_THAI)
     timestamp = now.strftime("%Y%m%d_%H%M%S")
     backup_filename = f"backup_synced_from_render_{timestamp}.json"
     backup_path = os.path.join(BACKUPS_DIR, backup_filename)

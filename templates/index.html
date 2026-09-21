@@ -3181,6 +3181,9 @@
                   <a href="/api/backup/download/${b.filename}" download class="p-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-semibold shadow-2xs inline-flex items-center justify-center cursor-pointer transition" title="ดาวน์โหลดไฟล์ .json นี้">
                     <i data-lucide="download" class="w-3.5 h-3.5"></i>
                   </a>
+                  <button type="button" onclick="deleteServerBackup('${b.filename}', '${b.created_at_thai || b.filename}')" class="p-1.5 bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-lg text-xs font-semibold shadow-2xs inline-flex items-center justify-center cursor-pointer transition active:scale-95" title="ลบไฟล์สำรองนี้">
+                    <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                  </button>
                 </div>
               </div>
             `).join('');
@@ -3268,6 +3271,28 @@
           statusDiv.innerText = `❌ เกิดข้อผิดพลาดในการเชื่อมต่อ: ${err.message}`;
         }
         alert(`เกิดข้อผิดพลาด: ${err.message}`);
+      }
+    }
+
+    async function deleteServerBackup(filename, displayDate) {
+      if (!confirm(`คุณแน่ใจหรือไม่ว่าต้องการลบไฟล์สำรอง:\n"${displayDate}" (${filename})?\n\nเมื่อลบแล้วจะไม่สามารถกู้คืนไฟล์นี้ได้!`)) {
+        return;
+      }
+      try {
+        const resp = await fetch('/api/backup/delete', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ filename: filename })
+        });
+        const res = await resp.json();
+        if (resp.ok && res.status === 'success') {
+          showToast('ลบไฟล์สำเร็จ', res.message, true);
+          await loadBackupList();
+        } else {
+          alert(`ลบไฟล์ไม่สำเร็จ: ${res.message || 'เกิดข้อผิดพลาด'}`);
+        }
+      } catch (err) {
+        alert(`เกิดข้อผิดพลาดในการเชื่อมต่อ: ${err.message}`);
       }
     }
 

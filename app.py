@@ -1925,11 +1925,18 @@ BACKUP_TARGET_FILES = [
     "webhook_config.json"
 ]
 
+TZ_THAI = datetime.timezone(datetime.timedelta(hours=7))
 THAI_MONTHS_SHORT = ["", "ม.ค.", "ก.พ.", "มี.ค.", "เม.ย.", "พ.ค.", "มิ.ย.", "ก.ค.", "ส.ค.", "ก.ย.", "ต.ค.", "พ.ย.", "ธ.ค."]
 
+def get_thai_now():
+    """Get current datetime in Thailand timezone (UTC+7)."""
+    return datetime.datetime.now(TZ_THAI)
+
 def format_thai_datetime(dt):
-    """Format datetime into readable Thai string."""
+    """Format datetime into readable Thai string in Thai timezone."""
     try:
+        if dt.tzinfo is not None:
+            dt = dt.astimezone(TZ_THAI)
         y = dt.year + 543
         m = THAI_MONTHS_SHORT[dt.month] if 1 <= dt.month <= 12 else str(dt.month)
         return f"{dt.day} {m} {y} เวลา {dt.strftime('%H:%M:%S')} น."
@@ -1939,7 +1946,7 @@ def format_thai_datetime(dt):
 def create_backup_snapshot(note="สร้างจุดสำรองข้อมูล"):
     """Package all databases and save a timestamped file into backups/ directory."""
     os.makedirs(BACKUPS_DIR, exist_ok=True)
-    now = datetime.datetime.now()
+    now = get_thai_now()
     timestamp = now.strftime("%Y%m%d_%H%M%S")
     filename = f"backup_{timestamp}.json"
     filepath = os.path.join(BACKUPS_DIR, filename)
@@ -2020,23 +2027,48 @@ def api_backup_list():
             fpath = os.path.join(BACKUPS_DIR, fname)
             try:
                 stat = os.stat(fpath)
-                mtime = datetime.datetime.fromtimestamp(stat.st_mtime)
+                mtime_thai = datetime.datetime.fromtimestamp(stat.st_mtime, tz=datetime.timezone.utc).astimezone(TZ_THAI)
                 size_kb = round(stat.st_size / 1024, 1)
                 
-                # Fast probe header without reading entire huge json if possible
+                # Default created_thai from file mtime
+                created_thai = format_thai_datetime(mtime_thai)
+                mtime_iso = mtime_thai.isoformat()
                 t_count = 0
                 s_count = 0
                 l_count = 0
                 note = "จุดสำรองข้อมูล"
-                created_thai = format_thai_datetime(mtime)
                 
                 try:
                     with open(fpath, "r", encoding="utf-8") as f:
                         obj = json.load(f)
                     if isinstance(obj, dict):
                         note = obj.get("note") or note
-                        if obj.get("created_at_thai"):
+                        exp_iso = obj.get("exported_at")
+                        if exp_iso:
+                            try:
+                                exp_dt = datetime.datetime.fromisoformat(exp_iso)
+                                if exp_dt.tzinfo is not None:
+                                    exp_thai = exp_dt.astimezone(TZ_THAI)
+                                    created_thai = format_thai_datetime(exp_thai)
+                                    mtime_iso = exp_thai.isoformat()
+                                else:
+                                    # Naive ISO: check if it was UTC from Render
+                                    diff_hours = (mtime_thai.replace(tzinfo=None) - exp_dt).total_seconds() / 3600.0
+                                    if 6.0 <= diff_hours <= 8.0:
+                                        # Generated in UTC on Render, convert to Thai (+7h)
+                                        exp_thai = (exp_dt + datetime.timedelta(hours=7)).replace(tzinfo=TZ_THAI)
+                                        created_thai = format_thai_datetime(exp_thai)
+                                        mtime_iso = exp_thai.isoformat()
+                                    else:
+                                        # Already Thai local naive
+                                        exp_thai = exp_dt.replace(tzinfo=TZ_THAI)
+                                        created_thai = format_thai_datetime(exp_thai)
+                                        mtime_iso = exp_thai.isoformat()
+                            except Exception:
+                                pass
+                        elif obj.get("created_at_thai"):
                             created_thai = obj["created_at_thai"]
+                            
                         files_dict = obj.get("files", {})
                         if isinstance(files_dict, dict):
                             t_list = files_dict.get("teachers_master.json", [])
@@ -2051,7 +2083,7 @@ def api_backup_list():
                 backups.append({
                     "filename": fname,
                     "created_at_thai": created_thai,
-                    "mtime_iso": mtime.isoformat(),
+                    "mtime_iso": mtime_iso,
                     "size_kb": size_kb,
                     "note": note,
                     "teachers_count": t_count,
@@ -2131,6 +2163,29 @@ def api_backup_download_file(filename: str):
         media_type="application/json",
         filename=safe_fname
     )
+
+@app.post("/api/backup/delete")
+async def api_backup_delete_file(request: Request):
+    """Delete a specific backup file from backups/ folder."""
+    try:
+        body = await request.json()
+        raw_fname = body.get("filename", "").strip()
+        safe_fname = os.path.basename(raw_fname)
+        if not safe_fname or not safe_fname.endswith(".json"):
+            return JSONResponse(content={"status": "error", "message": "ชื่อไฟล์ไม่ถูกต้อง"}, status_code=400)
+
+        fpath = os.path.join(BACKUPS_DIR, safe_fname)
+        if not os.path.exists(fpath):
+            return JSONResponse(content={"status": "error", "message": f"ไม่พบไฟล์สำรอง {safe_fname} บนเซิร์ฟเวอร์"}, status_code=404)
+
+        os.remove(fpath)
+        return JSONResponse(content={
+            "status": "success",
+            "message": f"ลบไฟล์สำรอง {safe_fname} เรียบร้อยแล้ว",
+            "deleted_filename": safe_fname
+        })
+    except Exception as e:
+        return JSONResponse(content={"status": "error", "message": f"เกิดข้อผิดพลาดในการลบไฟล์: {str(e)}"}, status_code=500)
 
 @app.post("/api/backup/import")
 async def import_backup(request: Request, file: UploadFile = File(None)):
