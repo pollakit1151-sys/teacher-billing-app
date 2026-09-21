@@ -4,7 +4,17 @@
     ".a4-page > table:nth-of-type(1) > thead > tr:nth-of-type(1) > th:nth-of-type(3)": "ตำแหน่ง<br>ผู้ทำการสอน",
     "#teacher-card-3 > table:nth-of-type(1) > thead > tr:nth-of-type(1) > th:nth-of-type(6)": "ชั้น,แผนก,ห้อง",
     "#teacher-card-5 > table:nth-of-type(3) > tbody > tr:nth-of-type(1) > td:nth-of-type(1) > div:nth-of-type(3)": "( &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <span contenteditable=\"true\" class=\"font-bold \" spellcheck=\"false\" style=\"font-weight: bold !important; font-size: 16px !important;\">นายดําเนิน สุขขี</span> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; )",
-    "#teacher-card-5 > table:nth-of-type(3) > tbody > tr:nth-of-type(1) > td:nth-of-type(1) > div:nth-of-type(4)": "ตำแหน่ง <span contenteditable=\"true\" class=\"font-bold\" spellcheck=\"false\" style=\"font-weight: bold !important; font-size: 16px !important;\">ครู</span>"
+    "#teacher-card-5 > table:nth-of-type(3) > tbody > tr:nth-of-type(1) > td:nth-of-type(1) > div:nth-of-type(4)": "ตำแหน่ง <span contenteditable=\"true\" class=\"font-bold\" spellcheck=\"false\" style=\"font-weight: bold !important; font-size: 16px !important;\">ครู</span>",
+    "#teacher-card-1 > table:nth-of-type(3) > tbody > tr:nth-of-type(1) > td:nth-of-type(1) > div:nth-of-type(5)": "วันที่ <span contenteditable=\"true\" class=\"font-bold\" spellcheck=\"false\" style=\"font-weight: bold !important; font-size: 16px !important;\">22</span> เดือน <span contenteditable=\"true\" class=\"font-bold\" spellcheck=\"false\" style=\"font-weight: bold !important; font-size: 16px !important;\">กันยายน</span> พ.ศ.<span contenteditable=\"true\" class=\"font-bold\" spellcheck=\"false\" style=\"font-weight: bold !important; font-size: 16px !important;\">2569</span>",
+    "#teacher-card-1 > table:nth-of-type(3) > tbody > tr:nth-of-type(1) > td:nth-of-type(2) > div:nth-of-type(5)": "วันที่ <span contenteditable=\"true\" class=\"font-bold\" spellcheck=\"false\" style=\"font-weight: bold !important; font-size: 16px !important;\">22</span> เดือน <span contenteditable=\"true\" class=\"font-bold\" spellcheck=\"false\" style=\"font-weight: bold !important; font-size: 16px !important;\">กันยายน</span> พ.ศ.<span contenteditable=\"true\" class=\"font-bold\" spellcheck=\"false\" style=\"font-weight: bold !important; font-size: 16px !important;\">2569</span>",
+    "#teacher-card-1 > table:nth-of-type(3) > tbody > tr:nth-of-type(1) > td:nth-of-type(3) > div:nth-of-type(5)": "วันที่ <span contenteditable=\"true\" class=\"font-bold\" spellcheck=\"false\" style=\"font-weight: bold !important; font-size: 16px !important;\">22</span> เดือน <span contenteditable=\"true\" class=\"font-bold\" spellcheck=\"false\" style=\"font-weight: bold !important; font-size: 16px !important;\">กันยายน</span> พ.ศ.<span contenteditable=\"true\" class=\"font-bold\" spellcheck=\"false\" style=\"font-weight: bold !important; font-size: 16px !important;\">2569</span>",
+    "#teacher-card-1 > div:nth-of-type(2) > div:nth-of-type(2)": "\n  <span class=\"text-black font-bold select-none inline-block mr-1\" style=\"font-size: 16px !important;\" contenteditable=\"true\" spellcheck=\"false\" data-custom-font-size=\"16px\">✓   </span><span style=\"font-size: 15px !important;\" contenteditable=\"true\" spellcheck=\"false\" class=\"\">ครู</span>\n            ",
+    "#teacher-card-1 > div:nth-of-type(1) > div:nth-of-type(2)": "แผนกวิชาช่างยนต์",
+    "#teacher-card-1 > div:nth-of-type(1) > div:nth-of-type(1)": "ใบเบิกจ่ายเงินค่าสอนพิเศษและค่าสอนเกินภาระงานสอนในสถานศึกษา",
+    "#teacher-card-1 > div:nth-of-type(2) > div:nth-of-type(4)": "\n              <span class=\"whitespace-nowrap shrink-0\" style=\"font-size: 15px !important; white-space: nowrap !important;\" contenteditable=\"true\" spellcheck=\"false\">หน้าที่พิเศษ&nbsp; &nbsp; หัวหน้าแผนกวิชาช่างยนต์</span>\n            ",
+    "#teacher-card-1 > table:nth-of-type(3) > tbody > tr:nth-of-type(1) > td:nth-of-type(3) > div:nth-of-type(1)": "ผู้ตรวจ",
+    "#teacher-card-1 > table:nth-of-type(3) > tbody > tr:nth-of-type(1) > td:nth-of-type(2) > div:nth-of-type(1)": "ผู้รับรอง",
+    "#teacher-card-1 > table:nth-of-type(1) > thead > tr:nth-of-type(1) > th:nth-of-type(6)": "ชั้น,แผนก,ห้อง"
   },
   "template_overrides": {
     "table:nth-of-type(3) > tbody > tr:nth-of-type(1) > td:nth-of-type(1) > div:nth-of-type(5)": {
@@ -49,7 +59,14 @@
     "#teacher-card-1 > div:nth-of-type(2) > div:nth-of-type(2) > span:nth-of-type(1)": "16px",
     "#teacher-card-1 > table:nth-of-type(3) > tbody > tr:nth-of-type(1) > td:nth-of-type(3) > div:nth-of-type(1)": "16px",
     ".a4-page > table:nth-of-type(2) > tbody > tr:nth-of-type(1) > td:nth-of-type(1) > div:nth-of-type(2)": "16px",
-    ".a4-page > table:nth-of-type(2) > tbody > tr:nth-of-type(1) > td:nth-of-type(1) > div:nth-of-type(2) > span": "17px"
+    ".a4-page > table:nth-of-type(2) > tbody > tr:nth-of-type(1) > td:nth-of-type(1) > div:nth-of-type(2) > span": "17px",
+    "#teacher-card-1 > table:nth-of-type(1) > tbody > tr:nth-of-type(1) > td:nth-of-type(2) > div": "14px",
+    "#teacher-card-1 > table:nth-of-type(1) > tbody > tr:nth-of-type(1) > td:nth-of-type(5)": "14px",
+    "#teacher-card-1 > table:nth-of-type(1) > tbody > tr:nth-of-type(6) > td:nth-of-type(1)": "14px",
+    "#teacher-card-1 > table:nth-of-type(1) > tbody > tr:nth-of-type(11) > td:nth-of-type(1)": "14px",
+    "#teacher-card-1 > table:nth-of-type(1) > tbody > tr:nth-of-type(16) > td:nth-of-type(1)": "14px",
+    "#teacher-card-1 > table:nth-of-type(1) > tbody > tr:nth-of-type(21) > td:nth-of-type(1)": "14px",
+    "#teacher-card-1 > table:nth-of-type(1) > tbody > tr:nth-of-type(26) > td:nth-of-type(1)": "14px"
   },
   "font_weights": {
     "#teacher-card-1 > table:nth-of-type(3) > tbody > tr:nth-of-type(1) > td:nth-of-type(1) > div:nth-of-type(5)": "normal",
@@ -391,6 +408,7 @@
           "rate_vc": 0,
           "rate_vs": 0,
           "note": "",
+          "_sched_idx": 0,
           "is_workplace": false,
           "amt_vc": 0,
           "amt_vs": 0,
@@ -412,6 +430,7 @@
           "rate_vc": 0,
           "rate_vs": 0,
           "note": "",
+          "_sched_idx": 1,
           "is_workplace": false,
           "amt_vc": 0,
           "amt_vs": 0,
@@ -433,6 +452,7 @@
           "rate_vc": 0,
           "rate_vs": 0,
           "note": "",
+          "_sched_idx": 2,
           "is_workplace": false,
           "amt_vc": 0,
           "amt_vs": 0,
@@ -449,7 +469,7 @@
           "code": "30101-2009",
           "subject_name": "งานไฟฟ้ายานยนต์",
           "room": "9404",
-          "class_info": "สย.ม.6 2/3 (26)",
+          "class_info": "สย. 2/3 .ม.6 (26)",
           "time_str": "11.10 - 12.10",
           "start_col": 4,
           "end_col": 4,
@@ -460,6 +480,7 @@
           "rate_vc": 0,
           "rate_vs": 270,
           "note": "",
+          "_sched_idx": 3,
           "is_workplace": false,
           "amt_vc": 0,
           "amt_vs": 270,
@@ -481,6 +502,7 @@
           "rate_vc": 0,
           "rate_vs": 270,
           "note": "",
+          "_sched_idx": 4,
           "is_workplace": false,
           "amt_vc": 0,
           "amt_vs": 1080,
@@ -511,6 +533,7 @@
           "rate_vc": 0,
           "rate_vs": 0,
           "note": "วันหยุดราชการ",
+          "_sched_idx": 5,
           "is_workplace": false,
           "is_holiday": true,
           "amt_vc": 0,
@@ -522,7 +545,7 @@
           "code": "30101-2009",
           "subject_name": "งานไฟฟ้ายานยนต์",
           "room": "9404",
-          "class_info": "สย.ม.6 2/5 (26)",
+          "class_info": "สย. 2/3 .ม.6 (26)",
           "time_str": "14.10 - 19.10",
           "start_col": 6,
           "end_col": 10,
@@ -533,6 +556,7 @@
           "rate_vc": 0,
           "rate_vs": 0,
           "note": "วันหยุดราชการ",
+          "_sched_idx": 6,
           "is_workplace": false,
           "is_holiday": true,
           "amt_vc": 0,
@@ -564,6 +588,7 @@
           "rate_vc": 0,
           "rate_vs": 0,
           "note": "",
+          "_sched_idx": 7,
           "is_workplace": false,
           "amt_vc": 0,
           "amt_vs": 0,
@@ -597,7 +622,7 @@
           "day": "ศุกร์"
         }
       ],
-      "updated_at": "2026-09-20T01:07:04.287168"
+      "updated_at": "2026-09-20T01:25:04.255385"
     }
   },
   "course_types": {
@@ -1568,6 +1593,8 @@
     "แผนก ชย สย.1/1,สย.1/2": 26,
     "สยฟ.ทวี 1i": 26,
     "สยฟ.1i": 26,
-    "ขย.2/2": 26
+    "ขย.2/2": 26,
+    "สย. 2/3 .ม.6": 26,
+    "สย.2/3.ม.6": 26
   }
 }

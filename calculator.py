@@ -616,10 +616,15 @@ def calculate_week(teachers_master, holiday_days=None, leaves=None, substitution
         sorted_asubs = sorted(a_subs, key=lambda s: (DAY_ORDER.index(s.get('day', '')) if s.get('day', '') in DAY_ORDER else 99, int(s.get('start_p', 1))))
         for asub in sorted_asubs:
             h = asub.get('hours') or (int(asub.get('end_p', 4)) - int(asub.get('start_p', 1)) + 1)
-            # ส่วนสอนแทนให้เน้นเป็นคาบนอกก่อนแต่ห้ามเกินสิทธิ์เดิม
-            alloc_out = min(h, a_max_sub_out)
+            # เติม 'ใน' ให้คนไปราชการ/ลาจนครบขั้นต่ำก่อนเสมอ
+            alloc_in_shortage = min(h, shortage)
+            shortage -= alloc_in_shortage
+            rem_h = h - alloc_in_shortage
+
+            # ส่วนที่เหลือหลังจากเติมในจนครบแล้ว จึงสามารถเป็น 'นอก' ได้ไม่เกินสิทธิ์เดิมของคนไปราชการ
+            alloc_out = min(rem_h, a_max_sub_out)
             a_max_sub_out -= alloc_out
-            alloc_in = h - alloc_out
+            alloc_in = alloc_in_shortage + (rem_h - alloc_out)
 
             asub['_alloc_in'] = alloc_in
             asub['_alloc_out'] = alloc_out
