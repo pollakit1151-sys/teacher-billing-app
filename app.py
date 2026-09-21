@@ -1902,10 +1902,15 @@ async def save_distribution_revenues(request: Request):
 
 
 # ----------------------------------------------------
-# BACKUP & RESTORE ENDPOINTS (For Hugging Face Spaces & Local)
+# BACKUP & RESTORE ENDPOINTS (Auto-Sync & Historical Snapshots)
 # ----------------------------------------------------
+BACKUPS_DIR = os.path.join(BASE_DIR, "backups")
+os.makedirs(BACKUPS_DIR, exist_ok=True)
+
 BACKUP_TARGET_FILES = [
     "teachers_master.json",
+    "substitutions_master.json",
+    "leaves_master.json",
     "compensations_master.json",
     "custom_overrides_master.json",
     "signatories_master.json",
@@ -1920,39 +1925,216 @@ BACKUP_TARGET_FILES = [
     "webhook_config.json"
 ]
 
+THAI_MONTHS_SHORT = ["", "ม.ค.", "ก.พ.", "มี.ค.", "เม.ย.", "พ.ค.", "มิ.ย.", "ก.ค.", "ส.ค.", "ก.ย.", "ต.ค.", "พ.ย.", "ธ.ค."]
+
+def format_thai_datetime(dt):
+    """Format datetime into readable Thai string."""
+    try:
+        y = dt.year + 543
+        m = THAI_MONTHS_SHORT[dt.month] if 1 <= dt.month <= 12 else str(dt.month)
+        return f"{dt.day} {m} {y} เวลา {dt.strftime('%H:%M:%S')} น."
+    except Exception:
+        return str(dt)
+
+def create_backup_snapshot(note="สร้างจุดสำรองข้อมูล"):
+    """Package all databases and save a timestamped file into backups/ directory."""
+    os.makedirs(BACKUPS_DIR, exist_ok=True)
+    now = datetime.datetime.now()
+    timestamp = now.strftime("%Y%m%d_%H%M%S")
+    filename = f"backup_{timestamp}.json"
+    filepath = os.path.join(BACKUPS_DIR, filename)
+
+    data = {
+        "app": "teacher_billing_app",
+        "version": "1.0",
+        "exported_at": now.isoformat(),
+        "created_at_thai": format_thai_datetime(now),
+        "note": note,
+        "files": {}
+    }
+    for fname in BACKUP_TARGET_FILES:
+        fpath = os.path.join(BASE_DIR, fname)
+        if os.path.exists(fpath):
+            try:
+                with open(fpath, "r", encoding="utf-8") as f:
+                    data["files"][fname] = json.load(f)
+            except Exception:
+                pass
+
+    with open(filepath, "w", encoding="utf-8") as f:
+        json.dump(data, f, ensure_ascii=False, indent=2)
+
+    teachers = data["files"].get("teachers_master.json", [])
+    subs = data["files"].get("substitutions_master.json", [])
+    leaves = data["files"].get("leaves_master.json", [])
+    size_kb = round(os.path.getsize(filepath) / 1024, 1)
+
+    return {
+        "filename": filename,
+        "exported_at": now.isoformat(),
+        "created_at_thai": format_thai_datetime(now),
+        "note": note,
+        "size_kb": size_kb,
+        "teachers_count": len(teachers) if isinstance(teachers, list) else 0,
+        "substitutions_count": len(subs) if isinstance(subs, list) else 0,
+        "leaves_count": len(leaves) if isinstance(leaves, list) else 0
+    }
+
 @app.get("/api/backup/export")
 def export_backup():
     """Download full backup package containing all master databases."""
     try:
-        data = {
-            "app": "teacher_billing_app",
-            "version": "1.0",
-            "exported_at": datetime.datetime.now().isoformat(),
-            "files": {}
-        }
-        for fname in BACKUP_TARGET_FILES:
-            fpath = os.path.join(BASE_DIR, fname)
-            if os.path.exists(fpath):
-                try:
-                    with open(fpath, "r", encoding="utf-8") as f:
-                        data["files"][fname] = json.load(f)
-                except Exception:
-                    pass
-        content = json.dumps(data, ensure_ascii=False, indent=2)
-        timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-        filename = f"teacher_billing_backup_{timestamp}.json"
-        
-        return Response(
-            content=content,
+        meta = create_backup_snapshot(note="ดาวน์โหลดโดยผู้ใช้")
+        filepath = os.path.join(BACKUPS_DIR, meta["filename"])
+        return FileResponse(
+            path=filepath,
             media_type="application/json",
-            headers={"Content-Disposition": f"attachment; filename={filename}"}
+            filename=meta["filename"]
         )
     except Exception as e:
         return JSONResponse(content={"status": "error", "message": str(e)}, status_code=500)
 
+@app.post("/api/backup/create")
+async def api_backup_create(request: Request):
+    """API to create a new historical backup snapshot on server."""
+    try:
+        body = {}
+        try:
+            body = await request.json()
+        except Exception:
+            pass
+        note = body.get("note", "บันทึกโดยผู้ใช้")
+        meta = create_backup_snapshot(note=note)
+        return JSONResponse(content={"status": "success", "message": "สร้างจุดสำรองข้อมูลสำเร็จ", "backup": meta})
+    except Exception as e:
+        return JSONResponse(content={"status": "error", "message": str(e)}, status_code=500)
+
+@app.get("/api/backup/list")
+def api_backup_list():
+    """List all available backup snapshots in backups/ folder, newest first."""
+    try:
+        os.makedirs(BACKUPS_DIR, exist_ok=True)
+        files = [f for f in os.listdir(BACKUPS_DIR) if f.endswith(".json")]
+        backups = []
+        for fname in files:
+            fpath = os.path.join(BACKUPS_DIR, fname)
+            try:
+                stat = os.stat(fpath)
+                mtime = datetime.datetime.fromtimestamp(stat.st_mtime)
+                size_kb = round(stat.st_size / 1024, 1)
+                
+                # Fast probe header without reading entire huge json if possible
+                t_count = 0
+                s_count = 0
+                l_count = 0
+                note = "จุดสำรองข้อมูล"
+                created_thai = format_thai_datetime(mtime)
+                
+                try:
+                    with open(fpath, "r", encoding="utf-8") as f:
+                        obj = json.load(f)
+                    if isinstance(obj, dict):
+                        note = obj.get("note") or note
+                        if obj.get("created_at_thai"):
+                            created_thai = obj["created_at_thai"]
+                        files_dict = obj.get("files", {})
+                        if isinstance(files_dict, dict):
+                            t_list = files_dict.get("teachers_master.json", [])
+                            t_count = len(t_list) if isinstance(t_list, list) else 0
+                            s_list = files_dict.get("substitutions_master.json", [])
+                            s_count = len(s_list) if isinstance(s_list, list) else 0
+                            l_list = files_dict.get("leaves_master.json", [])
+                            l_count = len(l_list) if isinstance(l_list, list) else 0
+                except Exception:
+                    pass
+
+                backups.append({
+                    "filename": fname,
+                    "created_at_thai": created_thai,
+                    "mtime_iso": mtime.isoformat(),
+                    "size_kb": size_kb,
+                    "note": note,
+                    "teachers_count": t_count,
+                    "substitutions_count": s_count,
+                    "leaves_count": l_count
+                })
+            except Exception:
+                pass
+
+        # Sort newest first by mtime_iso
+        backups.sort(key=lambda x: x.get("mtime_iso", ""), reverse=True)
+        return JSONResponse(content={"status": "success", "backups": backups})
+    except Exception as e:
+        return JSONResponse(content={"status": "error", "message": str(e)}, status_code=500)
+
+@app.post("/api/backup/restore_server_file")
+async def api_backup_restore_server_file(request: Request):
+    """Restore master databases from a selected server backup file."""
+    try:
+        body = await request.json()
+        raw_fname = body.get("filename", "").strip()
+        safe_fname = os.path.basename(raw_fname)
+        if not safe_fname or not safe_fname.endswith(".json"):
+            return JSONResponse(content={"status": "error", "message": "ชื่อไฟล์ไม่ถูกต้อง"}, status_code=400)
+
+        fpath = os.path.join(BACKUPS_DIR, safe_fname)
+        if not os.path.exists(fpath):
+            return JSONResponse(content={"status": "error", "message": f"ไม่พบไฟล์สำรอง {safe_fname} บนเซิร์ฟเวอร์"}, status_code=404)
+
+        # Safety: auto-create a backup of current state before restoring
+        try:
+            create_backup_snapshot(note=f"ก่อนกู้คืนจาก {safe_fname}")
+        except Exception:
+            pass
+
+        with open(fpath, "r", encoding="utf-8") as f:
+            backup_obj = json.load(f)
+
+        files_dict = backup_obj.get("files", {})
+        if not files_dict and isinstance(backup_obj, dict):
+            if "teachers_master.json" in backup_obj:
+                files_dict = backup_obj
+
+        if not files_dict:
+            return JSONResponse(content={"status": "error", "message": "โครงสร้างไฟล์สำรองไม่ถูกต้อง"}, status_code=400)
+
+        restored = []
+        for fname, fcontent in files_dict.items():
+            target_fname = os.path.basename(fname)
+            if not target_fname.endswith(".json"):
+                continue
+            target_path = os.path.join(BASE_DIR, target_fname)
+            try:
+                with open(target_path, "w", encoding="utf-8") as out_f:
+                    json.dump(fcontent, out_f, ensure_ascii=False, indent=2)
+                restored.append(target_fname)
+            except Exception as fe:
+                print(f"Error restoring {target_fname}: {fe}")
+
+        return JSONResponse(content={
+            "status": "success",
+            "message": f"กู้คืนข้อมูลสำเร็จ ({len(restored)} ไฟล์)",
+            "restored_files": restored
+        })
+    except Exception as e:
+        return JSONResponse(content={"status": "error", "message": f"การกู้คืนล้มเหลว: {str(e)}"}, status_code=500)
+
+@app.get("/api/backup/download/{filename}")
+def api_backup_download_file(filename: str):
+    """Download a specific historical backup file."""
+    safe_fname = os.path.basename(filename)
+    fpath = os.path.join(BACKUPS_DIR, safe_fname)
+    if not os.path.exists(fpath):
+        return JSONResponse(content={"status": "error", "message": "ไม่พบไฟล์"}, status_code=404)
+    return FileResponse(
+        path=fpath,
+        media_type="application/json",
+        filename=safe_fname
+    )
+
 @app.post("/api/backup/import")
 async def import_backup(request: Request, file: UploadFile = File(None)):
-    """Upload and restore backup package to restore databases."""
+    """Upload and restore backup package to restore databases from user machine."""
     try:
         content = None
         if file is not None and file.filename:
@@ -1977,6 +2159,12 @@ async def import_backup(request: Request, file: UploadFile = File(None)):
         if not files_dict:
             return JSONResponse(content={"status": "error", "message": "โครงสร้างไฟล์สำรองไม่ถูกต้อง"}, status_code=400)
             
+        # Safety auto-backup before import
+        try:
+            create_backup_snapshot(note="ก่อนนำเข้าไฟล์จากเครื่องผู้ใช้")
+        except Exception:
+            pass
+
         restored = []
         for fname, fcontent in files_dict.items():
             safe_fname = os.path.basename(fname)
@@ -1984,8 +2172,6 @@ async def import_backup(request: Request, file: UploadFile = File(None)):
                 continue
             target_path = os.path.join(BASE_DIR, safe_fname)
             try:
-                if os.path.exists(target_path):
-                    shutil.copy2(target_path, target_path + ".bak")
                 with open(target_path, "w", encoding="utf-8") as f:
                     json.dump(fcontent, f, ensure_ascii=False, indent=2)
                 restored.append(safe_fname)
