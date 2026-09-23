@@ -519,28 +519,51 @@ def calculate_week(teachers_master, holiday_days=None, leaves=None, substitution
         valid_substitutions.append(sub)
     substitutions = valid_substitutions
 
+    def resolve_teacher_idx(raw_idx, name=""):
+        if raw_idx is not None:
+            try:
+                val = int(raw_idx)
+                if any(t.get('index') == val for t in teachers_master):
+                    return val
+            except (ValueError, TypeError):
+                pass
+        if name:
+            clean = re.sub(r'^(นาย|นางสาว|นาง)\s*', '', str(name)).strip()
+            match = next((t.get('index') for t in teachers_master if clean and (clean in t.get('name', '') or t.get('name', '') in clean)), None)
+            if match is not None:
+                return match
+        return raw_idx
+
     # Pre-build maps
     absent_map = {}
     for lv in leaves:
         lv_wk = lv.get('week_num') or lv.get('week') or 1
         if str(lv_wk) != str(week_num):
             continue
-        t_idx = lv.get('teacher_idx') if lv.get('teacher_idx') is not None else lv.get('teacher_index')
+        raw_idx = lv.get('teacher_idx') if lv.get('teacher_idx') is not None else lv.get('teacher_index')
+        t_idx = resolve_teacher_idx(raw_idx, lv.get('teacher_name') or lv.get('name', ''))
         day = normalize_day(lv.get('day'))
         if t_idx is not None:
             if t_idx not in absent_map:
                 absent_map[t_idx] = []
-            absent_map[t_idx].append(day)
+            if day not in absent_map[t_idx]:
+                absent_map[t_idx].append(day)
 
     sub_map = {}
     absent_sub_map = {}
     for sub in substitutions:
-        s_idx = sub.get('sub_teacher_idx')
+        s_raw = sub.get('sub_teacher_idx')
+        s_name = sub.get('sub_name') or sub.get('sub_teacher_name') or sub.get('substitute_teacher_name') or ''
+        s_idx = resolve_teacher_idx(s_raw, s_name)
+        sub['sub_teacher_idx'] = s_idx
         if s_idx not in sub_map:
             sub_map[s_idx] = []
         sub_map[s_idx].append(sub)
 
-        a_idx = sub.get('absent_teacher_idx')
+        a_raw = sub.get('absent_teacher_idx')
+        a_name = sub.get('absent_name') or sub.get('absent_teacher_name') or ''
+        a_idx = resolve_teacher_idx(a_raw, a_name)
+        sub['absent_teacher_idx'] = a_idx
         if a_idx not in absent_sub_map:
             absent_sub_map[a_idx] = []
         absent_sub_map[a_idx].append(sub)
@@ -1090,8 +1113,8 @@ def calculate_week(teachers_master, holiday_days=None, leaves=None, substitution
         
         # เพดานคาบนอกสำหรับคาบปกติของตนเอง:
         # 1) ต้องไม่เกิน baseline_cap ที่เหลืออยู่ (หลังหักคาบที่ให้คนอื่นสอนแทนเบิกนอกไปแล้ว)
-        # 2) เมื่อรวมกับคาบสอนแทนของตนเอง (total_sub_out) และสอนชดเชย (total_comp_out) ต้องไม่เกินเพดานสูงสุด 12 คาบ/สัปดาห์
-        max_claim_allowed = max(0, min(12, baseline_cap) - total_sub_out - total_comp_out)
+        # 2) สำหรับคาบปกติของตนเอง + สอนชดเชย ต้องไม่เกินเพดานสูงสุด 12 คาบ/สัปดาห์ (ส่วนการสอนแทนผู้อื่นสามารถเบิกเพิ่มได้ตามสิทธิ์)
+        max_claim_allowed = max(0, min(12, baseline_cap) - total_comp_out)
 
         # 4 Priority Groups for claiming 'นอก' (overflow/extra teaching hours):
         # 1) วิชาปกติ วันธรรมดา (จันทร์ - ศุกร์): ให้สิทธิ์เบิก 'นอก' เป็นลำดับแรก
@@ -1312,7 +1335,7 @@ def calculate_week(teachers_master, holiday_days=None, leaves=None, substitution
         for c in t.get('classes', []):
             if c.get('is_substituted') and c.get('sub_match'):
                 sm = c.get('sub_match')
-                sub_name = sm.get('sub_name') or sm.get('sub_teacher_name') or 'ครูสอนแทน'
+                sub_name = sm.get('sub_name') or sm.get('sub_teacher_name') or sm.get('substitute_teacher_name') or 'ครูสอนแทน'
                 s_idx = sm.get('sub_teacher_idx')
                 day = sm.get('day')
                 
@@ -1574,7 +1597,9 @@ def find_substitute_candidates(teachers_master, absent_teacher_idx, day, start_p
         clean_t_name = t_name.replace("นาย", "").replace("นางสาว", "").replace("นาง", "").strip()
 
         # Exclude the absent teacher themselves (by index OR by name)
-        if t_idx == target_idx or (clean_target_name and clean_target_name in t_name) or (clean_t_name and clean_t_name in target_name):
+        if target_idx is not None and t_idx is not None and int(t_idx) == int(target_idx):
+            continue
+        if clean_target_name and clean_t_name and (clean_target_name == clean_t_name or clean_target_name in clean_t_name or clean_t_name in clean_target_name):
             continue
 
         if t.get('level') != target_level:

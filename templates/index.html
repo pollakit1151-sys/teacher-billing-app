@@ -4446,6 +4446,25 @@
     async function loadInitialMasterData() {
       try {
         await loadInitialStudentCounts();
+        try {
+          const subRes = await fetch('/api/substitutions');
+          if (subRes.ok) {
+            const subData = await subRes.json();
+            if (subData && subData.status === 'success') {
+              if (Array.isArray(subData.substitutions) && subData.substitutions.length > 0) {
+                substitutionsList = subData.substitutions;
+                try { localStorage.setItem('teacher_billing_substitutions_v1', JSON.stringify(substitutionsList)); } catch(e){}
+              }
+              if (Array.isArray(subData.leaves) && subData.leaves.length > 0) {
+                leavesList = subData.leaves;
+                try { localStorage.setItem('teacher_billing_leaves_v1', JSON.stringify(leavesList)); } catch(e){}
+              }
+            }
+          }
+        } catch(e) {
+          console.warn('Could not fetch /api/substitutions:', e);
+        }
+
         const res = await fetch('/api/teachers');
         masterTeachers = await res.json();
 
@@ -4471,6 +4490,7 @@
         }
 
         await recalculateAll();
+        renderActiveSubstitutions();
         setDepartmentFilter(currentDeptFilter);
         if (typeof syncSidebarTeacherSelect === 'function' && currentA4TeacherIndex) {
           syncSidebarTeacherSelect(currentA4TeacherIndex);
@@ -6427,10 +6447,21 @@
           const isHoliDay = isHoli || (cList && cList.some(c => c && c.is_holiday));
 
           // Check if teacher is absent or on compensated leave on this day (matching 2567.เทอม2.3ช่างยนต์.xlsx)
-          const dayAbsSubs = substitutionsList.filter(sub => Number(sub.absent_teacher_idx) === Number(teacher.index) && String(sub.day || '').trim() === String(dayStr || '').trim() && (!sub.week_num || Number(sub.week_num) === Number(curWk)));
+          const cleanTName = (teacher.name || '').replace(/^(นาย|นางสาว|นาง)\s*/, '').trim();
+          const dayAbsSubs = substitutionsList.filter(sub => {
+            const matchIdx = Number(sub.absent_teacher_idx) === Number(teacher.index);
+            const subAbsName = (sub.absent_name || sub.absent_teacher_name || '').replace(/^(นาย|นางสาว|นาง)\s*/, '').trim();
+            const matchName = cleanTName && subAbsName && (cleanTName === subAbsName || cleanTName.includes(subAbsName) || subAbsName.includes(cleanTName));
+            return (matchIdx || matchName) && String(sub.day || '').trim() === String(dayStr || '').trim() && (!sub.week_num || Number(sub.week_num) === Number(curWk));
+          });
           const isCompLeaveDay = (dayStr in compLeaveDaysMap) || (cList && cList.some(c => c && c.is_compensated_leave));
           const isCompDay = (cList && cList.some(c => c && c.is_compensatory));
-          const isAbsentDay = !isHoliDay && !isCompLeaveDay && (dayAbsSubs.length > 0 || leavesList.some(l => Number(l.teacher_idx) === Number(teacher.index) && String(l.day || '').trim() === String(dayStr || '').trim() && (!l.week_num || Number(l.week_num) === Number(curWk))) || cList.some(c => c.is_absent || c.is_substituted));
+          const isAbsentDay = !isHoliDay && !isCompLeaveDay && (dayAbsSubs.length > 0 || leavesList.some(l => {
+            const matchIdx = Number(l.teacher_idx) === Number(teacher.index);
+            const lvName = (l.teacher_name || l.name || '').replace(/^(นาย|นางสาว|นาง)\s*/, '').trim();
+            const matchName = cleanTName && lvName && (cleanTName === lvName || cleanTName.includes(lvName) || lvName.includes(cleanTName));
+            return (matchIdx || matchName) && String(l.day || '').trim() === String(dayStr || '').trim() && (!l.week_num || Number(l.week_num) === Number(curWk));
+          }) || cList.some(c => c.is_absent || c.is_substituted));
 
           let leaveReason = 'ไปราชการ';
           if (isCompLeaveDay && compLeaveDaysMap[dayStr]?.leave_reason) {
@@ -6438,7 +6469,12 @@
           } else if (dayAbsSubs.length > 0 && dayAbsSubs[0].reason) {
             leaveReason = dayAbsSubs[0].reason;
           } else {
-            const lv = leavesList.find(l => Number(l.teacher_idx) === Number(teacher.index) && String(l.day || '').trim() === String(dayStr || '').trim() && (!l.week_num || Number(l.week_num) === Number(curWk)));
+            const lv = leavesList.find(l => {
+              const matchIdx = Number(l.teacher_idx) === Number(teacher.index);
+              const lvName = (l.teacher_name || l.name || '').replace(/^(นาย|นางสาว|นาง)\s*/, '').trim();
+              const matchName = cleanTName && lvName && (cleanTName === lvName || cleanTName.includes(lvName) || lvName.includes(cleanTName));
+              return (matchIdx || matchName) && String(l.day || '').trim() === String(dayStr || '').trim() && (!l.week_num || Number(l.week_num) === Number(curWk));
+            });
             if (lv && lv.reason) leaveReason = lv.reason;
             else {
               const ac = cList.find(c => c.leave_reason);
@@ -7738,6 +7774,12 @@
       const list = document.getElementById('absentClassesList');
       if (!selectEl || !box || !list) return;
 
+      // Clear any candidate area from previous search to avoid stale candidates
+      const candArea = document.getElementById('subCandidateArea');
+      if (candArea) candArea.classList.add('hidden');
+      const candList = document.getElementById('candidateList');
+      if (candList) candList.innerHTML = '';
+
       const optVal = selectEl.value;
       const selectedOpt = selectEl.selectedIndex >= 0 ? selectEl.options[selectEl.selectedIndex] : null;
       const optName = selectedOpt ? (selectedOpt.getAttribute('data-name') || selectedOpt.text.split('(')[0].trim()) : '';
@@ -7900,45 +7942,57 @@
           })
         });
         const result = await res.json();
-        renderSubstituteCandidates(result.candidates || []);
+        renderSubstituteCandidates(result.candidates || [], realAbsentIdx, realAbsentName);
       } catch (err) {
         console.error("Error finding substitutes:", err);
       }
     }
 
-    function renderSubstituteCandidates(candidates) {
+    function renderSubstituteCandidates(candidates, absentIdx, absentName) {
       const area = document.getElementById('subCandidateArea');
       const list = document.getElementById('candidateList');
       const count = document.getElementById('candidateCount');
 
       area.classList.remove('hidden');
-      count.innerText = `${candidates.length} ท่าน`;
 
-      if (candidates.length === 0) {
+      // Filter out the absent teacher completely from candidate list
+      const cleanAbsent = (absentName || '').replace(/^(นาย|นางสาว|นาง)\s*/, '').trim();
+      const filtered = (candidates || []).filter(c => {
+        if (absentIdx && Number(c.teacher_idx) === Number(absentIdx)) return false;
+        const cleanC = (c.name || '').replace(/^(นาย|นางสาว|นาง)\s*/, '').trim();
+        if (cleanAbsent && cleanC && (cleanAbsent === cleanC || cleanAbsent.includes(cleanC) || cleanC.includes(cleanAbsent))) return false;
+        return true;
+      });
+
+      count.innerText = `${filtered.length} ท่าน`;
+
+      if (filtered.length === 0) {
         list.innerHTML = `<p class="text-xs text-rose-500 bg-rose-50 p-2 rounded-lg">ไม่พบครูที่ว่างในระดับเดียวกันและช่วงคาบนี้ (อาจติดภาระงาน, ธุรการ, หรือสอน ป.ตรี)</p>`;
         return;
       }
 
-      list.innerHTML = candidates.map(c => `
+      const safeAbsentName = (absentName || '').replace(/'/g, "\\'");
+
+      list.innerHTML = filtered.map(c => `
         <div class="p-2 rounded-xl border ${c.is_full_match ? 'bg-emerald-50/70 border-emerald-200' : 'bg-amber-50/70 border-amber-200'} flex items-center justify-between">
           <div>
             <div class="font-bold text-xs ${c.is_full_match ? 'text-emerald-900' : 'text-amber-900'}">${c.name}</div>
             <div class="text-[10px] text-slate-500">${c.level} • ${c.dept} • <span class="font-semibold">${c.match_desc}</span></div>
           </div>
-          <button onclick="selectSubstitute(${c.teacher_idx}, '${c.name}', ${c.start_p}, ${c.end_p})" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-900 text-white rounded text-[11px] font-bold shadow-xs">
+          <button onclick="selectSubstitute(${c.teacher_idx}, '${c.name.replace(/'/g, "\\'")}', ${c.start_p}, ${c.end_p}, ${absentIdx || 'null'}, '${safeAbsentName}')" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-900 text-white rounded text-[11px] font-bold shadow-xs">
             เลือกสอนแทน
           </button>
         </div>
       `).join('');
     }
 
-    async function selectSubstitute(subIdx, subName, startP, endP) {
+    async function selectSubstitute(subIdx, subName, startP, endP, forcedAbsentIdx = null, forcedAbsentName = '') {
       const selectEl = document.getElementById('absentTeacherSelect');
       const optVal = selectEl ? selectEl.value : '';
       const absentIdx = parseInt(optVal);
       const selectedOpt = selectEl && selectEl.selectedIndex >= 0 ? selectEl.options[selectEl.selectedIndex] : null;
       const optName = selectedOpt ? (selectedOpt.getAttribute('data-name') || selectedOpt.text.split('(')[0].trim()) : '';
-      const cleanTargetName = optName ? optName.replace(/^(นาย|นางสาว|นาง)\s*/, '').trim() : '';
+      const cleanTargetName = forcedAbsentName ? forcedAbsentName.replace(/^(นาย|นางสาว|นาง)\s*/, '').trim() : (optName ? optName.replace(/^(นาย|นางสาว|นาง)\s*/, '').trim() : '');
 
       const pool = (typeof calculatedData !== 'undefined' && calculatedData && calculatedData.length > 0) ? calculatedData : masterTeachers;
       let absentTeacher = null;
@@ -7950,8 +8004,9 @@
           return cleanT === cleanTargetName || t.name.includes(cleanTargetName) || cleanTargetName.includes(cleanT);
         });
       }
-      if (!absentTeacher && absentIdx && pool) {
-        absentTeacher = pool.find(t => t.index === absentIdx || String(t.index) === String(optVal));
+      if (!absentTeacher && (forcedAbsentIdx || absentIdx) && pool) {
+        const targetSearchIdx = forcedAbsentIdx || absentIdx;
+        absentTeacher = pool.find(t => t.index === targetSearchIdx || String(t.index) === String(targetSearchIdx));
       }
       if (!absentTeacher && typeof masterTeachers !== 'undefined' && masterTeachers) {
         if (cleanTargetName) {
@@ -7961,9 +8016,21 @@
             return cleanT === cleanTargetName || t.name.includes(cleanTargetName) || cleanTargetName.includes(cleanT);
           });
         }
-        if (!absentTeacher && absentIdx) {
-          absentTeacher = masterTeachers.find(t => t.index === absentIdx || String(t.index) === String(optVal));
+        if (!absentTeacher && (forcedAbsentIdx || absentIdx)) {
+          const targetSearchIdx = forcedAbsentIdx || absentIdx;
+          absentTeacher = masterTeachers.find(t => t.index === targetSearchIdx || String(t.index) === String(targetSearchIdx));
         }
+      }
+
+      const realAbsentIdx = (forcedAbsentIdx !== null && forcedAbsentIdx !== undefined) ? forcedAbsentIdx : (absentTeacher ? absentTeacher.index : absentIdx);
+      const rawAbsent = forcedAbsentName || (absentTeacher ? absentTeacher.name : (optName || `ครูลำดับที่ ${absentIdx}`));
+      const cleanAbsent = (rawAbsent || '').replace(/^(นาย|นางสาว|นาง)\s*/, '').trim();
+      const cleanSub = (subName || '').replace(/^(นาย|นางสาว|นาง)\s*/, '').trim();
+
+      // Guard: strictly forbid self-substitution
+      if (Number(subIdx) === Number(realAbsentIdx) || (cleanSub && cleanAbsent && cleanSub === cleanAbsent)) {
+        showToast("ไม่สามารถเลือกได้", "ครูผู้ลาและครูผู้สอนแทนเป็นคนเดียวกันไม่ได้", false);
+        return;
       }
 
       const day = document.getElementById('absentDaySelect').value;
@@ -8008,9 +8075,6 @@
         timeStr = `${sT} - ${eT}`;
       }
 
-      const realAbsentIdx = absentTeacher ? absentTeacher.index : absentIdx;
-      const rawAbsent = absentTeacher ? absentTeacher.name : (optName || `ครูลำดับที่ ${absentIdx}`);
-      const cleanAbsent = rawAbsent.replace(/^(นาย|นางสาว|นาง)\s*/, '').trim();
       const absentLabel = `สอนแทน อ.${cleanAbsent}`;
       const subLabel = `สอนแทน อ.${cleanAbsent}`;
 
@@ -8047,13 +8111,20 @@
 
       substitutionsList.push(subEntry);
 
-      if (!leavesList.some(l => l.teacher_idx === realAbsentIdx && l.day === day && (!l.week_num || l.week_num === curWk))) {
+      if (!leavesList.some(l => (Number(l.teacher_idx) === Number(realAbsentIdx) || ((l.teacher_name || '').replace(/^(นาย|นางสาว|นาง)\s*/, '').trim() === cleanAbsent)) && l.day === day && (!l.week_num || Number(l.week_num) === Number(curWk)))) {
         leavesList.push({ teacher_idx: realAbsentIdx, teacher_name: rawAbsent, day: day, reason: reason, week_num: curWk });
       }
 
+      // Clear candidate area after selection
+      const candArea = document.getElementById('subCandidateArea');
+      if (candArea) candArea.classList.add('hidden');
+      const candList = document.getElementById('candidateList');
+      if (candList) candList.innerHTML = '';
+
       await syncSubstitutionsToServer();
       renderActiveSubstitutions();
-      recalculateAll();
+      loadTeacherClassesForDay();
+      await recalculateAll();
       showToast("เพิ่มการสอนแทนแล้ว", `${subName} สอนแทน ${rawAbsent} วิชา ${code} วัน${day}`, true);
     }
 
@@ -8177,14 +8248,34 @@
         const sub = substitutionsList[idx];
         substitutionsList.splice(idx, 1);
         const subWk = sub.week_num || 1;
-        const remainingOnDay = substitutionsList.some(s => s.absent_teacher_idx === sub.absent_teacher_idx && s.day === sub.day && (s.week_num || 1) === subWk);
+        const cleanSubAbs = (sub.absent_name || sub.absent_teacher_name || '').replace(/^(นาย|นางสาว|นาง)\s*/, '').trim();
+        const remainingOnDay = substitutionsList.some(s => {
+          const matchIdx = Number(s.absent_teacher_idx) === Number(sub.absent_teacher_idx);
+          const cleanS = (s.absent_name || s.absent_teacher_name || '').replace(/^(นาย|นางสาว|นาง)\s*/, '').trim();
+          const matchName = cleanSubAbs && cleanS && (cleanSubAbs === cleanS || cleanSubAbs.includes(cleanS) || cleanS.includes(cleanSubAbs));
+          return (matchIdx || matchName) && s.day === sub.day && Number(s.week_num || 1) === Number(subWk);
+        });
         if (!remainingOnDay) {
-          const lIdx = leavesList.findIndex(l => l.teacher_idx === sub.absent_teacher_idx && l.day === sub.day && (l.week_num || 1) === subWk);
+          const lIdx = leavesList.findIndex(l => {
+            const matchIdx = Number(l.teacher_idx) === Number(sub.absent_teacher_idx);
+            const cleanL = (l.teacher_name || l.name || '').replace(/^(นาย|นางสาว|นาง)\s*/, '').trim();
+            const matchName = cleanSubAbs && cleanL && (cleanSubAbs === cleanL || cleanSubAbs.includes(cleanL) || cleanL.includes(cleanSubAbs));
+            return (matchIdx || matchName) && l.day === sub.day && Number(l.week_num || 1) === Number(subWk);
+          });
           if (lIdx !== -1) leavesList.splice(lIdx, 1);
         }
+
+        // Clear candidate search area
+        const candArea = document.getElementById('subCandidateArea');
+        if (candArea) candArea.classList.add('hidden');
+        const candList = document.getElementById('candidateList');
+        if (candList) candList.innerHTML = '';
+
         await syncSubstitutionsToServer();
         renderActiveSubstitutions();
-        recalculateAll();
+        loadTeacherClassesForDay();
+        await recalculateAll();
+        showToast("ยกเลิกแล้ว", "ยกเลิกรายการสอนแทนเรียบร้อยแล้ว", true);
       }
     }
 

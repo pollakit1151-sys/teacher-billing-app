@@ -675,17 +675,17 @@ async def api_calculate(payload: dict):
     week_num = int(payload.get("week_num") or payload.get("week") or 1)
     ovr = load_custom_overrides()
     holiday_days = payload.get("holiday_days", None)
-    if not holiday_days:
+    if holiday_days is None:
         holiday_map = ovr.get("week_holiday_map", {})
         holiday_days = holiday_map.get(str(week_num), holiday_map.get(week_num, []))
     leaves = payload.get("leaves", None)
-    if not leaves:
+    if leaves is None:
         leaves = load_leaves()
     substitutions = payload.get("substitutions", None)
-    if not substitutions:
+    if substitutions is None:
         substitutions = load_substitutions()
     compensations = payload.get("compensations", None)
-    if not compensations:
+    if compensations is None:
         compensations = load_compensations()
     
     student_counts = payload.get("student_counts", None)
