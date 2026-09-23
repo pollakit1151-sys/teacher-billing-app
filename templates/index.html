@@ -6407,9 +6407,6 @@
           }
         }
         if (curBlock) {
-          if (curBlock.type === 'normal' || curBlock.type === 'teacher_name') {
-            curBlock.span += 4; // Extend last normal/name block across 4 summary rows
-          }
           col2Blocks.push(curBlock);
         }
 
@@ -6500,7 +6497,7 @@
             // Col 1 (ที่)
             let col1Html = '';
             if (r === 0) {
-              col1Html = `<td rowspan="${totalBodyRows}" class="teacher-meta-cell text-center text-black" style="vertical-align: top; padding-top: 4px; white-space: nowrap; background-color: #ffffff !important;">${orderNum}</td>`;
+              col1Html = `<td rowspan="${totalTeachingRows}" class="teacher-meta-cell text-center text-black" style="vertical-align: top; padding-top: 4px; white-space: nowrap; background-color: #ffffff !important;">${orderNum}</td>`;
             }
 
             // Col 2 (ชื่อ-สกุล)
@@ -6509,14 +6506,14 @@
             if (bBlock) {
               if (bBlock.type === 'teacher_name_sub') {
                 col2Html = `
-                  <td rowspan="${bBlock.span}" class="teacher-meta-cell text-left px-1 text-black" style="vertical-align: top; padding-top: 2px; padding-bottom: 0px; white-space: nowrap; background-color: #ffffff !important; border-bottom: hidden !important;">
+                  <td rowspan="${bBlock.span}" class="teacher-meta-cell text-left px-1 text-black" style="vertical-align: top; padding-top: 2px; padding-bottom: 0px; white-space: nowrap; background-color: #ffffff !important;">
                     <div class="whitespace-nowrap font-bold" style="white-space: nowrap !important; overflow: visible;">${bBlock.label || teacher.name}</div>
                     <div class="whitespace-nowrap font-bold" style="color: #dc2626 !important; font-size: 13.5px; font-weight: bold !important; margin-top: 1px;">${bBlock.subLabel}</div>
                   </td>
                 `;
               } else if (bBlock.type === 'teacher_name') {
                 col2Html = `
-                  <td rowspan="${bBlock.span}" class="teacher-meta-cell text-left px-1 text-black" style="vertical-align: top; padding-top: 4px; padding-bottom: 0px; white-space: nowrap; background-color: #ffffff !important; border-bottom: hidden !important;">
+                  <td rowspan="${bBlock.span}" class="teacher-meta-cell text-left px-1 text-black" style="vertical-align: top; padding-top: 4px; padding-bottom: 0px; white-space: nowrap; background-color: #ffffff !important;">
                     <div class="whitespace-nowrap font-bold" style="white-space: nowrap !important; overflow: visible;">${bBlock.label || teacher.name}</div>
                   </td>
                 `;
@@ -6528,7 +6525,7 @@
                 `;
               } else if (bBlock.type === 'substitute' || bBlock.isSub) {
                 col2Html = `
-                  <td rowspan="${bBlock.span}" class="teacher-meta-cell text-left px-1 font-bold whitespace-nowrap" style="vertical-align: middle; padding-top: 1px; padding-bottom: 2px; background-color: #ffffff !important; color: #dc2626 !important; border-top: hidden !important; border-bottom: hidden !important;">
+                  <td rowspan="${bBlock.span}" class="teacher-meta-cell text-left px-1 font-bold whitespace-nowrap" style="vertical-align: middle; padding-top: 1px; padding-bottom: 2px; background-color: #ffffff !important; color: #dc2626 !important; border-top: hidden !important;">
                     <div class="whitespace-nowrap font-bold" style="color: #dc2626 !important; font-size: 13.5px; font-weight: bold !important;">${bBlock.label}</div>
                   </td>
                 `;
@@ -6551,10 +6548,10 @@
               const posText = teacher.position || 'ครู';
               const posStyle = 'white-space: nowrap;';
               col34Html = `
-                <td rowspan="${totalBodyRows}" class="teacher-meta-cell text-center text-black" style="vertical-align: top; padding-top: 4px; padding-left: 1px; padding-right: 1px; background-color: #ffffff !important;">
+                <td rowspan="${totalTeachingRows}" class="teacher-meta-cell text-center text-black" style="vertical-align: top; padding-top: 4px; padding-left: 1px; padding-right: 1px; background-color: #ffffff !important;">
                   <div style="${posStyle}">${posText}</div>
                 </td>
-                <td rowspan="${totalBodyRows}" class="teacher-meta-cell text-center text-black" style="vertical-align: top; padding-top: 4px; white-space: nowrap; background-color: #ffffff !important;">${curWk}</td>
+                <td rowspan="${totalTeachingRows}" class="teacher-meta-cell text-center text-black" style="vertical-align: top; padding-top: 4px; white-space: nowrap; background-color: #ffffff !important;">${curWk}</td>
               `;
             }
 
@@ -6887,7 +6884,7 @@
               ${rowsHtml}
               <!-- Row 1: รวมชั่วโมงที่สอนแยก ภาระงาน/ เกินภาระงาน -->
               <tr class="${rowHeightClass} text-center font-normal" style="background-color: #ffffff !important;">
-                ${(col2Blocks.reduce((acc, b) => acc + b.span, 0) < totalBodyRows) ? `<td rowspan="4" class="teacher-meta-cell text-left px-1" style="background-color: #ffffff !important; border: 1px solid #000000 !important;"></td>` : ''}
+                <td colspan="4" rowspan="4" class="border border-black text-center font-normal" style="border: 1px solid #000000 !important; background-color: #ffffff !important;"></td>
                 <td colspan="4" class="border border-black text-center font-normal" style="border: 1px solid #000000 !important; background-color: #ffffff !important;">รวมชั่วโมงที่สอนแยก ภาระงาน/ เกินภาระงาน</td>
                 <td id="foot_sum_in_vc_${teacher.index}" class="border border-black text-center" style="border: 1px solid #000000 !important; background-color: #ffffff !important;">${inVcTotal || 0}</td>
                 <td id="foot_sum_out_vc_${teacher.index}" class="border border-black text-center" style="border: 1px solid #000000 !important; background-color: #ffffff !important;">${outVcTotal || 0}</td>
@@ -6934,7 +6931,7 @@
           </table>
 
           <!-- Box: รวมจำนวนหน่วยชั่วโมงที่ขอเบิกค่าสอน & ยอดเงินรวม (100% Matching Official Sample PDF) -->
-          <table class="summary-hours-table w-full border-collapse text-black" style="border: 1px solid #000; border-top: none; table-layout: fixed; margin-top: 0; margin-bottom: 0; font-size: 15px !important; white-space: nowrap !important;">
+          <table class="summary-hours-table w-full border-collapse text-black" style="border: 1px solid #000; border-top: 1px solid #000 !important; table-layout: fixed; margin-top: -1px; margin-bottom: 0; font-size: 15px !important; white-space: nowrap !important;">
             <colgroup>
               <col style="width: 58%;">
               <col style="width: 42%;">
